@@ -1,0 +1,80 @@
+[
+  {
+    "id": "espana",
+    "name": "España Blvd - UST Ground Level",
+    "coordinates": [120.988, 14.608],
+    "imageId": "1036528001225261",
+    "heading": 48,
+    "streetName": "España Boulevard (Eastbound to Quezon Ave)",
+    "depthMeters": 1.2,
+    "hazardLevel": "HIGH",
+    "bypassName": "Quezon Ave Flyover Viaduct",
+    "bypassHeading": 320,
+    "description": "Ground perspective facing UST Main Building. Low-lying gutter basin prone to rapid storm surge."
+  },
+  {
+    "id": "araneta",
+    "name": "Araneta Ave Underpass",
+    "coordinates": [121.011, 14.629],
+    "imageId": "1025662415878499",
+    "heading": 215,
+    "streetName": "G. Araneta Avenue (Southbound to E. Rodriguez)",
+    "depthMeters": 1.8,
+    "hazardLevel": "CRITICAL",
+    "bypassName": "Quezon Ave High Overpass",
+    "bypassHeading": 110,
+    "description": "Depressed underpass roadway prone to flash accumulation exceeding hood height."
+  },
+  {
+    "id": "sta-mesa",
+    "name": "Sta. Mesa / Pureza Corridor",
+    "coordinates": [121.008, 14.601],
+    "imageId": "296648648607767",
+    "heading": 85,
+    "streetName": "Ramon Magsaysay Blvd (Pureza Intersection)",
+    "depthMeters": 0.95,
+    "hazardLevel": "HIGH",
+    "bypassName": "R. Magsaysay Elevated Flyover",
+    "bypassHeading": 70,
+    "description": "Ground street level near LRT-2 Pureza station adjacent to San Juan River spillway."
+  },
+  {
+    "id": "taft",
+    "name": "Taft Ave - Vito Cruz",
+    "coordinates": [120.993, 14.562],
+    "imageId": "1018543252934883",
+    "heading": 170,
+    "streetName": "Taft Avenue (Southbound to Pasay Rotonda)",
+    "depthMeters": 0.65,
+    "hazardLevel": "MEDIUM",
+    "bypassName": "Roxas Blvd / Skyway Connector",
+    "bypassHeading": 260,
+    "description": "Coastal drainage depression prone to tidal backflow during torrential downpours."
+  },
+  {
+    "id": "marikina",
+    "name": "Katipunan / Marikina Riverbank",
+    "coordinates": [121.073, 14.639],
+    "imageId": "1041578620046268",
+    "heading": 30,
+    "streetName": "Marikina Riverbank Service Road",
+    "depthMeters": 0.85,
+    "hazardLevel": "HIGH",
+    "bypassName": "Marcos Highway Viaduct",
+    "bypassHeading": 15,
+    "description": "Low-elevation perimeter riverbank road vulnerable to upstream water surge."
+  },
+  {
+    "id": "sanjose",
+    "name": "San Jose del Monte - Quirino Highway",
+    "coordinates": [121.052, 14.814],
+    "imageId": null,
+    "heading": 15,
+    "streetName": "Quirino Highway (Tungkong Mangga Basin)",
+    "depthMeters": 1.3,
+    "hazardLevel": "CRITICAL",
+    "bypassName": "Quirino Highway Ridge Bypass",
+    "bypassHeading": 340,
+    "description": "Valley depression roadway subject to runoff accumulation from eastern Sierra Madre foothills."
+  }
+]

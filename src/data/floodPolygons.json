@@ -1,0 +1,149 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "espana",
+        "name": "España Blvd - UST Basin",
+        "hazardLevel": "HIGH",
+        "depthMeters": 1.2,
+        "passability": "Impassable for Sedans",
+        "clearanceTime": "7:30 PM"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [120.985, 14.606],
+            [120.995, 14.612],
+            [120.992, 14.618],
+            [120.982, 14.610],
+            [120.985, 14.606]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "araneta",
+        "name": "Araneta Ave Underpass",
+        "hazardLevel": "HIGH",
+        "depthMeters": 1.8,
+        "passability": "Closed to All Traffic",
+        "clearanceTime": "9:00 PM"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [121.008, 14.625],
+            [121.018, 14.629],
+            [121.014, 14.636],
+            [121.005, 14.632],
+            [121.008, 14.625]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "marikina",
+        "name": "Marikina Riverbank / Provident",
+        "hazardLevel": "MEDIUM",
+        "depthMeters": 0.8,
+        "passability": "High-Clearance 4x4 Only",
+        "clearanceTime": "8:15 PM"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [121.085, 14.630],
+            [121.095, 14.638],
+            [121.092, 14.646],
+            [121.080, 14.638],
+            [121.085, 14.630]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "sta-mesa",
+        "name": "Sta. Mesa / Pureza, Manila",
+        "hazardLevel": "HIGH",
+        "depthMeters": 0.95,
+        "passability": "Trucks / High-Axle Only",
+        "clearanceTime": "8:30 PM",
+        "rainRate": "42 mm/h",
+        "description": "Severe ponding along R. Magsaysay Blvd & San Juan River bank"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [121.006, 14.598],
+            [121.018, 14.601],
+            [121.015, 14.608],
+            [121.003, 14.604],
+            [121.006, 14.598]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "taft",
+        "name": "Taft Ave - Vito Cruz, Pasay",
+        "hazardLevel": "MEDIUM",
+        "depthMeters": 0.65,
+        "passability": "Impassable for Low Sedans",
+        "clearanceTime": "7:45 PM",
+        "rainRate": "32 mm/h",
+        "description": "Gutter-deep flooding at Taft-Vito Cruz intersection"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [120.990, 14.558],
+            [120.999, 14.563],
+            [120.996, 14.571],
+            [120.987, 14.566],
+            [120.990, 14.558]
+          ]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "id": "katipunan",
+        "name": "Katipunan Ave - Marikina Link",
+        "hazardLevel": "HIGH",
+        "depthMeters": 0.85,
+        "passability": "High-Clearance 4x4 Only",
+        "clearanceTime": "8:00 PM",
+        "rainRate": "38 mm/h",
+        "description": "Overflow spillover near Ateneo & Barangka boundary"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [
+          [
+            [121.070, 14.635],
+            [121.079, 14.640],
+            [121.076, 14.648],
+            [121.067, 14.643],
+            [121.070, 14.635]
+          ]
+        ]
+      }
+    }
+  ]
+}
