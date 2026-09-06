@@ -102,7 +102,16 @@ export default function App() {
   const [showSensorsModal, setShowSensorsModal] = useState(false);
 
   // Real-Time Doppler Weather & Radar Telemetry State (Open-Meteo)
-  const [liveWeather, setLiveWeather] = useState(null);
+  const [liveWeather, setLiveWeather] = useState({
+    temperature: 27,
+    feelsLike: 31,
+    humidity: 85,
+    precipitation: 0.0,
+    windSpeed: 11,
+    weatherCode: 0,
+    condition: 'Clear Sky',
+    lastUpdated: 'Connecting...',
+  });
   const [isRefreshingWeather, setIsRefreshingWeather] = useState(false);
   const [telemetryMode, setTelemetryMode] = useState('live'); // 'live' | 'scenario'
 
@@ -699,7 +708,7 @@ export default function App() {
                       onClick={() => updateWeather()}
                       disabled={isRefreshingWeather}
                       className="bg-[#000000] hover:bg-black/80 text-white p-1.5 rounded-full transition focus:outline-none shadow-sm active:scale-90"
-                      title={`Last synced at ${liveWeather.lastUpdated}. Click to ping live weather now.`}
+                      title={`Last synced at ${liveWeather?.lastUpdated || 'Connecting...'}. Click to ping live weather now.`}
                     >
                       <RefreshCw className={`w-3.5 h-3.5 text-[#FFE142] ${isRefreshingWeather ? 'animate-spin' : ''}`} />
                     </button>
