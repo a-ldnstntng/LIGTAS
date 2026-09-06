@@ -3,11 +3,13 @@ import MapViewport from './components/MapViewport';
 import StreetViewerModal from './components/StreetViewerModal';
 import floodData from './data/floodPolygons.json';
 import { fetchNearbyImageId } from './services/mapillaryService';
+import { fetchLiveWeatherData, computeLiveInundation } from './services/weatherService';
 import { 
   Search, SlidersHorizontal, Droplets, CloudRain,
   Wind, AlertTriangle, ShieldCheck, Waves,
   MapPin, Navigation, PhoneCall, Activity,
-  Radio, Info, ArrowUpRight, Loader2, Camera
+  Radio, Info, ArrowUpRight, Loader2, Camera,
+  RefreshCw
 } from 'lucide-react';
 
 // Procedural flood & telemetry generator for any place in the Philippines (PAR)
@@ -98,6 +100,42 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('Overview');
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [showSensorsModal, setShowSensorsModal] = useState(false);
+
+  // Real-Time Doppler Weather & Radar Telemetry State (Open-Meteo)
+  const [liveWeather, setLiveWeather] = useState({
+    precipitation: 0.0,
+    rainRate: '0.0 mm/h',
+    windSpeed: '11 km/h',
+    humidity: '85%',
+    temperature: '27°C',
+    weatherCode: 0,
+    conditionLabel: 'Clear Sky',
+    isRaining: false,
+    lastUpdated: 'Syncing...',
+    hourlyPrecipitation: [],
+  });
+  const [isRefreshingWeather, setIsRefreshingWeather] = useState(false);
+  const [telemetryMode, setTelemetryMode] = useState('live'); // 'live' | 'scenario'
+
+  // Fetch real-time weather observation for current coordinates
+  const updateWeather = useCallback(async () => {
+    const coords = activeLocation.coordinates || [activeLocation.lon || 120.9894, activeLocation.lat || 14.6091];
+    const lon = coords[0] || 120.9894;
+    const lat = coords[1] || 14.6091;
+    setIsRefreshingWeather(true);
+    const data = await fetchLiveWeatherData(lat, lon);
+    setLiveWeather(data);
+    setIsRefreshingWeather(false);
+  }, [activeLocation]);
+
+  // Automated background polling every 30 seconds to keep stats live and accurate
+  useEffect(() => {
+    updateWeather();
+    const interval = setInterval(() => {
+      updateWeather();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, [updateWeather]);
 
   // Street-Level Viewer State (Mapillary JS)
   const [streetViewData, setStreetViewData] = useState({ 
@@ -301,12 +339,33 @@ export default function App() {
     };
   }, [searchQuery]);
 
-  // Telemetry computation: uses actual polygon data if available, otherwise procedural PAR telemetry
+  // Telemetry computation: real-time live radar/weather telemetry vs. stress-test simulation
   const activeMetrics = useMemo(() => {
     const name = activeLocation.name || 'España, Manila';
-    const [lon, lat] = activeLocation.coordinates || [120.989, 14.609];
+    const [lon, lat] = activeLocation.coordinates || [activeLocation.lon || 120.989, activeLocation.lat || 14.609];
 
-    // Check if location matches a pre-defined polygon in floodPolygons.json
+    // Mode 1: TRUE LIVE ATMOSPHERIC & INUNDATION RADAR
+    if (telemetryMode === 'live') {
+      const inundation = computeLiveInundation(name, liveWeather.precipitation);
+      return {
+        name,
+        depthMeters: inundation.depthMeters,
+        hazardLevel: inundation.hazardLevel,
+        passability: inundation.passability,
+        severityLabel: inundation.severityLabel,
+        rainRate: liveWeather.rainRate,
+        windSpeed: liveWeather.windSpeed,
+        humidity: liveWeather.humidity,
+        temperature: liveWeather.temperature,
+        clearanceTime: liveWeather.isRaining ? '~1h after rain cessation' : 'Clear / Normal Headway',
+        riskPercent: inundation.riskPercent,
+        advisory: liveWeather.isRaining ? `LIVE RAIN: ${liveWeather.conditionLabel.toUpperCase()}` : `LIVE RADAR: ${liveWeather.conditionLabel.toUpperCase()}`,
+        detourDelta: inundation.detourDelta,
+        lastUpdated: liveWeather.lastUpdated,
+      };
+    }
+
+    // Mode 2: HABAGAT / TYPHOON EMERGENCY STRESS-TEST SCENARIO
     const str = name.toLowerCase();
     const match = floodData.features.find((f) => {
       const p = f.properties;
@@ -331,16 +390,20 @@ export default function App() {
         passability: p.passability,
         severityLabel: p.depthMeters >= 1.2 ? 'Severe Inundation (Chest Depth)' : 'Moderate Inundation (Knee Depth)',
         rainRate: p.rainRate || '45 mm/h',
+        windSpeed: '38 km/h',
+        humidity: '94%',
+        temperature: '25°C',
         clearanceTime: p.clearanceTime || '~7:30 PM',
         riskPercent: p.hazardLevel === 'HIGH' ? '85% RISK' : '65% RISK',
-        advisory: 'HABAGAT SURGE ADVISORY',
+        advisory: 'HABAGAT SURGE STRESS-TEST',
         detourDelta: '+18 min detour',
+        lastUpdated: 'Simulated Scenario',
       };
     }
 
     // Procedural simulation for any newly geocoded location across the Philippines
     return getProceduralTelemetry(name, lat, lon);
-  }, [activeLocation]);
+  }, [activeLocation, telemetryMode, liveWeather]);
 
   // Dynamic Suggested Bypass information matching the current location
   const bypassInfo = useMemo(() => {
@@ -605,19 +668,70 @@ export default function App() {
             {/* Top Date / Condition Badges (Small Pitch-Black Capsules) */}
             <div>
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                <span className="bg-[#000000] text-white px-3 py-1 rounded-full text-[11px] font-sans font-bold flex items-center gap-1.5 shadow-sm">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#FFE142]" />
-                  {activeMetrics.advisory}
-                </span>
-                <span className="bg-[#000000] text-white px-3 py-1 rounded-full text-[11px] font-sans font-bold flex items-center gap-1.5 shadow-sm font-mono tabular-nums">
-                  <Droplets className="w-3 h-3 text-white/90" /> {activeMetrics.riskPercent}
-                </span>
+                {/* Mode Selector Pill: Live Radar vs Stress-Test */}
+                <div className="flex items-center gap-1 bg-[#000000] p-1 rounded-full text-[11px] font-sans font-bold text-white shadow-sm">
+                  <button
+                    type="button"
+                    onClick={() => setTelemetryMode('live')}
+                    className={`px-3 py-1 rounded-full flex items-center gap-1.5 transition duration-150 ${
+                      telemetryMode === 'live'
+                        ? 'bg-[#FFE142] text-[#000000]'
+                        : 'text-white/70 hover:text-white'
+                    }`}
+                    title="Real-time atmospheric Doppler & precipitation radar from Open-Meteo"
+                  >
+                    <span className={`w-1.5 h-1.5 rounded-full ${telemetryMode === 'live' ? 'bg-[#000000] animate-pulse' : 'bg-white/40'}`} />
+                    <span>LIVE RADAR</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setTelemetryMode('scenario')}
+                    className={`px-3 py-1 rounded-full transition duration-150 ${
+                      telemetryMode === 'scenario'
+                        ? 'bg-[#FFE142] text-[#000000]'
+                        : 'text-white/70 hover:text-white'
+                    }`}
+                    title="Simulate high-water Habagat emergency monsoon scenario"
+                  >
+                    <span>STRESS-TEST</span>
+                  </button>
+                </div>
+
+                {/* Right Badges: Risk & Live Refresh */}
+                <div className="flex items-center gap-1.5">
+                  <span className="bg-[#000000] text-white px-3 py-1.5 rounded-full text-[11px] font-sans font-bold flex items-center gap-1.5 shadow-sm font-mono tabular-nums">
+                    <Droplets className="w-3 h-3 text-[#FFE142]" /> {activeMetrics.riskPercent}
+                  </span>
+                  {telemetryMode === 'live' && (
+                    <button
+                      type="button"
+                      onClick={() => updateWeather()}
+                      disabled={isRefreshingWeather}
+                      className="bg-[#000000] hover:bg-black/80 text-white p-1.5 rounded-full transition focus:outline-none shadow-sm active:scale-90"
+                      title={`Last synced at ${liveWeather.lastUpdated}. Click to ping live weather now.`}
+                    >
+                      <RefreshCw className={`w-3.5 h-3.5 text-[#FFE142] ${isRefreshingWeather ? 'animate-spin' : ''}`} />
+                    </button>
+                  )}
+                </div>
               </div>
               
               {/* Location Title (Editorial Ledger Serif in Standard Sentence Case) */}
               <h1 className="font-serif text-3xl sm:text-4xl font-normal text-[#000000] tracking-tight line-clamp-2 mt-2 leading-tight">
                 {activeMetrics.name}
               </h1>
+
+              {/* Real-Time Radar Sync Status Bar */}
+              <div className="mt-1.5 flex items-center gap-2 text-[11px] font-sans font-extrabold uppercase tracking-wider text-black/75">
+                <span className="w-1.5 h-1.5 rounded-full bg-black/70" />
+                {telemetryMode === 'live' ? (
+                  <span>
+                    Synced {liveWeather.lastUpdated} • {liveWeather.conditionLabel} • {liveWeather.temperature}
+                  </span>
+                ) : (
+                  <span>Habagat Monsoon Flood Simulation (0.9m Baseline)</span>
+                )}
+              </div>
             </div>
 
             {/* Giant Center Telemetry Readout (Clean, Geometric Bold Sans-Serif) */}

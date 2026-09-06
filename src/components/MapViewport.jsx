@@ -387,9 +387,9 @@ export default function MapViewport({
         </div>
 
         <!-- Floating Badge Above Marker -->
-        <div style="margin-top: 6px; background-color: rgba(18, 18, 20, 0.95); border: 1px solid rgba(255, 107, 107, 0.6); padding: 3px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; color: #ff6b6b; white-space: nowrap; box-shadow: 0 4px 12px rgba(18, 18, 20, 0.6); backdrop-filter: blur(8px); z-index: 20; display: flex; align-items: center; gap: 5px;">
-          <span style="display: inline-block; width: 6px; height: 6px; border-radius: 9999px; background-color: #ff6b6b;"></span>
-          <span>${cleanName} • ${depth.toFixed(1)}m</span>
+        <div style="margin-top: 6px; background-color: rgba(18, 18, 20, 0.95); border: 1px solid ${depth > 0.1 ? 'rgba(255, 107, 107, 0.6)' : 'rgba(81, 207, 102, 0.6)'}; padding: 3px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; color: ${depth > 0.1 ? '#ff6b6b' : '#51cf66'}; white-space: nowrap; box-shadow: 0 4px 12px rgba(18, 18, 20, 0.6); backdrop-filter: blur(8px); z-index: 20; display: flex; align-items: center; gap: 5px;">
+          <span style="display: inline-block; width: 6px; height: 6px; border-radius: 9999px; background-color: ${depth > 0.1 ? '#ff6b6b' : '#51cf66'};"></span>
+          <span>${cleanName} • ${depth > 0.1 ? `${depth.toFixed(1)}m` : 'Clear (0.0m)'}</span>
         </div>
       </div>
     `;
