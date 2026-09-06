@@ -55,6 +55,18 @@ export default function StreetViewerModal({
     }
   }, [activeLocation?.bearing, activeLocation?.heading]);
 
+  // Global Escape keydown listener for keyboard accessibility
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        onClose?.();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   const locationTitle = activeLocation?.name || 'Active Floodway Corridor';
   const depthMeters = typeof activeLocation?.depthMeters === 'number' ? activeLocation.depthMeters : 1.2;
 
@@ -270,7 +282,14 @@ export default function StreetViewerModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose?.();
+        }
+      }}
+    >
       
       {/* Modal Shell */}
       <div className="relative w-full max-w-4xl bg-[#1a1a1e]/95 backdrop-blur-xl border border-[#26262b] rounded-4xl shadow-2xl overflow-hidden flex flex-col h-[600px] sm:h-[660px] animate-in zoom-in-95 duration-200 ease-out-expo">
@@ -286,7 +305,7 @@ export default function StreetViewerModal({
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-serif text-base sm:text-lg font-bold text-white tracking-tight">
-                  Surface Telemetry & Ground Truth
+                  Roadway Ground Truth & Baseline
                 </h3>
                 <span className="hidden sm:inline-block px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-[#26262b] text-[#FFE142] border border-white/5">
                   METRO MANILA
@@ -315,7 +334,7 @@ export default function StreetViewerModal({
                 aria-label="Ground-Truth 360° (Mapillary)"
               >
                 <Camera className="w-3.5 h-3.5" />
-                <span className="tracking-wide">360° GROUND TRUTH</span>
+                <span className="tracking-wide">360° BASELINE</span>
               </button>
 
               <button
@@ -337,7 +356,7 @@ export default function StreetViewerModal({
             {/* Modal Dismiss Button */}
             <button
               onClick={onClose}
-              className="p-2 rounded-2xl bg-[#222328] hover:bg-[#2c2d33] text-gray-300 hover:text-white transition active:scale-95 border border-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
+              className="p-2 rounded-2xl bg-[#222328] hover:bg-[#2c2d33] text-gray-300 hover:text-white transition active:scale-95 border border-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold min-h-[44px] min-w-[44px] flex items-center justify-center"
               title="Close Viewer (Esc)"
               aria-label="Close Viewer"
             >
@@ -365,17 +384,44 @@ export default function StreetViewerModal({
             {/* Overlaid Telemetry Heads-Up Pill (when Mapillary photo is active) */}
             {resolvedImageId && token && !viewerError && (
               <div className="absolute top-4 left-4 right-4 z-20 pointer-events-none flex flex-wrap items-center justify-between gap-2">
-                <div className="bg-obsidian/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 shadow-xl flex items-center gap-2">
+                <div className="bg-obsidian/95 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 shadow-xl flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-emerald-400" />
                   <span className="text-xs font-mono font-bold text-white tracking-wide">
-                    MAPILLARY CROWDSOURCE GROUND TRUTH
+                    HISTORICAL 360° BENCHMARK (NOT LIVE CCTV)
+                  </span>
+                  <span className="hidden sm:inline-block text-[11px] text-gray-400 border-l border-white/15 pl-2 font-mono">
+                    GROUND WATERLINE: {depthMeters.toFixed(1)}m
                   </span>
                 </div>
-                <div className="bg-obsidian/90 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 shadow-xl flex items-center gap-2">
+                <div className="bg-obsidian/95 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 shadow-xl flex items-center gap-2">
                   <Compass className="w-3.5 h-3.5 text-clay-gold" />
                   <span className="text-xs font-mono font-bold text-white tabular-nums">
                     BEARING: {bearing}°
                   </span>
+                </div>
+              </div>
+            )}
+
+            {/* Augmented Telemetry Waterline Plane Overlay */}
+            {resolvedImageId && token && !viewerError && (
+              <div className="absolute bottom-4 left-4 right-4 z-20 pointer-events-none flex items-center justify-between">
+                <div className="bg-obsidian/95 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 shadow-2xl flex items-center gap-3">
+                  <div className="flex items-center gap-2.5">
+                    <Waves className={`w-4 h-4 ${depthMeters > 0.35 ? 'text-soft-red' : depthMeters > 0.15 ? 'text-clay-amber' : 'text-sage-green'}`} />
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">
+                          LIVE WATERLINE: {depthMeters.toFixed(1)}m
+                        </span>
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${depthMeters > 0.35 ? 'bg-soft-red/20 text-soft-red' : depthMeters > 0.15 ? 'bg-clay-amber/20 text-clay-amber' : 'bg-sage-green/20 text-sage-green'}`}>
+                          {depthMeters > 0.35 ? 'CRITICAL SUBMERSION' : depthMeters > 0.15 ? 'CAUTION: GUTTER LINE' : 'SURFACE CLEAR'}
+                        </span>
+                      </div>
+                      <p className="text-[10px] text-[#9ca3af] mt-0.5">
+                        Daylight panorama is dry baseline reference for curb elevation; waterline reflects live radar.
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
             )}

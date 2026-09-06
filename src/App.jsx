@@ -100,6 +100,30 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('Overview');
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [showSensorsModal, setShowSensorsModal] = useState(false);
+  const [copiedHotline, setCopiedHotline] = useState(null);
+
+  const handleCopyHotline = useCallback((number, e) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    if (navigator?.clipboard?.writeText) {
+      navigator.clipboard.writeText(number);
+      setCopiedHotline(number);
+      setTimeout(() => setCopiedHotline(null), 2000);
+    }
+  }, []);
+
+  // Global Escape keydown listener for Emergency and Sensors modals
+  useEffect(() => {
+    if (!showEmergencyModal && !showSensorsModal) return;
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setShowEmergencyModal(false);
+        setShowSensorsModal(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showEmergencyModal, showSensorsModal]);
 
   // Real-Time Doppler Weather & Radar Telemetry State (Open-Meteo)
   const [liveWeather, setLiveWeather] = useState({
@@ -457,16 +481,23 @@ export default function App() {
 
   // Handle location selection from search or tabs
   const handleSelectLocation = (loc) => {
+    const rawCoords = loc.coordinates || (loc.lon && loc.lat ? [parseFloat(loc.lon), parseFloat(loc.lat)] : null);
+    if (!rawCoords || isNaN(rawCoords[0]) || isNaN(rawCoords[1])) {
+      setSearchError('Location coordinates could not be verified. Please choose from monitored corridors.');
+      return;
+    }
+
     const selected = {
       name: loc.name || loc.primaryName || 'Selected Location',
-      coordinates: loc.coordinates || [loc.lon || 120.989, loc.lat || 14.609],
-      lat: loc.lat,
-      lon: loc.lon,
+      coordinates: rawCoords,
+      lat: rawCoords[1],
+      lon: rawCoords[0],
     };
 
     setActiveLocation(selected);
     setIsSearchFocused(false);
     setSearchQuery('');
+    setSearchError(null);
 
     // Prepend to quick corridors carousel if not present
     setCorridorsList((prev) => {
@@ -482,18 +513,50 @@ export default function App() {
   // Submit direct search on Enter or 'Go' button
   const handleSearchSubmit = (e) => {
     e?.preventDefault();
-    if (!searchQuery.trim()) return;
+    const query = searchQuery.trim();
+    if (!query) return;
 
     if (nominatimResults.length > 0) {
+      setSearchError(null);
       handleSelectLocation(nominatimResults[0]);
+    } else if (isSearching) {
+      setSearchError('Locating Philippine coordinates...');
     } else {
-      // Create location from typed query
-      handleSelectLocation({
-        name: searchQuery.trim(),
-        coordinates: [120.989, 14.609],
-      });
+      // Prevent silently defaulting unmapped queries to Manila coordinates
+      setSearchError(`No verified location found for "${query}" in PAR. Check spelling or pick a corridor below.`);
+      setIsSearchFocused(true);
     }
   };
+
+  // Focus and scroll to search input (used by bottom nav trigger and / shortcut)
+  const handleSearchFocus = useCallback(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const input = document.getElementById('search-corridor-input');
+    input?.focus();
+    setIsSearchFocused(true);
+  }, []);
+
+  // Global keyboard accelerators for power users & dispatchers: / for search, 1-5 for corridors
+  useEffect(() => {
+    const handleGlobalKey = (e) => {
+      const activeTag = document.activeElement?.tagName?.toLowerCase();
+      const isInputActive = activeTag === 'input' || activeTag === 'textarea' || document.activeElement?.isContentEditable;
+      if (isInputActive) return;
+
+      if (e.key === '/') {
+        e.preventDefault();
+        handleSearchFocus();
+      } else if (['1', '2', '3', '4', '5'].includes(e.key)) {
+        const index = parseInt(e.key, 10) - 1;
+        if (corridorsList[index]) {
+          e.preventDefault();
+          handleSelectLocation(corridorsList[index]);
+        }
+      }
+    };
+    window.addEventListener('keydown', handleGlobalKey);
+    return () => window.removeEventListener('keydown', handleGlobalKey);
+  }, [corridorsList, handleSearchFocus]);
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
@@ -537,16 +600,17 @@ export default function App() {
               </button>
               
               <input 
+                id="search-corridor-input"
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
-                placeholder="Search floodway, city, or station across the Philippines..."
-                className="w-full bg-[#1a1a1e] text-sm text-white placeholder-[#9ca3af] pl-11 pr-20 py-3.5 rounded-full border border-[#26262b] focus:outline-none focus:border-clay-gold focus-visible:ring-2 focus-visible:ring-clay-gold caret-clay-gold transition shadow-inner"
+                placeholder="Search floodway or city in the Philippines... (Press /)"
+                className="w-full bg-[#1a1a1e] text-sm text-white placeholder-[#9ca3af] pl-11 pr-24 py-3.5 rounded-full border border-[#26262b] focus:outline-none focus:border-clay-gold focus-visible:ring-2 focus-visible:ring-clay-gold caret-clay-gold transition shadow-inner"
               />
 
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                {searchQuery && (
+                {searchQuery ? (
                   <button
                     type="button"
                     aria-label="Clear search input"
@@ -558,6 +622,10 @@ export default function App() {
                   >
                     ✕
                   </button>
+                ) : (
+                  <span className="hidden sm:inline-block text-[10px] font-mono text-[#9ca3af] px-2 py-0.5 rounded-md bg-white/5 border border-white/5 mr-0.5 select-none" title="Press / to search">
+                    /
+                  </span>
                 )}
                 <button
                   type="submit"
@@ -567,6 +635,24 @@ export default function App() {
                 </button>
               </div>
             </form>
+
+            {/* Direct Inline Search Error Notice */}
+            {searchError && (
+              <div className="mt-2 px-3.5 py-2 rounded-2xl bg-soft-red/15 border border-soft-red/30 text-xs flex items-center justify-between gap-2 animate-in fade-in duration-150">
+                <div className="flex items-center gap-2 text-soft-red">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-soft-red" />
+                  <span className="font-medium text-white">{searchError}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSearchError(null)}
+                  className="text-[#9ca3af] hover:text-white px-1.5 py-0.5 rounded-full hover:bg-white/10 transition"
+                  aria-label="Dismiss search error"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
 
             {/* Floating Squircle Dropdown for Nominatim Geocoding Results */}
             {isSearchFocused && (searchQuery.trim().length >= 2 || nominatimResults.length > 0) && (
@@ -605,15 +691,16 @@ export default function App() {
 
                   {!isSearching && nominatimResults.length === 0 && searchQuery.trim().length >= 2 && (
                     <div className="p-4 text-center">
+                      <div className="flex items-center justify-center gap-1.5 text-soft-red mb-1.5">
+                        <AlertTriangle className="w-4 h-4 text-soft-red" />
+                        <span className="text-xs font-bold text-white">Unverified Location in PAR</span>
+                      </div>
                       <p className="text-xs text-[#9ca3af]">
-                        No official OSM location found for "<span className="text-white font-medium">{searchQuery}</span>"
+                        No verified GPS coordinates found for "<span className="text-white font-medium">{searchQuery}</span>".
                       </p>
-                      <button
-                        onClick={handleSearchSubmit}
-                        className="mt-2 text-xs font-bold text-clay-gold hover:underline inline-flex items-center gap-1"
-                      >
-                        Simulate Telemetry for "{searchQuery}" <ArrowUpRight className="w-3.5 h-3.5" />
-                      </button>
+                      <p className="text-[11px] text-[#9ca3af]/80 mt-1">
+                        Please check spelling or choose from the monitored corridors list.
+                      </p>
                     </div>
                   )}
                 </div>
@@ -659,6 +746,37 @@ export default function App() {
             );
           })}
         </div>
+
+        {/* Simulation Mode Warning Banner (Visible whenever stress-test mode is engaged) */}
+        {telemetryMode === 'scenario' && (
+          <div className="bg-[#f7b731]/15 border border-[#f7b731]/40 rounded-3xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 shadow-lg animate-in fade-in duration-200">
+            <div className="flex items-start sm:items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-[#f7b731]/20 text-clay-amber shrink-0 mt-0.5 sm:mt-0">
+                <AlertTriangle className="w-5 h-5 text-clay-amber" />
+              </div>
+              <div>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold font-mono px-2 py-0.5 rounded-full bg-[#f7b731] text-obsidian uppercase tracking-wider">
+                    DRILL SIMULATION
+                  </span>
+                  <h2 className="text-sm font-bold text-white tracking-tight">
+                    Habagat High-Water Drill Mode Active (0.9m Baseline)
+                  </h2>
+                </div>
+                <p className="text-xs text-[#9ca3af] mt-1">
+                  Telemetry reflects emergency simulation parameters, not live weather radar. Real-world conditions may differ.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setTelemetryMode('live')}
+              className="px-4 py-2 rounded-full bg-[#f7b731] hover:bg-[#f7b731]/90 text-obsidian text-xs font-bold transition shadow-md active:scale-95 ml-auto sm:ml-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold min-h-[44px] flex items-center"
+            >
+              Return to Live Radar
+            </button>
+          </div>
+        )}
 
         {/* 2. Main Hero Grid */}
         <div id="hero-section" className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
@@ -925,25 +1043,74 @@ export default function App() {
         </div>
 
         {/* 4. Minimal Bottom Pill Navigation Island */}
-        <div className="fixed bottom-4 inset-x-0 mx-auto w-fit z-40 px-4">
+        <div className="fixed bottom-4 inset-x-0 mx-auto w-fit z-40 px-3">
           <nav className="inline-flex items-center gap-1 bg-[#1a1a1e]/95 backdrop-blur-xl border border-[#26262b] p-1.5 rounded-full shadow-2xl">
-            {['Overview', 'Radar Map', 'Street View', 'Sensors', 'Emergency'].map((tab) => {
-              const isTabActive = tab === 'Street View' ? streetViewData.isOpen : activeTab === tab;
-              return (
-                <button
-                  key={tab}
-                  onClick={() => handleTabClick(tab)}
-                  className={`px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-full text-xs transition-all duration-200 active:scale-95 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold ${
-                    isTabActive
-                      ? 'bg-clay-gold text-pitch-black font-sans font-bold shadow-lg'
-                      : 'text-[#9ca3af] hover:text-white hover:bg-white/5 font-sans font-medium'
-                  }`}
-                >
-                  {tab === 'Street View' && <Camera className="w-3 h-3" />}
-                  <span>{tab}</span>
-                </button>
-              );
-            })}
+            {/* Viewport Anchors */}
+            <div className="flex items-center gap-1">
+              {['Overview', 'Radar Map'].map((tab) => {
+                const isTabActive = activeTab === tab;
+                return (
+                  <button
+                    key={tab}
+                    onClick={() => handleTabClick(tab)}
+                    className={`px-3.5 sm:px-4 py-2.5 rounded-full text-xs min-h-[44px] transition-all duration-200 active:scale-95 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold ${
+                      isTabActive
+                        ? 'bg-clay-gold text-pitch-black font-sans font-bold shadow-lg'
+                        : 'text-[#9ca3af] hover:text-white hover:bg-white/5 font-sans font-medium'
+                    }`}
+                  >
+                    <span>{tab}</span>
+                  </button>
+                );
+              })}
+
+              <button
+                onClick={() => handleTabClick('Street View')}
+                className={`px-3.5 sm:px-4 py-2.5 rounded-full text-xs min-h-[44px] transition-all duration-200 active:scale-95 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold ${
+                  streetViewData.isOpen
+                    ? 'bg-clay-gold text-pitch-black font-sans font-bold shadow-lg'
+                    : 'text-[#9ca3af] hover:text-white hover:bg-white/5 font-sans font-medium'
+                }`}
+              >
+                <Camera className="w-3.5 h-3.5" />
+                <span>Street Cam</span>
+              </button>
+            </div>
+
+            {/* Architectural Divider Separating Views from Modals */}
+            <span className="w-px h-5 bg-[#26262b] mx-0.5 shrink-0" aria-hidden="true" />
+
+            {/* Quick Utility Sheets */}
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                onClick={handleSearchFocus}
+                className="px-3 sm:px-3.5 py-2.5 rounded-full text-xs min-h-[44px] transition-all duration-200 active:scale-95 flex items-center gap-1.5 text-[#9ca3af] hover:text-white hover:bg-white/5 font-sans font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
+                title="Search Locations (Press /)"
+                aria-label="Search Corridors"
+              >
+                <Search className="w-3.5 h-3.5 text-clay-gold" />
+                <span className="hidden sm:inline">Search</span>
+              </button>
+
+              <button
+                onClick={() => setShowSensorsModal(true)}
+                className="px-3 sm:px-3.5 py-2.5 rounded-full text-xs min-h-[44px] transition-all duration-200 active:scale-95 flex items-center gap-1.5 text-[#9ca3af] hover:text-clay-amber hover:bg-clay-amber/10 font-sans font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-amber"
+                title="Open Live Hydro Sensor Feeds"
+              >
+                <Activity className="w-3.5 h-3.5 text-clay-amber" />
+                <span className="hidden sm:inline">Sensors</span>
+              </button>
+
+              <button
+                onClick={() => setShowEmergencyModal(true)}
+                className="px-3 sm:px-3.5 py-2.5 rounded-full text-xs min-h-[44px] transition-all duration-200 active:scale-95 flex items-center gap-1.5 text-soft-red hover:bg-soft-red/10 font-sans font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soft-red"
+                title="Open Emergency Rescue Hotlines"
+              >
+                <PhoneCall className="w-3.5 h-3.5 text-soft-red" />
+                <span>Hotlines</span>
+              </button>
+            </div>
           </nav>
         </div>
 
@@ -951,7 +1118,12 @@ export default function App() {
 
       {/* ===================== EMERGENCY RESCUE MODAL ===================== */}
       {showEmergencyModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowEmergencyModal(false);
+          }}
+        >
           <div className="bg-[#1a1a1e] border border-[#26262b] rounded-4xl max-w-md w-full p-6 sm:p-7 shadow-2xl relative text-white animate-in zoom-in-95 duration-200 ease-out-expo">
             
             <div className="flex items-center justify-between mb-4">
@@ -961,78 +1133,143 @@ export default function App() {
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-white leading-none">Emergency Rescue Hotlines</h3>
-                  <p className="text-xs text-[#9ca3af] mt-1">Tap any number to call instantly from your phone</p>
+                  <p className="text-xs text-[#9ca3af] mt-1">Tap any number to call or copy for dispatch</p>
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setShowEmergencyModal(false)}
                 aria-label="Close Emergency Hotline Directory"
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
+                className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
               >
                 ✕
               </button>
             </div>
 
             <div className="space-y-2.5 my-4">
-              <a 
-                href="tel:136" 
-                className="flex items-center justify-between p-3.5 rounded-2xl bg-[#121214] hover:bg-[#222328] border border-[#26262b] transition group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
-              >
-                <div>
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#121214] border border-[#26262b] transition group">
+                <a 
+                  href="tel:136" 
+                  className="flex-1 mr-3 focus-visible:outline-none"
+                  title="Call MMDA Metrobase"
+                >
                   <div className="font-bold text-sm text-white group-hover:text-clay-gold transition">
                     MMDA Metrobase (Traffic & Floods)
                   </div>
                   <div className="text-xs text-[#9ca3af]">Road obstruction, flood towing, emergency pumping</div>
+                </a>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={(e) => handleCopyHotline('136', e)}
+                    className="px-2.5 py-1.5 min-h-[44px] rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs font-mono font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
+                    title="Copy number to clipboard"
+                    aria-label="Copy MMDA hotline number 136"
+                  >
+                    {copiedHotline === '136' ? 'Copied!' : 'Copy'}
+                  </button>
+                  <a 
+                    href="tel:136"
+                    className="text-clay-gold font-mono font-bold text-base tabular-nums px-3 py-1.5 min-h-[44px] flex items-center rounded-xl bg-clay-gold/10 hover:bg-clay-gold/20 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
+                    title="Dial 136"
+                  >
+                    136
+                  </a>
                 </div>
-                <span className="text-clay-gold font-mono font-bold text-base tabular-nums px-3 py-1 rounded-xl bg-clay-gold/10 ml-2">
-                  136
-                </span>
-              </a>
+              </div>
 
-              <a 
-                href="tel:143" 
-                className="flex items-center justify-between p-3.5 rounded-2xl bg-[#121214] hover:bg-[#222328] border border-[#26262b] transition group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soft-red"
-              >
-                <div>
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#121214] border border-[#26262b] transition group">
+                <a 
+                  href="tel:143" 
+                  className="flex-1 mr-3 focus-visible:outline-none"
+                  title="Call Philippine Red Cross"
+                >
                   <div className="font-bold text-sm text-white group-hover:text-soft-red transition">
                     Philippine Red Cross
                   </div>
                   <div className="text-xs text-[#9ca3af]">Ambulance, rapid response & amphibian boats</div>
+                </a>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={(e) => handleCopyHotline('143', e)}
+                    className="px-2.5 py-1.5 min-h-[44px] rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs font-mono font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soft-red"
+                    title="Copy number to clipboard"
+                    aria-label="Copy Red Cross hotline number 143"
+                  >
+                    {copiedHotline === '143' ? 'Copied!' : 'Copy'}
+                  </button>
+                  <a 
+                    href="tel:143"
+                    className="text-soft-red font-mono font-bold text-base tabular-nums px-3 py-1.5 min-h-[44px] flex items-center rounded-xl bg-soft-red/10 hover:bg-soft-red/20 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soft-red"
+                    title="Dial 143"
+                  >
+                    143
+                  </a>
                 </div>
-                <span className="text-soft-red font-mono font-bold text-base tabular-nums px-3 py-1 rounded-xl bg-soft-red/10 ml-2">
-                  143
-                </span>
-              </a>
+              </div>
 
-              <a 
-                href="tel:161" 
-                className="flex items-center justify-between p-3.5 rounded-2xl bg-[#121214] hover:bg-[#222328] border border-[#26262b] transition group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-green"
-              >
-                <div>
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#121214] border border-[#26262b] transition group">
+                <a 
+                  href="tel:161" 
+                  className="flex-1 mr-3 focus-visible:outline-none"
+                  title="Call Marikina Rescue 161"
+                >
                   <div className="font-bold text-sm text-white group-hover:text-sage-green transition">
                     Marikina Rescue 161
                   </div>
                   <div className="text-xs text-[#9ca3af]">River overflow rescue & evacuation center coordination</div>
+                </a>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={(e) => handleCopyHotline('161', e)}
+                    className="px-2.5 py-1.5 min-h-[44px] rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs font-mono font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-green"
+                    title="Copy number to clipboard"
+                    aria-label="Copy Marikina Rescue hotline number 161"
+                  >
+                    {copiedHotline === '161' ? 'Copied!' : 'Copy'}
+                  </button>
+                  <a 
+                    href="tel:161"
+                    className="text-sage-green font-mono font-bold text-base tabular-nums px-3 py-1.5 min-h-[44px] flex items-center rounded-xl bg-sage-green/10 hover:bg-sage-green/20 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-green"
+                    title="Dial 161"
+                  >
+                    161
+                  </a>
                 </div>
-                <span className="text-sage-green font-mono font-bold text-base tabular-nums px-3 py-1 rounded-xl bg-sage-green/10 ml-2">
-                  161
-                </span>
-              </a>
+              </div>
 
-              <a 
-                href="tel:911" 
-                className="flex items-center justify-between p-3.5 rounded-2xl bg-[#121214] hover:bg-[#222328] border border-[#26262b] transition group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
-              >
-                <div>
+              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#121214] border border-[#26262b] transition group">
+                <a 
+                  href="tel:911" 
+                  className="flex-1 mr-3 focus-visible:outline-none"
+                  title="Call National Emergency Hotline"
+                >
                   <div className="font-bold text-sm text-white group-hover:text-white transition">
                     National Emergency Hotline
                   </div>
                   <div className="text-xs text-[#9ca3af]">PNP, BFP fire & swift-water teams</div>
+                </a>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button
+                    type="button"
+                    onClick={(e) => handleCopyHotline('911', e)}
+                    className="px-2.5 py-1.5 min-h-[44px] rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs font-mono font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
+                    title="Copy number to clipboard"
+                    aria-label="Copy National Emergency hotline number 911"
+                  >
+                    {copiedHotline === '911' ? 'Copied!' : 'Copy'}
+                  </button>
+                  <a 
+                    href="tel:911"
+                    className="text-white font-mono font-bold text-base tabular-nums px-3 py-1.5 min-h-[44px] flex items-center rounded-xl bg-white/10 hover:bg-white/20 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
+                    title="Dial 911"
+                  >
+                    911
+                  </a>
                 </div>
-                <span className="text-white font-mono font-bold text-base tabular-nums px-3 py-1 rounded-xl bg-white/10 ml-2">
-                  911
-                </span>
-              </a>
+              </div>
             </div>
 
             <button
@@ -1047,7 +1284,12 @@ export default function App() {
 
       {/* ===================== LIVE HYDRO SENSORS MODAL ===================== */}
       {showSensorsModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200">
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowSensorsModal(false);
+          }}
+        >
           <div className="bg-[#1a1a1e] border border-[#26262b] rounded-4xl max-w-lg w-full p-6 sm:p-7 shadow-2xl relative text-white animate-in zoom-in-95 duration-200 ease-out-expo">
             
             <div className="flex items-center justify-between mb-4">
@@ -1061,9 +1303,10 @@ export default function App() {
                 </div>
               </div>
               <button
+                type="button"
                 onClick={() => setShowSensorsModal(false)}
                 aria-label="Close Hydro Telemetry Feed"
-                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
+                className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
               >
                 ✕
               </button>
