@@ -48,80 +48,30 @@ function getConditionLabel(code) {
   return 'Scattered Rain';
 }
 
+const VULN_MAP = { espa: 1.6, araneta: 1.5, mesa: 1.4, pureza: 1.4, marikina: 1.3, taft: 1.2 };
+
+const TIERS = [
+  { max: 0.1, depth: 0, level: 'LOW', pass: 'Passable to All Vehicles', sev: 'Dry / Normal Gutter Clearance', risk: '5% RISK', adv: 'CLEAR / NORMAL SURVEILLANCE', detour: '+0 min detour' },
+  { max: 2.5, depth: 0.08, level: 'LOW', pass: 'Passable to All Vehicles', sev: 'Light Ponding (Gutter Depth)', risk: '18% RISK', adv: 'LIGHT SHOWER SURVEILLANCE', detour: '+2 min detour' },
+  { max: 15.0, depth: 0.28, level: 'MEDIUM', pass: 'Passable with Caution for Sedans', sev: 'Moderate Inundation (Gutter Depth)', risk: '45% RISK', adv: 'LOCALIZED RAIN ADVISORY', detour: '+8 min detour' },
+  { max: 35.0, depth: 0.75, level: 'HIGH', pass: 'Trucks & High-Axle Only', sev: 'Severe Inundation (Knee to Chest Depth)', risk: '78% RISK', adv: 'HEAVY RAIN ADVISORY', detour: '+18 min detour' },
+  { max: Infinity, depth: 1.25, level: 'CRITICAL', pass: 'Closed to All Traffic', sev: 'Critical Submersion (Above Hood)', risk: '95% RISK', adv: 'HABAGAT / TYPHOON SURGE ADVISORY', detour: '+32 min detour' },
+];
+
 // Compute honest road inundation from live precipitation rate & terrain vulnerability
-export function computeLiveInundation(name, precipMmH) {
-  const n = (name || '').toLowerCase();
-  let vuln = 1.0;
-  if (n.includes('españa') || n.includes('espana')) vuln = 1.6;
-  else if (n.includes('araneta')) vuln = 1.5;
-  else if (n.includes('mesa') || n.includes('pureza')) vuln = 1.4;
-  else if (n.includes('taft')) vuln = 1.2;
-  else if (n.includes('marikina')) vuln = 1.3;
+export function computeLiveInundation(name = '', precip = 0) {
+  const n = name.toLowerCase();
+  const vulnKey = Object.keys(VULN_MAP).find(k => n.includes(k));
+  const vuln = vulnKey ? VULN_MAP[vulnKey] : 1.0;
+  const tier = TIERS.find(t => precip <= t.max);
 
-  if (precipMmH <= 0.1) {
-    return {
-      depthMeters: 0.0,
-      hazardLevel: 'LOW',
-      passability: 'Passable to All Vehicles',
-      severityLabel: 'Dry / Normal Gutter Clearance',
-      riskPercent: '5% RISK',
-      advisory: 'CLEAR / NORMAL SURVEILLANCE',
-      detourDelta: '+0 min detour',
-    };
-  }
-
-  if (precipMmH < 2.5) {
-    const depth = parseFloat((0.08 * vuln).toFixed(2));
-    return {
-      depthMeters: depth,
-      hazardLevel: 'LOW',
-      passability: 'Passable to All Vehicles',
-      severityLabel: 'Light Ponding (Gutter Depth)',
-      riskPercent: '18% RISK',
-      advisory: 'LIGHT SHOWER SURVEILLANCE',
-      detourDelta: '+2 min detour',
-    };
-  }
-
-  if (precipMmH < 15.0) {
-    const depth = parseFloat((0.28 * vuln).toFixed(2));
-    return {
-      depthMeters: depth,
-      hazardLevel: 'MEDIUM',
-      passability: 'Passable with Caution for Sedans',
-      severityLabel: 'Moderate Inundation (Gutter Depth)',
-      riskPercent: '45% RISK',
-      advisory: 'LOCALIZED RAIN ADVISORY',
-      detourDelta: '+8 min detour',
-    };
-  }
-
-  if (precipMmH < 35.0) {
-    const depth = parseFloat((0.75 * vuln).toFixed(2));
-    return {
-      depthMeters: depth,
-      hazardLevel: 'HIGH',
-      passability: 'Trucks & High-Axle Only',
-      severityLabel: 'Severe Inundation (Knee to Chest Depth)',
-      riskPercent: '78% RISK',
-      advisory: 'HEAVY RAIN ADVISORY',
-      detourDelta: '+18 min detour',
-    };
-  }
-
-  const depth = parseFloat((1.25 * vuln).toFixed(2));
   return {
-    depthMeters: depth,
-    hazardLevel: 'CRITICAL',
-    passability: 'Closed to All Traffic',
-    severityLabel: 'Critical Submersion (Above Hood)',
-    riskPercent: '95% RISK',
-    advisory: 'HABAGAT / TYPHOON SURGE ADVISORY',
-    detourDelta: '+32 min detour',
+    depthMeters: parseFloat((tier.depth * vuln).toFixed(2)),
+    hazardLevel: tier.level,
+    passability: tier.pass,
+    severityLabel: tier.sev,
+    riskPercent: tier.risk,
+    advisory: tier.adv,
+    detourDelta: tier.detour,
   };
 }
-
-export default {
-  fetchLiveWeather,
-  computeLiveInundation,
-};

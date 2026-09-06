@@ -102,24 +102,13 @@ export default function App() {
   const [showSensorsModal, setShowSensorsModal] = useState(false);
 
   // Real-Time Doppler Weather & Radar Telemetry State (Open-Meteo)
-  const [liveWeather, setLiveWeather] = useState({
-    temperature: 27,
-    feelsLike: 31,
-    humidity: 85,
-    precipitation: 0.0,
-    windSpeed: 11,
-    weatherCode: 0,
-    condition: 'Clear Sky',
-    lastUpdated: 'Syncing...',
-  });
+  const [liveWeather, setLiveWeather] = useState(null);
   const [isRefreshingWeather, setIsRefreshingWeather] = useState(false);
   const [telemetryMode, setTelemetryMode] = useState('live'); // 'live' | 'scenario'
 
   // Fetch real-time weather observation for current coordinates
   const updateWeather = useCallback(async () => {
-    const coords = activeLocation.coordinates || [activeLocation.lon || 120.9894, activeLocation.lat || 14.6091];
-    const lon = coords[0] || 120.9894;
-    const lat = coords[1] || 14.6091;
+    const [lon, lat] = activeLocation.coordinates || [120.9894, 14.6091];
     setIsRefreshingWeather(true);
     const data = await fetchLiveWeather(lat, lon);
     setLiveWeather(data);
@@ -344,25 +333,26 @@ export default function App() {
 
     // Mode 1: TRUE LIVE ATMOSPHERIC & INUNDATION RADAR
     if (telemetryMode === 'live') {
-      const inundation = computeLiveInundation(name, liveWeather.precipitation || 0);
-      const isRaining = (liveWeather.precipitation || 0) > 0.1;
-      const cond = liveWeather.condition || 'Clear Sky';
+      const precip = liveWeather?.precipitation ?? 0;
+      const inundation = computeLiveInundation(name, precip);
+      const isRaining = precip > 0.1;
+      const cond = liveWeather?.condition || 'Clear Sky';
       return {
         name,
         depthMeters: inundation.depthMeters,
         hazardLevel: inundation.hazardLevel,
         passability: inundation.passability,
         severityLabel: inundation.severityLabel,
-        rainRate: `${(liveWeather.precipitation || 0).toFixed(1)} mm/h`,
-        windSpeed: `${liveWeather.windSpeed} km/h`,
-        humidity: `${liveWeather.humidity}%`,
-        temperature: `${liveWeather.temperature}°C`,
-        feelsLike: `${liveWeather.feelsLike}°C`,
+        rainRate: `${precip.toFixed(1)} mm/h`,
+        windSpeed: `${liveWeather?.windSpeed ?? 11} km/h`,
+        humidity: `${liveWeather?.humidity ?? 80}%`,
+        temperature: `${liveWeather?.temperature ?? 27}°C`,
+        feelsLike: `${liveWeather?.feelsLike ?? 31}°C`,
         clearanceTime: isRaining ? '~1h after rain cessation' : 'Clear / Normal Headway',
         riskPercent: inundation.riskPercent,
         advisory: isRaining ? `LIVE RAIN: ${cond.toUpperCase()}` : `LIVE RADAR: ${cond.toUpperCase()}`,
         detourDelta: inundation.detourDelta,
-        lastUpdated: liveWeather.lastUpdated,
+        lastUpdated: liveWeather?.lastUpdated || 'Connecting...',
       };
     }
 
@@ -727,7 +717,7 @@ export default function App() {
                 <span className="w-1.5 h-1.5 rounded-full bg-black/70" />
                 {telemetryMode === 'live' ? (
                   <span>
-                    Synced {liveWeather.lastUpdated} • {liveWeather.condition} • {liveWeather.temperature}°C (Feels {liveWeather.feelsLike}°C)
+                    Synced {liveWeather?.lastUpdated || 'Connecting...'} • {liveWeather?.condition || 'Monitoring'} • {liveWeather?.temperature ?? 27}°C (Feels {liveWeather?.feelsLike ?? 31}°C)
                   </span>
                 ) : (
                   <span>Habagat Monsoon Flood Simulation (0.9m Baseline)</span>
