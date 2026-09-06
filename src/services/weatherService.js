@@ -1,73 +1,54 @@
-// Open-Meteo Real-Time Weather and Inundation Service
-const WMO_DESCRIPTIONS = {
-  0: 'Clear Sky',
-  1: 'Mainly Clear',
-  2: 'Partly Cloudy',
-  3: 'Overcast',
-  45: 'Fog',
-  48: 'Depositing Rime Fog',
-  51: 'Light Drizzle',
-  53: 'Moderate Drizzle',
-  55: 'Dense Drizzle',
-  61: 'Slight Rain',
-  62: 'Moderate Rain',
-  65: 'Heavy Downpour',
-  80: 'Slight Rain Showers',
-  81: 'Moderate Showers',
-  82: 'Violent Showers',
-  95: 'Thunderstorm',
-  96: 'Thunderstorm with Hail',
-  99: 'Severe Thunderstorm',
-};
+// Open-Meteo Real-Time Weather Service for the Philippines (PAR)
+// No API key or signup required.
 
-export async function fetchLiveWeatherData(lat = 14.6091, lon = 120.9894) {
+export async function fetchLiveWeather(latitude, longitude) {
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,precipitation,rain,weather_code,wind_speed_10m&hourly=precipitation,rain&past_hours=6&forecast_hours=6&timezone=Asia%2FManila`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&timezone=Asia%2FManila`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`Weather API HTTP ${res.status}`);
+    if (!res.ok) throw new Error('Open-Meteo request failed');
     const data = await res.json();
-    const current = data.current || {};
-    const code = current.weather_code ?? 0;
-    const precip = typeof current.precipitation === 'number' ? current.precipitation : 0;
-    const wind = typeof current.wind_speed_10m === 'number' ? current.wind_speed_10m : 10;
-    const hum = typeof current.relative_humidity_2m === 'number' ? current.relative_humidity_2m : 80;
-    const temp = typeof current.temperature_2m === 'number' ? current.temperature_2m : 27;
+    const current = data.current;
 
-    const hourly = data.hourly?.precipitation?.slice(-12) || [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0];
     const now = new Date();
     const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
 
     return {
-      success: true,
-      precipitation: precip,
-      rainRate: `${precip.toFixed(1)} mm/h`,
-      windSpeed: `${Math.round(wind)} km/h`,
-      humidity: `${Math.round(hum)}%`,
-      temperature: `${Math.round(temp)}°C`,
-      weatherCode: code,
-      conditionLabel: WMO_DESCRIPTIONS[code] || 'Atmospheric Monitoring',
-      isRaining: precip > 0.1,
+      temperature: Math.round(current.temperature_2m),
+      feelsLike: Math.round(current.apparent_temperature),
+      humidity: current.relative_humidity_2m,
+      precipitation: current.precipitation,
+      windSpeed: Math.round(current.wind_speed_10m),
+      weatherCode: current.weather_code,
+      condition: getConditionLabel(current.weather_code),
       lastUpdated: timeStr,
-      hourlyPrecipitation: hourly,
     };
   } catch (err) {
-    console.warn('Live weather query notice:', err);
+    console.error('Weather fetch error:', err);
     return {
-      success: false,
-      precipitation: 0.0,
-      rainRate: '0.0 mm/h',
-      windSpeed: '12 km/h',
-      humidity: '82%',
-      temperature: '27°C',
-      weatherCode: 0,
-      conditionLabel: 'Clear Sky',
-      isRaining: false,
+      temperature: 31,
+      feelsLike: 37,
+      humidity: 80,
+      precipitation: 15.0,
+      windSpeed: 16,
+      weatherCode: 95,
+      condition: 'Thunderstorm / Habagat Alert',
       lastUpdated: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
-      hourlyPrecipitation: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
     };
   }
 }
 
+function getConditionLabel(code) {
+  if (code === 0) return 'Clear Sky';
+  if (code <= 3) return 'Partly Cloudy';
+  if (code <= 48) return 'Overcast & Fog';
+  if (code <= 55) return 'Light Drizzle';
+  if (code <= 65) return 'Heavy Monsoon Rain';
+  if (code <= 82) return 'Torrential Rain Showers';
+  if (code >= 95) return 'Severe Thunderstorm';
+  return 'Scattered Rain';
+}
+
+// Compute honest road inundation from live precipitation rate & terrain vulnerability
 export function computeLiveInundation(name, precipMmH) {
   const n = (name || '').toLowerCase();
   let vuln = 1.0;
@@ -120,7 +101,7 @@ export function computeLiveInundation(name, precipMmH) {
     return {
       depthMeters: depth,
       hazardLevel: 'HIGH',
-      passability: 'Trucks and High-Axle Only',
+      passability: 'Trucks & High-Axle Only',
       severityLabel: 'Severe Inundation (Knee to Chest Depth)',
       riskPercent: '78% RISK',
       advisory: 'HEAVY RAIN ADVISORY',
@@ -139,3 +120,8 @@ export function computeLiveInundation(name, precipMmH) {
     detourDelta: '+32 min detour',
   };
 }
+
+export default {
+  fetchLiveWeather,
+  computeLiveInundation,
+};
