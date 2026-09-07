@@ -21,6 +21,7 @@ export async function fetchLiveWeather(latitude, longitude) {
       weatherCode: current.weather_code,
       condition: getConditionLabel(current.weather_code),
       lastUpdated: timeStr,
+      isOffline: false,
     };
   } catch (err) {
     console.error('Weather fetch error:', err);
@@ -32,7 +33,8 @@ export async function fetchLiveWeather(latitude, longitude) {
       windSpeed: 16,
       weatherCode: 95,
       condition: 'Thunderstorm / Habagat Alert',
-      lastUpdated: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+      lastUpdated: 'Signal Dropped',
+      isOffline: true,
     };
   }
 }

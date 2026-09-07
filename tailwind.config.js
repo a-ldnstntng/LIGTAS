@@ -26,7 +26,7 @@ export default {
       },
       fontFamily: {
         serif: ["'Ledger'", 'Georgia', 'serif'],
-        sans: ['-apple-system', 'BlinkMacSystemFont', "'SF Pro Display'", "'SF Compact Display'", "'Inter'", 'sans-serif'],
+        sans: ['-apple-system', 'BlinkMacSystemFont', "'SF Pro Display'", "'SF Compact Display'", 'sans-serif'],
         mono: ["'JetBrains Mono'", 'monospace'],
       },
       transitionTimingFunction: {

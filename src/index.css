@@ -7,9 +7,9 @@
 
 @layer base {
   body {
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Compact Display', 'Inter', sans-serif;
-    background-color: #121214;
-    color: #fcfcfc;
+    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Compact Display', sans-serif;
+    background-color: #F5F5F7;
+    color: #121214;
     margin: 0;
     padding: 0;
     overflow-x: hidden;
@@ -34,11 +34,11 @@
   }
 
   ::-webkit-scrollbar-track {
-    background: #121214;
+    background: #F5F5F7;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: #26262b;
+    background: rgba(18, 18, 20, 0.2);
     border-radius: 9999px;
   }
 

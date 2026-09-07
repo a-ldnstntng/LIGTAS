@@ -381,16 +381,33 @@ export default function StreetViewerModal({
               style={{ position: 'relative', width: '100%', height: '100%', minHeight: '380px' }}
             />
 
+            {/* Atmospheric Storm Weather Vignette Overlay */}
+            {resolvedImageId && token && !viewerError && depthMeters > 0.15 && (
+              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#090a0d]/85 via-transparent to-black/40 mix-blend-multiply" />
+            )}
+
+            {/* Projected Waterline Visual Plane (Ground Reflection Shader) */}
+            {resolvedImageId && token && !viewerError && depthMeters > 0.15 && (
+              <div 
+                className={`pointer-events-none absolute inset-x-0 bottom-0 border-t ${
+                  depthMeters > 0.35 
+                    ? 'bg-gradient-to-t from-[#ff6b6b]/20 via-[#ff6b6b]/5 to-transparent border-[#ff6b6b]/40' 
+                    : 'bg-gradient-to-t from-[#f7b731]/20 via-[#f7b731]/5 to-transparent border-[#f7b731]/40'
+                }`}
+                style={{ height: `${Math.min(Math.max(depthMeters * 65, 45), 160)}px` }}
+              />
+            )}
+
             {/* Overlaid Telemetry Heads-Up Pill (when Mapillary photo is active) */}
             {resolvedImageId && token && !viewerError && (
               <div className="absolute top-4 left-4 right-4 z-20 pointer-events-none flex flex-wrap items-center justify-between gap-2">
                 <div className="bg-obsidian/95 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 shadow-xl flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <div className={`w-2 h-2 rounded-full ${depthMeters > 0.35 ? 'bg-[#f7b731] animate-pulse' : 'bg-emerald-400'}`} />
                   <span className="text-xs font-mono font-bold text-white tracking-wide">
-                    HISTORICAL 360° BENCHMARK (NOT LIVE CCTV)
+                    PRE-FLOOD 360° CURB BENCHMARK (NOT LIVE CCTV)
                   </span>
-                  <span className="hidden sm:inline-block text-[11px] text-gray-400 border-l border-white/15 pl-2 font-mono">
-                    GROUND WATERLINE: {depthMeters.toFixed(1)}m
+                  <span className="hidden sm:inline-block text-[11px] text-[#9ca3af] border-l border-white/15 pl-2 font-mono">
+                    CURB WATERLINE: {depthMeters.toFixed(1)}m
                   </span>
                 </div>
                 <div className="bg-obsidian/95 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 shadow-xl flex items-center gap-2">
@@ -418,7 +435,7 @@ export default function StreetViewerModal({
                         </span>
                       </div>
                       <p className="text-[10px] text-[#9ca3af] mt-0.5">
-                        Daylight panorama is dry baseline reference for curb elevation; waterline reflects live radar.
+                        Daylight panorama serves as structural curb elevation reference. Translucent waterline shows live flood level against curbs.
                       </p>
                     </div>
                   </div>

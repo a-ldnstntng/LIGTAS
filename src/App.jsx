@@ -69,6 +69,7 @@ function getProceduralTelemetry(name, lat, lon) {
     riskPercent,
     advisory,
     detourDelta: `+${(absSeed % 20) + 12} min detour`,
+    isModeled: true,
   };
 }
 
@@ -135,6 +136,7 @@ export default function App() {
     weatherCode: 0,
     condition: 'Clear Sky',
     lastUpdated: 'Connecting...',
+    isOffline: false,
   });
   const [isRefreshingWeather, setIsRefreshingWeather] = useState(false);
   const [telemetryMode, setTelemetryMode] = useState('live'); // 'live' | 'scenario'
@@ -364,6 +366,9 @@ export default function App() {
     const name = activeLocation.name || 'España, Manila';
     const [lon, lat] = activeLocation.coordinates || [activeLocation.lon || 120.989, activeLocation.lat || 14.609];
 
+    const isCuratedCatchment = ['españa', 'espana', 'sta. mesa', 'santa mesa', 'araneta', 'taft', 'katipunan', 'marikina']
+      .some(k => name.toLowerCase().includes(k));
+
     // Mode 1: TRUE LIVE ATMOSPHERIC & INUNDATION RADAR
     if (telemetryMode === 'live') {
       const precip = liveWeather?.precipitation ?? 0;
@@ -386,6 +391,7 @@ export default function App() {
         advisory: isRaining ? `LIVE RAIN: ${cond.toUpperCase()}` : `LIVE RADAR: ${cond.toUpperCase()}`,
         detourDelta: inundation.detourDelta,
         lastUpdated: liveWeather?.lastUpdated || 'Connecting...',
+        isModeled: !isCuratedCatchment,
       };
     }
 
@@ -422,11 +428,15 @@ export default function App() {
         advisory: 'HABAGAT SURGE STRESS-TEST',
         detourDelta: '+18 min detour',
         lastUpdated: 'Simulated Scenario',
+        isModeled: false,
       };
     }
 
     // Procedural simulation for any newly geocoded location across the Philippines
-    return getProceduralTelemetry(name, lat, lon);
+    return {
+      ...getProceduralTelemetry(name, lat, lon),
+      isModeled: true,
+    };
   }, [activeLocation, telemetryMode, liveWeather]);
 
   // Dynamic Suggested Bypass information matching the current location
@@ -579,7 +589,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#121214] text-[#fcfcfc] p-4 md:p-8 flex justify-center selection:bg-clay-gold selection:text-obsidian pb-24">
+    <div className="min-h-screen bg-[#F5F5F7] text-[#121214] p-4 md:p-8 flex justify-center selection:bg-clay-gold selection:text-obsidian pb-12">
       <div className="w-full max-w-5xl flex flex-col gap-6">
 
         {/* 1. Header & Dynamic Nominatim Geocoding Search */}
@@ -590,7 +600,7 @@ export default function App() {
                 type="submit"
                 title="Search Philippine Location"
                 aria-label="Submit search"
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#9ca3af] hover:text-clay-gold transition p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold rounded-full"
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black transition p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold rounded-full"
               >
                 {isSearching ? (
                   <Loader2 className="w-4 h-4 text-clay-gold animate-spin" />
@@ -606,7 +616,7 @@ export default function App() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onFocus={() => setIsSearchFocused(true)}
                 placeholder="Search floodway or city in the Philippines... (Press /)"
-                className="w-full bg-[#1a1a1e] text-sm text-white placeholder-[#9ca3af] pl-11 pr-24 py-3.5 rounded-full border border-[#26262b] focus:outline-none focus:border-clay-gold focus-visible:ring-2 focus-visible:ring-clay-gold caret-clay-gold transition shadow-inner"
+                className="w-full bg-white text-sm text-[#121214] placeholder-gray-500 pl-11 pr-24 py-3.5 rounded-full border border-black/10 focus:outline-none focus:border-clay-gold focus-visible:ring-2 focus-visible:ring-clay-gold caret-clay-gold transition shadow-sm"
               />
 
               <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
@@ -618,12 +628,12 @@ export default function App() {
                       setSearchQuery('');
                       setNominatimResults([]);
                     }}
-                    className="text-xs text-[#9ca3af] hover:text-white px-2 py-1 rounded-full bg-white/5 transition"
+                    className="text-xs text-gray-500 hover:text-black px-2 py-1 rounded-full bg-black/5 transition"
                   >
                     ✕
                   </button>
                 ) : (
-                  <span className="hidden sm:inline-block text-[10px] font-mono text-[#9ca3af] px-2 py-0.5 rounded-md bg-white/5 border border-white/5 mr-0.5 select-none" title="Press / to search">
+                  <span className="hidden sm:inline-block text-[10px] font-mono text-gray-500 px-2 py-0.5 rounded-md bg-black/5 border border-black/5 mr-0.5 select-none" title="Press / to search">
                     /
                   </span>
                 )}
@@ -708,14 +718,22 @@ export default function App() {
             )}
           </div>
           
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <button 
+              onClick={() => setShowEmergencyModal(true)}
+              title="Emergency Rescue Hotlines (136 / 143)"
+              aria-label="Open Emergency Rescue Hotlines"
+              className="w-12 h-12 rounded-full bg-soft-red/10 hover:bg-soft-red/20 border border-soft-red/30 flex items-center justify-center transition active:scale-95 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soft-red"
+            >
+              <PhoneCall className="w-5 h-5 text-soft-red" />
+            </button>
             <button 
               onClick={() => setShowSensorsModal(true)}
               title="Open Telemetry Filters"
               aria-label="Open Telemetry Filters"
-              className="w-12 h-12 rounded-full bg-[#1a1a1e] border border-[#26262b] flex items-center justify-center hover:border-clay-gold/50 transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
+              className="w-12 h-12 rounded-full bg-white border border-black/10 flex items-center justify-center hover:border-clay-gold transition active:scale-95 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
             >
-              <SlidersHorizontal className="w-5 h-5 text-gray-300" />
+              <SlidersHorizontal className="w-5 h-5 text-gray-700" />
             </button>
             <div className="w-12 h-12 rounded-full bg-clay-gold text-obsidian font-bold flex items-center justify-center text-sm shadow-md">
               PAR
@@ -725,7 +743,7 @@ export default function App() {
 
         {/* Dynamic Corridor Quick Tabs (Horizontally Scrollable Carousel) */}
         <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none items-center">
-          <span className="font-serif text-sm font-normal text-[#9ca3af] mr-1.5 flex items-center gap-1.5 whitespace-nowrap">
+          <span className="font-serif text-sm font-normal text-gray-500 mr-1.5 flex items-center gap-1.5 whitespace-nowrap">
             <Radio className="w-3.5 h-3.5 text-clay-gold" /> Recents:
           </span>
           {corridorsList.map((corridor) => {
@@ -736,11 +754,11 @@ export default function App() {
                 onClick={() => handleSelectLocation(corridor)}
                 className={`px-4 sm:px-5 py-2.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 ease-out-expo active:scale-[0.97] flex items-center gap-2 ${
                   isSelected
-                    ? 'bg-[#fcfcfc] text-pitch-black shadow-lg scale-[1.02]'
-                    : 'bg-[#1a1a1e] text-gray-400 hover:text-white border border-[#26262b]'
+                    ? 'bg-[#121214] text-white shadow-md scale-[1.02]'
+                    : 'bg-white text-gray-700 hover:text-black border border-black/10 shadow-sm'
                 }`}
               >
-                <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-clay-gold' : 'bg-gray-600'}`} />
+                <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-clay-gold' : 'bg-gray-300'}`} />
                 <span className="font-serif">{corridor.name}</span>
               </button>
             );
@@ -759,11 +777,11 @@ export default function App() {
                   <span className="text-[11px] font-bold font-mono px-2 py-0.5 rounded-full bg-[#f7b731] text-obsidian uppercase tracking-wider">
                     DRILL SIMULATION
                   </span>
-                  <h2 className="text-sm font-bold text-white tracking-tight">
+                  <h2 className="text-sm font-bold text-[#121214] tracking-tight">
                     Habagat High-Water Drill Mode Active (0.9m Baseline)
                   </h2>
                 </div>
-                <p className="text-xs text-[#9ca3af] mt-1">
+                <p className="text-xs text-gray-700 mt-1">
                   Telemetry reflects emergency simulation parameters, not live weather radar. Real-world conditions may differ.
                 </p>
               </div>
@@ -782,7 +800,7 @@ export default function App() {
         <div id="hero-section" className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
           
           {/* Dynamic Hero Weather/Flood Card (Editorial Yellow Squircle) */}
-          <div className="md:col-span-5 bg-[#FFE142] text-[#000000] rounded-4xl p-7 relative overflow-hidden shadow-2xl flex flex-col justify-between min-h-[480px] transition-all duration-300">
+          <div className="md:col-span-5 bg-[#FFE142] text-[#000000] rounded-4xl p-7 relative overflow-hidden shadow-2xl flex flex-col justify-between min-h-[440px] transition-all duration-300">
             {/* Top Date / Condition Badges (Small Pitch-Black Capsules) */}
             <div>
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
@@ -841,15 +859,34 @@ export default function App() {
 
               {/* Real-Time Radar Sync Status Bar */}
               <div className="mt-1.5 flex items-center gap-2 text-[11px] font-sans font-extrabold uppercase tracking-wider text-black/75">
-                <span className="w-1.5 h-1.5 rounded-full bg-black/70" />
+                <span className={`w-1.5 h-1.5 rounded-full ${liveWeather?.isOffline ? 'bg-soft-red animate-pulse' : 'bg-black/70'}`} />
                 {telemetryMode === 'live' ? (
-                  <span>
-                    Synced {liveWeather?.lastUpdated || 'Connecting...'} • {liveWeather?.condition || 'Monitoring'} • {liveWeather?.temperature ?? 27}°C (Feels {liveWeather?.feelsLike ?? 31}°C)
-                  </span>
+                  liveWeather?.isOffline ? (
+                    <span className="flex items-center gap-1.5 text-[#000000] font-bold">
+                      <span className="px-1.5 py-0.2 rounded bg-[#000000] text-[#FFE142] text-[10px] font-mono tracking-normal font-bold">
+                        OFFLINE
+                      </span>
+                      Cached Radar Telemetry • {liveWeather?.lastUpdated}
+                    </span>
+                  ) : (
+                    <span>
+                      Synced {liveWeather?.lastUpdated || 'Connecting...'} • {liveWeather?.condition || 'Monitoring'} • {liveWeather?.temperature ?? 27}°C (Feels {liveWeather?.feelsLike ?? 31}°C)
+                    </span>
+                  )
                 ) : (
                   <span>Habagat Monsoon Flood Simulation (0.9m Baseline)</span>
                 )}
               </div>
+
+              {activeMetrics.isModeled && (
+                <div 
+                  className="mt-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/10 border border-black/20 text-[#000000] text-[10px] font-mono font-bold tracking-wide"
+                  title="Estimated via Open-Meteo precipitation and terrain elevation basin modeling; no physical ultrasonic EFCOS gauge installed on site."
+                >
+                  <Info className="w-3 h-3 text-black/70 shrink-0" />
+                  <span>MODELED BASIN ESTIMATE (NO DIRECT SENSOR)</span>
+                </div>
+              )}
             </div>
 
             {/* Giant Center Telemetry Readout (Clean, Geometric Bold Sans-Serif) */}
@@ -915,7 +952,7 @@ export default function App() {
           </div>
 
           {/* Map Viewport Card */}
-          <div id="map-section" className="md:col-span-7 bg-[#1a1a1e] border border-[#26262b] rounded-4xl p-2 h-[460px] shadow-2xl relative">
+          <div id="map-section" className="md:col-span-7 bg-[#1a1a1e] border border-[#26262b] rounded-4xl p-2 h-[440px] shadow-2xl relative">
             <MapViewport 
               activeCorridor={{ ...activeLocation, ...activeMetrics }} 
               isStreetViewOpen={streetViewData.isOpen}
@@ -972,26 +1009,26 @@ export default function App() {
         <div id="sensors-section" className="grid grid-cols-1 md:grid-cols-3 gap-4">
           
           {/* Card 1: Safe Route Option */}
-          <div className="bg-[#fcfcfc] text-obsidian rounded-3xl p-5 shadow-lg flex flex-col justify-between">
+          <div className="bg-[#1a1a1e] border border-[#26262b] rounded-3xl p-5 shadow-lg flex flex-col justify-between">
             <div>
-              <div className="flex items-center justify-between mb-4">
-                <span className="font-serif text-xs font-bold tracking-wider uppercase text-[#6b7280]">Suggested Bypass</span>
+              <div className="flex items-center justify-between mb-3">
+                <span className="font-serif text-xs font-bold tracking-wider uppercase text-[#9ca3af]">Suggested Bypass</span>
                 <ShieldCheck className="w-5 h-5 text-sage-green" />
               </div>
-              <h3 className="font-serif font-bold text-lg text-obsidian">{bypassInfo.title}</h3>
-              <p className="text-xs text-gray-600 mt-0.5">{bypassInfo.description}</p>
+              <h3 className="font-serif font-bold text-lg text-white">{bypassInfo.title}</h3>
+              <p className="text-xs text-[#9ca3af] mt-1 leading-relaxed">{bypassInfo.description}</p>
             </div>
             <div className="mt-4">
-              <div className="pt-3 border-t border-gray-100 flex items-center justify-between text-xs font-bold mb-3">
-                <span className="font-mono tabular-nums">{bypassInfo.detour}</span>
-                <span className="text-sage-green font-bold"><span className="font-mono tabular-nums">100%</span> Flood Free</span>
+              <div className="pt-3 border-t border-[#26262b] flex items-center justify-between text-xs font-bold mb-3">
+                <span className="font-mono text-white tabular-nums">{bypassInfo.detour}</span>
+                <span className="text-sage-green font-bold flex items-center gap-1 font-mono"><span className="tabular-nums">100%</span> Flood Free</span>
               </div>
               <button
                 onClick={() => handleOpenStreetCam({
                   name: bypassInfo.title,
                   coordinates: activeLocation.coordinates
                 })}
-                className="w-full py-2.5 px-3 rounded-xl bg-pitch-black text-white hover:bg-[#26262b] active:scale-95 transition-all text-xs font-sans font-bold flex items-center justify-center gap-1.5 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black"
+                className="w-full py-2.5 px-3 rounded-xl bg-[#121214] hover:bg-black text-white border border-[#26262b] hover:border-clay-gold/40 active:scale-95 transition-all text-xs font-sans font-bold flex items-center justify-center gap-2 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
                 title="Inspect Bypass Corridor on Street Cam"
               >
                 <Camera className="w-3.5 h-3.5 text-clay-gold" />
@@ -1014,14 +1051,27 @@ export default function App() {
               <Waves className="w-5 h-5 text-clay-amber" />
             </div>
             <div>
-              <div className="flex items-baseline justify-between">
-                <h3 className="font-serif font-bold text-lg text-white">Marikina River</h3>
-                <span className="text-sm font-bold text-clay-amber font-mono tabular-nums">16.4m / 18m</span>
-              </div>
-              <p className="text-xs text-[#9ca3af] mt-0.5">Sto. Niño Monitoring Post (Tap details)</p>
+              <h3 className="font-serif font-bold text-lg text-white">Marikina River</h3>
+              <p className="text-xs text-[#9ca3af] mt-1">Sto. Niño Monitoring Post • Alert Level 2</p>
             </div>
-            <div className="mt-4 w-full bg-[#222328] rounded-full h-2 overflow-hidden">
-              <div className="bg-clay-amber h-full w-[82%] rounded-full transition-all duration-700 ease-out-expo" />
+            <div className="mt-4 pt-3 border-t border-[#26262b]">
+              <div className="flex items-baseline justify-between mb-2">
+                <span className="text-xs text-[#9ca3af]">Water Level</span>
+                <div className="flex items-baseline gap-1">
+                  <span className="text-sm font-extrabold font-mono text-clay-amber tabular-nums">16.4m</span>
+                  <span className="text-xs font-mono text-[#9ca3af] tabular-nums">/ 18.0m</span>
+                </div>
+              </div>
+              <div className="w-full bg-[#222328] rounded-full h-2 overflow-hidden mb-2">
+                <div 
+                  className="bg-clay-amber h-full rounded-full transition-all duration-700 ease-out-expo" 
+                  style={{ width: '82%' }}
+                />
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-[#9ca3af]">
+                <span className="font-mono">Sensor: EFCOS-MR04</span>
+                <span className="text-clay-amber font-semibold font-mono">Tap for Details →</span>
+              </div>
             </div>
           </div>
 
@@ -1033,18 +1083,27 @@ export default function App() {
             </div>
             <div>
               <h3 className="font-serif font-bold text-lg text-white">LRT-2 & MRT-3</h3>
-              <p className="text-xs text-[#9ca3af] mt-0.5">Operating normal headway</p>
+              <p className="text-xs text-[#9ca3af] mt-1">Operating normal headway across viaducts</p>
             </div>
-            <div className="mt-4 pt-3 border-t border-[#26262b] flex items-center justify-between text-xs">
-              <span className="text-[#9ca3af]">Elevated Rail Grid</span>
-              <span className="text-clay-amber font-bold">Footbridge Access Clear</span>
+            <div className="mt-4 pt-3 border-t border-[#26262b] space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-[#9ca3af]">Elevated Rail Grid</span>
+                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-sage-green font-mono">
+                  <span className="w-1.5 h-1.5 rounded-full bg-sage-green animate-pulse" />
+                  Normal Service
+                </span>
+              </div>
+              <div className="flex items-center justify-between text-xs pt-1 border-t border-white/5">
+                <span className="text-[#9ca3af]">Footbridge Access</span>
+                <span className="text-xs text-clay-amber font-bold font-mono">Clear / Dry Deck</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* 4. Minimal Bottom Pill Navigation Island */}
-        <div className="fixed bottom-4 inset-x-0 mx-auto w-fit z-40 px-3">
-          <nav className="inline-flex items-center gap-1 bg-[#1a1a1e]/95 backdrop-blur-xl border border-[#26262b] p-1.5 rounded-full shadow-2xl">
+        {/* 4. Minimal Bottom Pill Navigation Island (Docked cleanly below cards) */}
+        <div className="w-full flex justify-center mt-6 mb-2 px-3">
+          <nav className="inline-flex items-center gap-1 bg-[#1a1a1e] border border-[#26262b] p-1.5 rounded-full shadow-xl">
             {/* Viewport Anchors */}
             <div className="flex items-center gap-1">
               {['Overview', 'Radar Map'].map((tab) => {
@@ -1053,27 +1112,36 @@ export default function App() {
                   <button
                     key={tab}
                     onClick={() => handleTabClick(tab)}
-                    className={`px-3.5 sm:px-4 py-2.5 rounded-full text-xs min-h-[44px] transition-all duration-200 active:scale-95 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold ${
+                    className={`px-3 sm:px-4 py-2.5 rounded-full text-xs min-h-[44px] min-w-[44px] transition-all duration-200 active:scale-95 flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold ${
                       isTabActive
                         ? 'bg-clay-gold text-pitch-black font-sans font-bold shadow-lg'
                         : 'text-[#9ca3af] hover:text-white hover:bg-white/5 font-sans font-medium'
                     }`}
+                    title={tab}
+                    aria-label={tab}
                   >
-                    <span>{tab}</span>
+                    {tab === 'Overview' ? (
+                      <MapPin className={`w-3.5 h-3.5 ${isTabActive ? 'text-pitch-black' : 'text-[#9ca3af]'}`} />
+                    ) : (
+                      <Radio className={`w-3.5 h-3.5 ${isTabActive ? 'text-pitch-black' : 'text-[#9ca3af]'}`} />
+                    )}
+                    <span className={isTabActive ? 'inline' : 'hidden sm:inline'}>{tab}</span>
                   </button>
                 );
               })}
 
               <button
                 onClick={() => handleTabClick('Street View')}
-                className={`px-3.5 sm:px-4 py-2.5 rounded-full text-xs min-h-[44px] transition-all duration-200 active:scale-95 flex items-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold ${
+                className={`px-3 sm:px-4 py-2.5 rounded-full text-xs min-h-[44px] min-w-[44px] transition-all duration-200 active:scale-95 flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold ${
                   streetViewData.isOpen
                     ? 'bg-clay-gold text-pitch-black font-sans font-bold shadow-lg'
                     : 'text-[#9ca3af] hover:text-white hover:bg-white/5 font-sans font-medium'
                 }`}
+                title="Street Level Ground Truth"
+                aria-label="Street Cam"
               >
-                <Camera className="w-3.5 h-3.5" />
-                <span>Street Cam</span>
+                <Camera className={`w-3.5 h-3.5 ${streetViewData.isOpen ? 'text-pitch-black' : 'text-[#9ca3af]'}`} />
+                <span className={streetViewData.isOpen ? 'inline' : 'hidden sm:inline'}>Street Cam</span>
               </button>
             </div>
 
@@ -1085,7 +1153,7 @@ export default function App() {
               <button
                 type="button"
                 onClick={handleSearchFocus}
-                className="px-3 sm:px-3.5 py-2.5 rounded-full text-xs min-h-[44px] transition-all duration-200 active:scale-95 flex items-center gap-1.5 text-[#9ca3af] hover:text-white hover:bg-white/5 font-sans font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
+                className="px-3 sm:px-3.5 py-2.5 rounded-full text-xs min-h-[44px] min-w-[44px] transition-all duration-200 active:scale-95 flex items-center justify-center gap-1.5 text-[#9ca3af] hover:text-white hover:bg-white/5 font-sans font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
                 title="Search Locations (Press /)"
                 aria-label="Search Corridors"
               >
@@ -1095,8 +1163,9 @@ export default function App() {
 
               <button
                 onClick={() => setShowSensorsModal(true)}
-                className="px-3 sm:px-3.5 py-2.5 rounded-full text-xs min-h-[44px] transition-all duration-200 active:scale-95 flex items-center gap-1.5 text-[#9ca3af] hover:text-clay-amber hover:bg-clay-amber/10 font-sans font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-amber"
+                className="px-3 sm:px-3.5 py-2.5 rounded-full text-xs min-h-[44px] min-w-[44px] transition-all duration-200 active:scale-95 flex items-center justify-center gap-1.5 text-[#9ca3af] hover:text-clay-amber hover:bg-clay-amber/10 font-sans font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-amber"
                 title="Open Live Hydro Sensor Feeds"
+                aria-label="Telemetry Sensors"
               >
                 <Activity className="w-3.5 h-3.5 text-clay-amber" />
                 <span className="hidden sm:inline">Sensors</span>
@@ -1104,11 +1173,12 @@ export default function App() {
 
               <button
                 onClick={() => setShowEmergencyModal(true)}
-                className="px-3 sm:px-3.5 py-2.5 rounded-full text-xs min-h-[44px] transition-all duration-200 active:scale-95 flex items-center gap-1.5 text-soft-red hover:bg-soft-red/10 font-sans font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soft-red"
+                className="px-3 sm:px-3.5 py-2.5 rounded-full text-xs min-h-[44px] min-w-[44px] transition-all duration-200 active:scale-95 flex items-center justify-center gap-1.5 text-soft-red hover:bg-soft-red/10 font-sans font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soft-red"
                 title="Open Emergency Rescue Hotlines"
+                aria-label="Emergency Hotlines"
               >
                 <PhoneCall className="w-3.5 h-3.5 text-soft-red" />
-                <span>Hotlines</span>
+                <span className="hidden sm:inline">Hotlines</span>
               </button>
             </div>
           </nav>

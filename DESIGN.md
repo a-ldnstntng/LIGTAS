@@ -2,6 +2,7 @@
 name: LIGTAS METRO
 description: Frosted Clay / Editorial Weather design language for flood hazard mitigation and street-level ground truth navigation.
 colors:
+  canvas-alabaster: "#F5F5F7"
   obsidian: "#121214"
   graphite: "#1a1a1e"
   pitch-black: "#000000"
@@ -14,11 +15,11 @@ colors:
   cyan-sensor: "#38bdf8"
   cyan-blue: "#42C6FF"
   electric-pink: "#FF64D4"
-  text-primary: "#fcfcfc"
-  text-muted: "#9ca3af"
+  text-primary: "#121214"
+  text-muted: "#6b7280"
 typography:
   display:
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Compact Display', 'Inter', sans-serif"
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Compact Display', sans-serif"
     fontSize: "4.5rem"
     fontWeight: 800
     lineHeight: 1
@@ -35,7 +36,7 @@ typography:
     fontWeight: 700
     lineHeight: 1.25
   body:
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Compact Display', 'Inter', sans-serif"
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Compact Display', sans-serif"
     fontSize: "0.875rem"
     fontWeight: 400
     lineHeight: 1.5
@@ -45,11 +46,11 @@ typography:
     fontWeight: 700
     letterSpacing: "0.025em"
   caption:
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Compact Display', 'Inter', sans-serif"
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Compact Display', sans-serif"
     fontSize: "0.6875rem"
     fontWeight: 700
   micro:
-    fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Compact Display', 'Inter', sans-serif"
+    fontFamily: "-apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Compact Display', sans-serif"
     fontSize: "0.625rem"
     fontWeight: 700
 rounded:
@@ -76,9 +77,9 @@ components:
     rounded: "{rounded.xl}"
     padding: "20px"
   bypass-card:
-    backgroundColor: "{colors.text-primary}"
-    textColor: "{colors.obsidian}"
-    rounded: "{rounded.lg}"
+    backgroundColor: "{colors.graphite}"
+    textColor: "{colors.text-primary}"
+    rounded: "{rounded.xl}"
     padding: "20px"
   button-primary:
     backgroundColor: "{colors.obsidian}"
