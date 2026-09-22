@@ -410,6 +410,55 @@ export default function App() {
     };
   }, [activeLocation, telemetryMode, liveWeather]);
 
+  const bypassInfo = useMemo(() => {
+    const name = activeMetrics.name || 'Current Location';
+    const primary = name.split(',')[0].trim();
+
+    if (primary.includes('España') || primary.includes('Espana')) {
+      return {
+        title: 'Quezon Ave Flyover Viaduct',
+        description: 'Dry elevation corridor across España ground depression',
+        detour: '+18 min detour',
+      };
+    } else if (primary.includes('Sta. Mesa') || primary.includes('Santa Mesa')) {
+      return {
+        title: 'R. Magsaysay Elevated Bypass',
+        description: 'High flyover viaduct above San Juan River confluence',
+        detour: '+14 min detour',
+      };
+    } else if (primary.includes('Araneta')) {
+      return {
+        title: 'Quezon Ave Underpass Overpass',
+        description: 'Elevated flyover above submerged Araneta underpass',
+        detour: '+12 min detour',
+      };
+    } else if (primary.includes('Marikina')) {
+      return {
+        title: 'Marcos Highway Viaduct',
+        description: 'Elevated highway bridge above Marikina River overflow',
+        detour: '+22 min detour',
+      };
+    } else if (primary.includes('Taft')) {
+      return {
+        title: 'Roxas Blvd / Skyway Connector',
+        description: 'Elevated viaduct avoiding coastal Taft avenue ponding',
+        detour: '+15 min detour',
+      };
+    } else if (primary.includes('San Jose')) {
+      return {
+        title: 'Quirino Highway Ridge Bypass',
+        description: 'Elevated ridge viaduct avoiding valley drainage basin',
+        detour: '+20 min detour',
+      };
+    }
+
+    return {
+      title: `${primary} High Ridge Bypass`,
+      description: 'Elevated perimeter route avoiding localized drainage basin',
+      detour: activeMetrics.detourDelta || '+18 min detour',
+    };
+  }, [activeMetrics]);
+
   const handleSelectLocation = (loc) => {
     const rawCoords = loc.coordinates || (loc.lon && loc.lat ? [parseFloat(loc.lon), parseFloat(loc.lat)] : null);
     if (!rawCoords || isNaN(rawCoords[0]) || isNaN(rawCoords[1])) {
