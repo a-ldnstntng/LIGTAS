@@ -92,12 +92,12 @@ typography:
     fontSize: "12px"
     fontWeight: 600
 rounded:
-  sm: "8px"
-  md: "16px"
-  lg: "24px"
-  card: "28px"
-  tablet: "32px"
-  xl: "40px"
+  sm: "6px"
+  md: "8px"
+  lg: "12px"
+  card: "16px"
+  tablet: "0px"
+  xl: "20px"
   pill: "9999px"
 spacing:
   xs: "4px"
@@ -107,15 +107,15 @@ spacing:
   xl: "32px"
 components:
   tablet-container:
-    backgroundColor: "{colors.surface-tablet}"
+    backgroundColor: "{colors.surface-dim}"
     textColor: "{colors.text-primary}"
-    rounded: "{rounded.tablet}"
-    border: "{colors.surface-border}"
+    rounded: "0px"
+    border: "transparent"
   surface-card:
     backgroundColor: "{colors.surface-card}"
     textColor: "{colors.text-primary}"
     rounded: "{rounded.card}"
-    border: "{colors.surface-border}"
+    border: "rgba(255, 255, 255, 0.08)"
   side-dock:
     backgroundColor: "{colors.surface-dim}"
     textColor: "{colors.text-secondary}"

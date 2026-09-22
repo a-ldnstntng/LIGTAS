@@ -36,11 +36,36 @@ const DEFAULT_DAILY = [
 
 export async function fetchLiveWeather(latitude, longitude) {
   try {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m&hourly=temperature_2m,precipitation_probability,precipitation,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia%2FManila&forecast_days=7`;
-    const res = await fetch(url);
-    if (!res.ok) throw new Error('Open-Meteo request failed');
-    const data = await res.json();
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,surface_pressure&hourly=temperature_2m,precipitation_probability,precipitation,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia%2FManila&forecast_days=7`;
+    const floodUrl = `https://flood-api.open-meteo.com/v1/flood?latitude=${latitude}&longitude=${longitude}&daily=river_discharge,river_discharge_mean,river_discharge_max,river_discharge_min&forecast_days=7`;
+
+    const [weatherRes, floodRes] = await Promise.allSettled([
+      fetch(weatherUrl),
+      fetch(floodUrl),
+    ]);
+
+    let data;
+    if (weatherRes.status === 'fulfilled' && weatherRes.value.ok) {
+      data = await weatherRes.value.json();
+    } else {
+      throw new Error('Open-Meteo weather request failed');
+    }
+
+    let floodData = null;
+    if (floodRes.status === 'fulfilled' && floodRes.value.ok) {
+      try {
+        floodData = await floodRes.value.json();
+      } catch (e) {
+        console.warn('Flood API parse warning:', e);
+      }
+    }
+
     const current = data.current;
+    const dischargeList = (floodData?.daily?.river_discharge && floodData.daily.river_discharge.length > 0)
+      ? floodData.daily.river_discharge.map(v => typeof v === 'number' ? Math.round(v) : 280)
+      : [302, 317, 332, 323, 289, 250, 216];
+    const currentDischarge = dischargeList[1] ?? dischargeList[0] ?? 316;
+    const currentPressure = Math.round(current.surface_pressure ?? 1010);
 
     const now = new Date();
     const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', second: '2-digit', hour12: true });
@@ -115,6 +140,7 @@ export async function fetchLiveWeather(latitude, longitude) {
       feelsLike: Math.round(current.apparent_temperature),
       humidity: current.relative_humidity_2m,
       precipitation: current.precipitation,
+      pressure: currentPressure,
       windSpeed: Math.round(current.wind_speed_10m),
       weatherCode: current.weather_code,
       condition: getConditionLabel(current.weather_code),
@@ -122,6 +148,9 @@ export async function fetchLiveWeather(latitude, longitude) {
       isOffline: false,
       hourly: hourly.length ? hourly : DEFAULT_HOURLY,
       daily: daily.length ? daily : DEFAULT_DAILY,
+      riverDischarge: currentDischarge,
+      riverDischargeSeries: dischargeList,
+      riverDischargeMax: Math.round(floodData?.daily?.river_discharge_max?.[1] ?? Math.max(...dischargeList)),
     };
   } catch (err) {
     console.error('Weather fetch error:', err);
@@ -130,6 +159,7 @@ export async function fetchLiveWeather(latitude, longitude) {
       feelsLike: null,
       humidity: 80,
       precipitation: 0.0,
+      pressure: 1010,
       windSpeed: 11,
       weatherCode: 0,
       condition: 'Signal Dropped',
@@ -137,6 +167,9 @@ export async function fetchLiveWeather(latitude, longitude) {
       isOffline: true,
       hourly: DEFAULT_HOURLY,
       daily: DEFAULT_DAILY,
+      riverDischarge: 316,
+      riverDischargeSeries: [302, 317, 332, 323, 289, 250, 216],
+      riverDischargeMax: 417,
     };
   }
 }

@@ -6,6 +6,7 @@ import {
   Waves, Loader2, Radio, Activity, CloudRain,
   ArrowRight, Gauge, Car
 } from 'lucide-react';
+import { RoadwayGlassIcon, CctvGlassIcon, TelemetryMetricsGlassIcon } from './glass-icons';
 import { fetchNearbyImageId } from '../services/mapillaryService';
 
 export default function StreetViewerModal({
@@ -294,16 +295,14 @@ export default function StreetViewerModal({
     >
       
       {/* Modal Shell */}
-      <div className="relative w-full max-w-4xl bg-[#1a1a1e]/95 backdrop-blur-xl border border-[#26262b] rounded-4xl shadow-2xl overflow-hidden flex flex-col h-[600px] sm:h-[660px] animate-in zoom-in-95 duration-200 ease-out-expo">
+      <div className="relative w-full max-w-4xl bg-[#17181f]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[600px] sm:h-[660px] animate-in zoom-in-95 duration-200 ease-out-expo">
         
         {/* Modal Top Header Bar */}
-        <div className="px-5 py-3.5 bg-[#121214]/95 border-b border-[#26262b] flex flex-wrap items-center justify-between gap-3 z-30">
+        <div className="px-5 py-3.5 bg-[#121318]/95 border-b border-white/[0.06] flex flex-wrap items-center justify-between gap-3 z-30">
           
           {/* Location & Title */}
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-[#FFE142]/15 text-[#FFE142] shrink-0">
-              <Camera className="w-5 h-5" />
-            </div>
+            <RoadwayGlassIcon className="w-10 h-10 shrink-0 drop-shadow-md" />
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="font-serif text-base sm:text-lg font-bold text-white tracking-tight">
@@ -323,7 +322,7 @@ export default function StreetViewerModal({
           <div className="flex items-center gap-2 ml-auto">
             
             {/* True Dual-Mode Tabs */}
-            <div className="flex items-center bg-[#0d0d0f] p-1 rounded-2xl border border-[#26262b] shadow-inner">
+            <div className="flex items-center bg-[#0d0d0f] p-1 rounded-2xl border border-white/[0.08] shadow-inner">
               <button
                 type="button"
                 onClick={() => setActiveMode('mapillary')}
@@ -335,7 +334,7 @@ export default function StreetViewerModal({
                 title="Ground-Truth 360° (Mapillary)"
                 aria-label="Ground-Truth 360° (Mapillary)"
               >
-                <Camera className="w-3.5 h-3.5" />
+                <CctvGlassIcon className="w-4 h-4 shrink-0" transparent={true} />
                 <span className="tracking-wide">360° BASELINE</span>
               </button>
 
@@ -350,7 +349,7 @@ export default function StreetViewerModal({
                 title="Corridor Sensor Telemetry"
                 aria-label="Corridor Sensor Telemetry"
               >
-                <Activity className="w-3.5 h-3.5" />
+                <TelemetryMetricsGlassIcon className="w-4 h-4 shrink-0" transparent={true} />
                 <span className="tracking-wide">CORRIDOR SENSORS</span>
               </button>
             </div>
