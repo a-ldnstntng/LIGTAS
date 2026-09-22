@@ -9,72 +9,30 @@ import {
   Wind, AlertTriangle, ShieldCheck, Waves,
   MapPin, Navigation, PhoneCall, Activity,
   Radio, Info, ArrowUpRight, Loader2, Camera,
-  RefreshCw
+  RefreshCw, Layers, Maximize2, ChevronRight, X
 } from 'lucide-react';
 
-// Procedural flood & telemetry generator for any place in the Philippines (PAR)
-function getProceduralTelemetry(name, lat, lon) {
-  let seed = 0;
-  const str = `${name}-${lat || 0}-${lon || 0}`;
-  for (let i = 0; i < str.length; i++) {
-    seed = (seed * 31 + str.charCodeAt(i)) & 0xffffffff;
-  }
-  const absSeed = Math.abs(seed);
-
-  // Depth between 0.15m and 1.55m
-  const rawDepth = ((absSeed % 140) + 15) / 100;
-  const depthMeters = parseFloat(rawDepth.toFixed(2));
-
-  let hazardLevel = 'MEDIUM';
-  let passability = 'Impassable for Sedans';
-  let severityLabel = 'Moderate Inundation (Gutter Depth)';
-
-  if (depthMeters >= 1.2) {
-    hazardLevel = 'CRITICAL';
-    passability = 'Closed to All Traffic';
-    severityLabel = 'Critical Submersion (Above Hood)';
-  } else if (depthMeters >= 0.75) {
-    hazardLevel = 'HIGH';
-    passability = 'Trucks & High-Axle Only';
-    severityLabel = 'Severe Inundation (Chest Depth)';
-  } else if (depthMeters >= 0.35) {
-    hazardLevel = 'HIGH';
-    passability = 'Impassable for Light Sedans';
-    severityLabel = 'Moderate Inundation (Knee Depth)';
-  } else {
-    hazardLevel = 'LOW';
-    passability = 'Passable to All Vehicles with Caution';
-    severityLabel = 'Minor Ponding (Gutter Depth)';
-  }
-
-  const rainRate = `${(absSeed % 38) + 18} mm/h`;
-  const windSpeed = `${(absSeed % 25) + 15} km/h`;
-  const humidity = `${(absSeed % 15) + 82}%`;
-  const hour = ((absSeed % 4) + 7);
-  const mins = (absSeed % 2 === 0) ? '30' : '45';
-  const clearanceTime = `~${hour}:${mins} PM`;
-  const riskPercent = `${(absSeed % 30) + 65}% RISK`;
-  const advisory = (absSeed % 3 === 0) ? 'HABAGAT SURGE ADVISORY' : (absSeed % 3 === 1) ? 'MONSOON INUNDATION ADVISORY' : 'TYPHOON CONVERGENCE WATCH';
-
+// Fallback for corridors outside sensor coverage
+function getUncoveredTelemetry(name) {
   return {
     name,
-    depthMeters,
-    hazardLevel,
-    passability,
-    severityLabel,
-    rainRate,
-    windSpeed,
-    humidity,
-    clearanceTime,
-    riskPercent,
-    advisory,
-    detourDelta: `+${(absSeed % 20) + 12} min detour`,
-    isModeled: true,
+    depthMeters: null,
+    hazardLevel: 'UNKNOWN',
+    passability: 'No sensor coverage for this corridor',
+    severityLabel: 'Depth unavailable — outside monitored catchments',
+    rainRate: '—',
+    windSpeed: '—',
+    humidity: '—',
+    clearanceTime: '—',
+    riskPercent: 'UNVERIFIED',
+    advisory: 'NO SENSOR COVERAGE',
+    detourDelta: '—',
+    isModeled: false,
+    isUncovered: true,
   };
 }
 
 export default function App() {
-  // Dynamic list of locations in the quick carousel
   const [corridorsList, setCorridorsList] = useState([
     { name: 'España, Manila', coordinates: [120.9894, 14.6091], heading: 48 },
     { name: 'Sta. Mesa, Manila', coordinates: [121.012, 14.601], heading: 85 },
@@ -99,8 +57,10 @@ export default function App() {
   const [searchError, setSearchError] = useState(null);
 
   const [activeTab, setActiveTab] = useState('Overview');
+  const [radarViewMode, setRadarViewMode] = useState('radar'); // 'radar' | 'vector'
   const [showEmergencyModal, setShowEmergencyModal] = useState(false);
   const [showSensorsModal, setShowSensorsModal] = useState(false);
+  const [showCorridorsModal, setShowCorridorsModal] = useState(false);
   const [copiedHotline, setCopiedHotline] = useState(null);
 
   const handleCopyHotline = useCallback((number, e) => {
@@ -113,18 +73,20 @@ export default function App() {
     }
   }, []);
 
-  // Global Escape keydown listener for Emergency and Sensors modals
+  // Global Escape keydown listener
   useEffect(() => {
-    if (!showEmergencyModal && !showSensorsModal) return;
+    if (!showEmergencyModal && !showSensorsModal && !showCorridorsModal && !isSearchFocused) return;
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         setShowEmergencyModal(false);
         setShowSensorsModal(false);
+        setShowCorridorsModal(false);
+        setIsSearchFocused(false);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showEmergencyModal, showSensorsModal]);
+  }, [showEmergencyModal, showSensorsModal, showCorridorsModal, isSearchFocused]);
 
   // Real-Time Doppler Weather & Radar Telemetry State (Open-Meteo)
   const [liveWeather, setLiveWeather] = useState({
@@ -137,11 +99,12 @@ export default function App() {
     condition: 'Clear Sky',
     lastUpdated: 'Connecting...',
     isOffline: false,
+    hourly: [],
+    daily: [],
   });
   const [isRefreshingWeather, setIsRefreshingWeather] = useState(false);
   const [telemetryMode, setTelemetryMode] = useState('live'); // 'live' | 'scenario'
 
-  // Fetch real-time weather observation for current coordinates
   const updateWeather = useCallback(async () => {
     const [lon, lat] = activeLocation.coordinates || [120.9894, 14.6091];
     setIsRefreshingWeather(true);
@@ -150,7 +113,6 @@ export default function App() {
     setIsRefreshingWeather(false);
   }, [activeLocation]);
 
-  // Automated background polling every 30 seconds to keep stats live and accurate
   useEffect(() => {
     updateWeather();
     const interval = setInterval(() => {
@@ -170,7 +132,6 @@ export default function App() {
   });
   const [streetViewPosition, setStreetViewPosition] = useState({ lng: 120.9894, lat: 14.6091, bearing: 48 });
 
-  // Handle map click: resolve imageId and open StreetViewerModal
   const handleMapClick = useCallback(async ({ lng, lat }) => {
     try {
       const locName = `${activeLocation.name?.split(',')[0] || 'Clicked Roadway'} (${lat.toFixed(4)}, ${lng.toFixed(4)})`;
@@ -197,7 +158,6 @@ export default function App() {
     }
   }, [activeLocation, streetViewPosition.bearing]);
 
-  // Open Street Cam for active corridor
   const handleOpenStreetCam = useCallback(async (customLoc) => {
     try {
       const loc = customLoc || activeLocation;
@@ -212,7 +172,6 @@ export default function App() {
         lat = parseFloat(loc.lat);
       }
 
-      // Check if location is España, Manila to guarantee exact coordinates: Lat 14.6091, Lng 120.9894
       const locName = (loc?.name || '').toLowerCase();
       if (locName.includes('españa') || locName.includes('espana')) {
         lng = 120.9894;
@@ -244,7 +203,6 @@ export default function App() {
     }
   }, [activeLocation]);
 
-  // Memoized camera move handler with delta throttling to avoid render loops
   const handleCameraMove = useCallback(({ lng, lat, bearing }) => {
     setStreetViewPosition((prev) => {
       const sameLng = lng === undefined || Math.abs((prev.lng || 0) - lng) < 0.00001;
@@ -262,7 +220,6 @@ export default function App() {
   const searchRef = useRef(null);
   const abortControllerRef = useRef(null);
 
-  // Close search dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (searchRef.current && !searchRef.current.contains(event.target)) {
@@ -285,7 +242,6 @@ export default function App() {
     setIsSearching(true);
     setSearchError(null);
 
-    // Cancel previous in-flight request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -308,8 +264,6 @@ export default function App() {
         }
 
         const data = await res.json();
-        
-        // Parse results into clean primary title & administrative region
         const parsed = (data || []).map((item) => {
           const parts = (item.display_name || '').split(',').map((s) => s.trim());
           const primary = parts[0] || item.name || query;
@@ -329,7 +283,6 @@ export default function App() {
       } catch (err) {
         if (err.name !== 'AbortError') {
           console.warn('Nominatim geocoding fallback:', err);
-          // Fallback to searching local floodPolygons
           const q = searchQuery.toLowerCase();
           const localMatches = floodData.features.filter((f) => {
             const p = f.properties;
@@ -361,16 +314,35 @@ export default function App() {
     };
   }, [searchQuery]);
 
-  // Telemetry computation: real-time live radar/weather telemetry vs. stress-test simulation
+  // Telemetry computation
   const activeMetrics = useMemo(() => {
     const name = activeLocation.name || 'España, Manila';
-    const [lon, lat] = activeLocation.coordinates || [activeLocation.lon || 120.989, activeLocation.lat || 14.609];
-
     const isCuratedCatchment = ['españa', 'espana', 'sta. mesa', 'santa mesa', 'araneta', 'taft', 'katipunan', 'marikina']
       .some(k => name.toLowerCase().includes(k));
 
-    // Mode 1: TRUE LIVE ATMOSPHERIC & INUNDATION RADAR
     if (telemetryMode === 'live') {
+      if (liveWeather?.isOffline) {
+        return {
+          name,
+          depthMeters: null,
+          hazardLevel: 'UNKNOWN',
+          passability: 'Awaiting live radar signal',
+          severityLabel: 'Live telemetry offline — depth unavailable',
+          rainRate: '—',
+          windSpeed: '—',
+          humidity: '—',
+          temperature: '—',
+          feelsLike: '—',
+          clearanceTime: '—',
+          riskPercent: 'NO SIGNAL',
+          advisory: 'LIVE RADAR OFFLINE',
+          detourDelta: '—',
+          lastUpdated: liveWeather?.lastUpdated || 'Signal Dropped',
+          isModeled: false,
+          isOffline: true,
+        };
+      }
+
       const precip = liveWeather?.precipitation ?? 0;
       const inundation = computeLiveInundation(name, precip);
       const isRaining = precip > 0.1;
@@ -395,7 +367,7 @@ export default function App() {
       };
     }
 
-    // Mode 2: HABAGAT / TYPHOON EMERGENCY STRESS-TEST SCENARIO
+    // Stress-Test Scenario Mode
     const str = name.toLowerCase();
     const match = floodData.features.find((f) => {
       const p = f.properties;
@@ -432,68 +404,16 @@ export default function App() {
       };
     }
 
-    // Procedural simulation for any newly geocoded location across the Philippines
     return {
-      ...getProceduralTelemetry(name, lat, lon),
-      isModeled: true,
+      ...getUncoveredTelemetry(name),
+      isModeled: false,
     };
   }, [activeLocation, telemetryMode, liveWeather]);
 
-  // Dynamic Suggested Bypass information matching the current location
-  const bypassInfo = useMemo(() => {
-    const name = activeMetrics.name || 'Current Location';
-    const primary = name.split(',')[0].trim();
-
-    if (primary.includes('España') || primary.includes('Espana')) {
-      return {
-        title: 'Quezon Ave Flyover Viaduct',
-        description: 'Dry elevation corridor across España ground depression',
-        detour: '+18 min detour',
-      };
-    } else if (primary.includes('Sta. Mesa') || primary.includes('Santa Mesa')) {
-      return {
-        title: 'R. Magsaysay Elevated Bypass',
-        description: 'High flyover viaduct above San Juan River confluence',
-        detour: '+14 min detour',
-      };
-    } else if (primary.includes('Araneta')) {
-      return {
-        title: 'Quezon Ave Underpass Overpass',
-        description: 'Elevated flyover above submerged Araneta underpass',
-        detour: '+12 min detour',
-      };
-    } else if (primary.includes('Marikina')) {
-      return {
-        title: 'Marcos Highway Viaduct',
-        description: 'Elevated highway bridge above Marikina River overflow',
-        detour: '+22 min detour',
-      };
-    } else if (primary.includes('Taft')) {
-      return {
-        title: 'Roxas Blvd / Skyway Connector',
-        description: 'Elevated viaduct avoiding coastal Taft avenue ponding',
-        detour: '+15 min detour',
-      };
-    } else if (primary.includes('San Jose')) {
-      return {
-        title: 'Quirino Highway Ridge Bypass',
-        description: 'Elevated ridge viaduct avoiding valley drainage basin',
-        detour: '+20 min detour',
-      };
-    }
-
-    return {
-      title: `${primary} High Ridge Bypass`,
-      description: `Elevated perimeter route avoiding localized drainage basin`,
-      detour: activeMetrics.detourDelta || '+18 min detour',
-    };
-  }, [activeMetrics]);
-
-  // Handle location selection from search or tabs
   const handleSelectLocation = (loc) => {
     const rawCoords = loc.coordinates || (loc.lon && loc.lat ? [parseFloat(loc.lon), parseFloat(loc.lat)] : null);
     if (!rawCoords || isNaN(rawCoords[0]) || isNaN(rawCoords[1])) {
-      setSearchError('Location coordinates could not be verified. Please choose from monitored corridors.');
+      setSearchError('Location coordinates could not be verified.');
       return;
     }
 
@@ -506,21 +426,17 @@ export default function App() {
 
     setActiveLocation(selected);
     setIsSearchFocused(false);
+    setShowCorridorsModal(false);
     setSearchQuery('');
     setSearchError(null);
 
-    // Prepend to quick corridors carousel if not present
     setCorridorsList((prev) => {
       const exists = prev.some((item) => item.name.toLowerCase() === selected.name.toLowerCase());
       if (exists) return prev;
       return [selected, ...prev.slice(0, 5)];
     });
-
-    // Scroll to hero card view
-    document.getElementById('hero-section')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  // Submit direct search on Enter or 'Go' button
   const handleSearchSubmit = (e) => {
     e?.preventDefault();
     const query = searchQuery.trim();
@@ -532,21 +448,19 @@ export default function App() {
     } else if (isSearching) {
       setSearchError('Locating Philippine coordinates...');
     } else {
-      // Prevent silently defaulting unmapped queries to Manila coordinates
-      setSearchError(`No verified location found for "${query}" in PAR. Check spelling or pick a corridor below.`);
+      setSearchError(`No verified location found for "${query}" in PAR. Check spelling or pick a corridor.`);
       setIsSearchFocused(true);
     }
   };
 
-  // Focus and scroll to search input (used by bottom nav trigger and / shortcut)
   const handleSearchFocus = useCallback(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-    const input = document.getElementById('search-corridor-input');
-    input?.focus();
     setIsSearchFocused(true);
+    setTimeout(() => {
+      document.getElementById('console-search-input')?.focus();
+    }, 50);
   }, []);
 
-  // Global keyboard accelerators for power users & dispatchers: / for search, 1-5 for corridors
+  // Keyboard shortcuts: / for search, 1-5 for corridors
   useEffect(() => {
     const handleGlobalKey = (e) => {
       const activeTag = document.activeElement?.tagName?.toLowerCase();
@@ -568,625 +482,741 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleGlobalKey);
   }, [corridorsList, handleSearchFocus]);
 
-  const handleTabClick = (tab) => {
-    setActiveTab(tab);
-    if (tab === 'Overview') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    } else if (tab === 'Radar Map') {
-      document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (tab === 'Street View') {
-      if (streetViewData.isOpen) {
-        setStreetViewData(prev => ({ ...prev, isOpen: false }));
-      } else {
-        handleOpenStreetCam();
-      }
-      document.getElementById('map-section')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    } else if (tab === 'Sensors') {
-      setShowSensorsModal(true);
-    } else if (tab === 'Emergency') {
-      setShowEmergencyModal(true);
-    }
-  };
+  const liveDateString = useMemo(() => {
+    return new Date().toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric'
+    });
+  }, []);
 
   return (
-    <div className="min-h-screen bg-[#F5F5F7] text-[#121214] p-4 md:p-8 flex justify-center selection:bg-clay-gold selection:text-obsidian pb-12">
-      <div className="w-full max-w-5xl flex flex-col gap-6">
-
-        {/* 1. Header & Dynamic Nominatim Geocoding Search */}
-        <header className="flex items-center justify-between gap-4">
-          <div ref={searchRef} className="relative flex-1 max-w-md">
-            <form onSubmit={handleSearchSubmit} className="relative flex items-center">
-              <button
-                type="submit"
-                title="Search Philippine Location"
-                aria-label="Submit search"
-                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-black transition p-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold rounded-full"
-              >
-                {isSearching ? (
-                  <Loader2 className="w-4 h-4 text-clay-gold animate-spin" />
-                ) : (
-                  <Search className="w-4 h-4" />
-                )}
-              </button>
-              
-              <input 
-                id="search-corridor-input"
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setIsSearchFocused(true)}
-                placeholder="Search floodway or city in the Philippines... (Press /)"
-                className="w-full bg-white text-sm text-[#121214] placeholder-gray-500 pl-11 pr-24 py-3.5 rounded-full border border-black/10 focus:outline-none focus:border-clay-gold focus-visible:ring-2 focus-visible:ring-clay-gold caret-clay-gold transition shadow-sm"
-              />
-
-              <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
-                {searchQuery ? (
-                  <button
-                    type="button"
-                    aria-label="Clear search input"
-                    onClick={() => {
-                      setSearchQuery('');
-                      setNominatimResults([]);
-                    }}
-                    className="text-xs text-gray-500 hover:text-black px-2 py-1 rounded-full bg-black/5 transition"
-                  >
-                    ✕
-                  </button>
-                ) : (
-                  <span className="hidden sm:inline-block text-[10px] font-mono text-gray-500 px-2 py-0.5 rounded-md bg-black/5 border border-black/5 mr-0.5 select-none" title="Press / to search">
-                    /
-                  </span>
-                )}
-                <button
-                  type="submit"
-                  className="px-3.5 py-1.5 rounded-full bg-clay-gold hover:bg-clay-gold/90 text-obsidian text-xs font-bold transition shadow-md active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
-                >
-                  Go
-                </button>
-              </div>
-            </form>
-
-            {/* Direct Inline Search Error Notice */}
-            {searchError && (
-              <div className="mt-2 px-3.5 py-2 rounded-2xl bg-soft-red/15 border border-soft-red/30 text-xs flex items-center justify-between gap-2 animate-in fade-in duration-150">
-                <div className="flex items-center gap-2 text-soft-red">
-                  <AlertTriangle className="w-4 h-4 shrink-0 text-soft-red" />
-                  <span className="font-medium text-white">{searchError}</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setSearchError(null)}
-                  className="text-[#9ca3af] hover:text-white px-1.5 py-0.5 rounded-full hover:bg-white/10 transition"
-                  aria-label="Dismiss search error"
-                >
-                  ✕
-                </button>
-              </div>
-            )}
-
-            {/* Floating Squircle Dropdown for Nominatim Geocoding Results */}
-            {isSearchFocused && (searchQuery.trim().length >= 2 || nominatimResults.length > 0) && (
-              <div className="absolute left-0 right-0 top-full mt-2 bg-[#1a1a1e]/95 border border-[#26262b] rounded-3xl p-2.5 shadow-2xl z-50 backdrop-blur-2xl animate-in fade-in duration-150">
-                <div className="flex items-center justify-between px-3 py-1.5 text-xs uppercase font-bold text-[#9ca3af] tracking-wider border-b border-white/5 mb-1">
-                  <span>Philippine Geocoding Results (PAR)</span>
-                  {isSearching && <span className="text-clay-gold flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Querying...</span>}
-                </div>
-                
-                <div className="max-h-72 overflow-y-auto space-y-1 scrollbar-none">
-                  {nominatimResults.map((item) => (
-                    <button
-                      key={item.id}
-                      onClick={() => handleSelectLocation(item)}
-                      className="w-full text-left p-3 rounded-2xl hover:bg-white/5 transition flex items-start justify-between group border border-transparent hover:border-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
-                    >
-                      <div className="flex items-start gap-3">
-                        <div className="p-2 rounded-xl bg-clay-gold/10 text-clay-gold group-hover:bg-clay-gold group-hover:text-obsidian transition-colors mt-0.5">
-                          <MapPin className="w-4 h-4" />
-                        </div>
-                        <div>
-                          <div className="text-sm font-bold text-white group-hover:text-clay-gold transition">
-                            {item.primaryName}
-                          </div>
-                          <div className="text-xs text-[#9ca3af] line-clamp-1 mt-0.5">
-                            {item.secondaryName}
-                          </div>
-                        </div>
-                      </div>
-
-                      <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-white/5 text-[#9ca3af] group-hover:bg-clay-gold/20 group-hover:text-clay-gold transition mt-1 flex-shrink-0">
-                        Select
-                      </span>
-                    </button>
-                  ))}
-
-                  {!isSearching && nominatimResults.length === 0 && searchQuery.trim().length >= 2 && (
-                    <div className="p-4 text-center">
-                      <div className="flex items-center justify-center gap-1.5 text-soft-red mb-1.5">
-                        <AlertTriangle className="w-4 h-4 text-soft-red" />
-                        <span className="text-xs font-bold text-white">Unverified Location in PAR</span>
-                      </div>
-                      <p className="text-xs text-[#9ca3af]">
-                        No verified GPS coordinates found for "<span className="text-white font-medium">{searchQuery}</span>".
-                      </p>
-                      <p className="text-[11px] text-[#9ca3af]/80 mt-1">
-                        Please check spelling or choose from the monitored corridors list.
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+    <div className="min-h-screen bg-[#111215] text-[#f5f6f9] font-sans antialiased selection:bg-[#e07a3f]/30 p-2 sm:p-4 md:p-6 lg:p-8 flex items-center justify-center">
+      {/* Master Smart-Display Tablet Container */}
+      <div className="w-full max-w-[1540px] bg-[#17181d] border border-[#262830] rounded-[32px] md:rounded-[40px] shadow-[0_25px_70px_rgba(0,0,0,0.85),0_2px_4px_rgba(255,255,255,0.03)_inset] overflow-hidden flex flex-col md:flex-row min-h-[920px]">
+        
+        {/* ================= LEFT SLIM DOCK ================= */}
+        <aside className="w-full md:w-24 bg-[#141519] border-b md:border-b-0 md:border-r border-[#24262d] flex md:flex-col items-center justify-between p-4 md:py-8 flex-shrink-0 z-20">
           
-          <div className="flex items-center gap-2 sm:gap-3">
-            <button 
-              onClick={() => setShowEmergencyModal(true)}
-              title="Emergency Rescue Hotlines (136 / 143)"
-              aria-label="Open Emergency Rescue Hotlines"
-              className="w-12 h-12 rounded-full bg-soft-red/10 hover:bg-soft-red/20 border border-soft-red/30 flex items-center justify-center transition active:scale-95 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soft-red"
+          {/* User Profile Avatar / LIGTAS Emblem */}
+          <div className="flex flex-col items-center">
+            <div 
+              onClick={() => setShowCorridorsModal(true)}
+              title="LIGTAS Metro Command Profile"
+              className="w-12 h-12 rounded-full ring-2 ring-[#2e303a] p-0.5 overflow-hidden transition-transform hover:scale-105 cursor-pointer shadow-lg bg-[#202228] flex items-center justify-center"
             >
-              <PhoneCall className="w-5 h-5 text-soft-red" />
+              <img 
+                alt="LIGTAS Command Avatar" 
+                className="w-full h-full object-cover rounded-full" 
+                src="/assets/user_avatar.jpg"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none';
+                  e.currentTarget.nextSibling.style.display = 'flex';
+                }}
+              />
+              <div className="hidden w-full h-full items-center justify-center bg-[#23252d] text-[#e07a3f] font-bold text-xs">
+                LT
+              </div>
+            </div>
+          </div>
+
+          {/* Vertical Nav Icon Cluster */}
+          <nav className="flex md:flex-col items-center gap-3 md:gap-4 my-auto">
+            {/* Overview / Home */}
+            <button 
+              onClick={() => setActiveTab('Overview')}
+              title="Overview Console"
+              className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+                activeTab === 'Overview' 
+                  ? 'bg-[#2a2c35] text-white shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),0_4px_12px_rgba(0,0,0,0.4)]' 
+                  : 'bg-transparent hover:bg-[#202228] text-[#8c909d] hover:text-[#f5f6f9]'
+              }`}
+            >
+              <span className="material-symbols-outlined text-2xl">home</span>
             </button>
+
+            {/* Location Corridors */}
+            <button 
+              onClick={() => setShowCorridorsModal(true)}
+              title="Monitored Corridors (Press 1-5)"
+              className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+                showCorridorsModal 
+                  ? 'bg-[#2a2c35] text-[#54b2d3] shadow-md' 
+                  : 'bg-transparent hover:bg-[#202228] text-[#8c909d] hover:text-[#f5f6f9]'
+              }`}
+            >
+              <span className="material-symbols-outlined text-2xl">location_on</span>
+            </button>
+
+            {/* Doppler Radar */}
+            <button 
+              onClick={() => {
+                setActiveTab('Radar');
+                setRadarViewMode(prev => prev === 'radar' ? 'vector' : 'radar');
+              }}
+              title="Toggle Doppler Radar / Vector Cartography"
+              className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+                activeTab === 'Radar' 
+                  ? 'bg-[#2a2c35] text-[#54b2d3] shadow-md' 
+                  : 'bg-transparent hover:bg-[#202228] text-[#8c909d] hover:text-[#f5f6f9]'
+              }`}
+            >
+              <span className="material-symbols-outlined text-2xl">radar</span>
+            </button>
+
+            {/* Hydro Analytics & Telemetry */}
             <button 
               onClick={() => setShowSensorsModal(true)}
-              title="Open Telemetry Filters"
-              aria-label="Open Telemetry Filters"
-              className="w-12 h-12 rounded-full bg-white border border-black/10 flex items-center justify-center hover:border-clay-gold transition active:scale-95 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
+              title="Live River Gauges & Sluice Gates"
+              className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+                showSensorsModal 
+                  ? 'bg-[#2a2c35] text-[#e07a3f] shadow-md' 
+                  : 'bg-transparent hover:bg-[#202228] text-[#8c909d] hover:text-[#f5f6f9]'
+              }`}
             >
-              <SlidersHorizontal className="w-5 h-5 text-gray-700" />
+              <span className="material-symbols-outlined text-2xl">bar_chart</span>
             </button>
-            <div className="w-12 h-12 rounded-full bg-clay-gold text-obsidian font-bold flex items-center justify-center text-sm shadow-md">
-              PAR
+
+            {/* Emergency Hotlines SOS */}
+            <button 
+              onClick={() => setShowEmergencyModal(true)}
+              title="Emergency Hotlines Directory"
+              className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all ${
+                showEmergencyModal 
+                  ? 'bg-[#e07a3f] text-[#141519] shadow-lg font-bold' 
+                  : 'bg-transparent hover:bg-[#202228] text-[#8c909d] hover:text-[#f5f6f9]'
+              }`}
+            >
+              <span className="material-symbols-outlined text-2xl">phone_in_talk</span>
+            </button>
+          </nav>
+
+          {/* Bottom Status Refresh Sync */}
+          <div 
+            onClick={updateWeather}
+            title="Click to refresh live weather observation"
+            className="hidden md:flex flex-col items-center text-center gap-1.5 cursor-pointer group"
+          >
+            <div className="w-9 h-9 rounded-full bg-[#1b1c22] border border-[#272932] group-hover:border-[#383a45] flex items-center justify-center text-[#8c909d] group-hover:text-[#f5f6f9] transition-all">
+              <span className={`material-symbols-outlined text-lg transition-transform duration-500 ${isRefreshingWeather ? 'animate-spin text-[#e07a3f]' : 'group-hover:rotate-180'}`}>
+                sync
+              </span>
+            </div>
+            <div className="text-[10px] tracking-tight leading-tight text-[#707482]">
+              <span className="block text-[#8c909d] font-medium">Updated</span>
+              <span className="font-mono">{liveWeather.isOffline ? 'Offline' : (liveWeather.lastUpdated?.split(' ')[0] || 'Just now')}</span>
             </div>
           </div>
-        </header>
 
-        {/* Dynamic Corridor Quick Tabs (Horizontally Scrollable Carousel) */}
-        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none items-center">
-          <span className="font-serif text-sm font-normal text-gray-500 mr-1.5 flex items-center gap-1.5 whitespace-nowrap">
-            <Radio className="w-3.5 h-3.5 text-clay-gold" /> Recents:
-          </span>
-          {corridorsList.map((corridor) => {
-            const isSelected = activeLocation.name?.toLowerCase() === corridor.name?.toLowerCase();
-            return (
-              <button
-                key={corridor.name}
-                onClick={() => handleSelectLocation(corridor)}
-                className={`px-4 sm:px-5 py-2.5 rounded-full text-xs font-semibold whitespace-nowrap transition-all duration-200 ease-out-expo active:scale-[0.97] flex items-center gap-2 ${
-                  isSelected
-                    ? 'bg-[#121214] text-white shadow-md scale-[1.02]'
-                    : 'bg-white text-gray-700 hover:text-black border border-black/10 shadow-sm'
-                }`}
+        </aside>
+
+        {/* ================= MAIN CONTENT AREA ================= */}
+        <main className="flex-1 p-5 md:p-8 lg:p-10 flex flex-col gap-6 md:gap-7 overflow-y-auto">
+          
+          {/* Top Minimal Header Bar */}
+          <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            
+            {/* Location Breadcrumb & Live Date */}
+            <div className="flex items-center gap-3">
+              <div 
+                onClick={() => setShowCorridorsModal(true)}
+                className="w-9 h-9 rounded-full bg-[#202228] border border-[#2a2c34] flex items-center justify-center text-[#54b2d3] cursor-pointer hover:border-[#54b2d3]/50 transition-colors"
               >
-                <span className={`w-2 h-2 rounded-full ${isSelected ? 'bg-clay-gold' : 'bg-gray-300'}`} />
-                <span className="font-serif">{corridor.name}</span>
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Simulation Mode Warning Banner (Visible whenever stress-test mode is engaged) */}
-        {telemetryMode === 'scenario' && (
-          <div className="bg-[#f7b731]/15 border border-[#f7b731]/40 rounded-3xl p-4 sm:p-5 flex flex-wrap items-center justify-between gap-3 shadow-lg animate-in fade-in duration-200">
-            <div className="flex items-start sm:items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-[#f7b731]/20 text-clay-amber shrink-0 mt-0.5 sm:mt-0">
-                <AlertTriangle className="w-5 h-5 text-clay-amber" />
+                <span className="material-symbols-outlined text-lg">location_on</span>
               </div>
               <div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[11px] font-bold font-mono px-2 py-0.5 rounded-full bg-[#f7b731] text-obsidian uppercase tracking-wider">
-                    DRILL SIMULATION
-                  </span>
-                  <h2 className="text-sm font-bold text-[#121214] tracking-tight">
-                    Habagat High-Water Drill Mode Active (0.9m Baseline)
-                  </h2>
+                <div 
+                  onClick={() => setShowCorridorsModal(true)}
+                  className="text-[16px] md:text-lg font-display font-semibold tracking-tight text-[#f5f6f9] hover:text-[#54b2d3] cursor-pointer flex items-center gap-1.5"
+                >
+                  <span>{activeLocation.name}</span>
+                  <span className="text-xs text-[#707482]">▾</span>
                 </div>
-                <p className="text-xs text-gray-700 mt-1">
-                  Telemetry reflects emergency simulation parameters, not live weather radar. Real-world conditions may differ.
-                </p>
+                <div className="text-[12px] md:text-xs text-[#848794]">
+                  {liveDateString}
+                </div>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={() => setTelemetryMode('live')}
-              className="px-4 py-2 rounded-full bg-[#f7b731] hover:bg-[#f7b731]/90 text-obsidian text-xs font-bold transition shadow-md active:scale-95 ml-auto sm:ml-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold min-h-[44px] flex items-center"
-            >
-              Return to Live Radar
-            </button>
-          </div>
-        )}
 
-        {/* 2. Main Hero Grid */}
-        <div id="hero-section" className="grid grid-cols-1 md:grid-cols-12 gap-6 items-start">
-          
-          {/* Dynamic Hero Weather/Flood Card (Editorial Yellow Squircle) */}
-          <div className="md:col-span-5 bg-[#FFE142] text-[#000000] rounded-4xl p-7 relative overflow-hidden shadow-2xl flex flex-col justify-between min-h-[440px] transition-all duration-300">
-            {/* Top Date / Condition Badges (Small Pitch-Black Capsules) */}
-            <div>
-              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                {/* Mode Selector Pill: Live Radar vs Stress-Test */}
-                <div className="flex items-center gap-1 bg-[#000000] p-1 rounded-full text-[11px] font-sans font-bold text-white shadow-sm">
-                  <button
-                    type="button"
-                    onClick={() => setTelemetryMode('live')}
-                    className={`px-3 py-1 rounded-full flex items-center gap-1.5 transition duration-150 ${
-                      telemetryMode === 'live'
-                        ? 'bg-[#FFE142] text-[#000000]'
-                        : 'text-white/70 hover:text-white'
-                    }`}
-                    title="Real-time atmospheric Doppler & precipitation radar from Open-Meteo"
-                  >
-                    <span className={`w-1.5 h-1.5 rounded-full ${telemetryMode === 'live' ? 'bg-[#000000] animate-pulse' : 'bg-white/40'}`} />
-                    <span>LIVE RADAR</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setTelemetryMode('scenario')}
-                    className={`px-3 py-1 rounded-full transition duration-150 ${
-                      telemetryMode === 'scenario'
-                        ? 'bg-[#FFE142] text-[#000000]'
-                        : 'text-white/70 hover:text-white'
-                    }`}
-                    title="Simulate high-water Habagat emergency monsoon scenario"
-                  >
-                    <span>STRESS-TEST</span>
-                  </button>
-                </div>
-
-                {/* Right Badges: Risk & Live Refresh */}
-                <div className="flex items-center gap-1.5">
-                  <span className="bg-[#000000] text-white px-3 py-1.5 rounded-full text-[11px] font-sans font-bold flex items-center gap-1.5 shadow-sm font-mono tabular-nums">
-                    <Droplets className="w-3 h-3 text-[#FFE142]" /> {activeMetrics.riskPercent}
-                  </span>
-                  {telemetryMode === 'live' && (
-                    <button
-                      type="button"
-                      onClick={() => updateWeather()}
-                      disabled={isRefreshingWeather}
-                      className="bg-[#000000] hover:bg-black/80 text-white p-1.5 rounded-full transition focus:outline-none shadow-sm active:scale-90"
-                      title={`Last synced at ${liveWeather?.lastUpdated || 'Connecting...'}. Click to ping live weather now.`}
-                    >
-                      <RefreshCw className={`w-3.5 h-3.5 text-[#FFE142] ${isRefreshingWeather ? 'animate-spin' : ''}`} />
-                    </button>
-                  )}
-                </div>
-              </div>
+            {/* Top Right Actions: Search Pill, Mode Toggle, Emergency SOS */}
+            <div className="flex items-center gap-2.5 flex-wrap">
               
-              {/* Location Title (Editorial Ledger Serif in Standard Sentence Case) */}
-              <h1 className="font-serif text-3xl sm:text-4xl font-normal text-[#000000] tracking-tight line-clamp-2 mt-2 leading-tight">
-                {activeMetrics.name}
-              </h1>
+              {/* Telemetry Mode Toggle */}
+              <button
+                onClick={() => setTelemetryMode(prev => prev === 'live' ? 'scenario' : 'live')}
+                className={`h-10 px-3.5 rounded-full border text-[11px] font-medium tracking-wide flex items-center gap-2 transition-all ${
+                  telemetryMode === 'live'
+                    ? 'bg-[#1b1d24] border-[#2e313b] text-[#54b2d3]'
+                    : 'bg-[#e07a3f]/15 border-[#e07a3f]/40 text-[#f59e6c]'
+                }`}
+                title="Toggle between real Open-Meteo radar and Habagat flood scenario"
+              >
+                <span className={`w-2 h-2 rounded-full ${telemetryMode === 'live' ? 'bg-[#54b2d3] animate-pulse' : 'bg-[#e07a3f]'}`}></span>
+                <span>{telemetryMode === 'live' ? 'Live Radar (PAR)' : 'Typhoon Simulation'}</span>
+              </button>
 
-              {/* Real-Time Radar Sync Status Bar */}
-              <div className="mt-1.5 flex items-center gap-2 text-[11px] font-sans font-extrabold uppercase tracking-wider text-black/75">
-                <span className={`w-1.5 h-1.5 rounded-full ${liveWeather?.isOffline ? 'bg-soft-red animate-pulse' : 'bg-black/70'}`} />
-                {telemetryMode === 'live' ? (
-                  liveWeather?.isOffline ? (
-                    <span className="flex items-center gap-1.5 text-[#000000] font-bold">
-                      <span className="px-1.5 py-0.2 rounded bg-[#000000] text-[#FFE142] text-[10px] font-mono tracking-normal font-bold">
-                        OFFLINE
-                      </span>
-                      Cached Radar Telemetry • {liveWeather?.lastUpdated}
-                    </span>
-                  ) : (
-                    <span>
-                      Synced {liveWeather?.lastUpdated || 'Connecting...'} • {liveWeather?.condition || 'Monitoring'} • {liveWeather?.temperature ?? 27}°C (Feels {liveWeather?.feelsLike ?? 31}°C)
-                    </span>
-                  )
-                ) : (
-                  <span>Habagat Monsoon Flood Simulation (0.9m Baseline)</span>
-                )}
-              </div>
+              {/* Search Pill Button */}
+              <button 
+                onClick={handleSearchFocus}
+                title="Search corridor or address (Press /)"
+                className="w-10 h-10 rounded-full bg-[#23252d] border border-[#2c2f38] hover:bg-[#2b2d37] text-[#8c909d] hover:text-[#ffffff] flex items-center justify-center transition-all shadow-sm"
+              >
+                <span className="material-symbols-outlined text-xl">search</span>
+              </button>
 
-              {activeMetrics.isModeled && (
-                <div 
-                  className="mt-2.5 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/10 border border-black/20 text-[#000000] text-[10px] font-mono font-bold tracking-wide"
-                  title="Estimated via Open-Meteo precipitation and terrain elevation basin modeling; no physical ultrasonic EFCOS gauge installed on site."
+              {/* Emergency SOS Pill */}
+              <button 
+                onClick={() => setShowEmergencyModal(true)}
+                className="h-10 px-4 rounded-full bg-[#e07a3f]/15 border border-[#e07a3f]/40 hover:bg-[#e07a3f]/25 text-[#f59e6c] font-medium text-[12px] tracking-wide flex items-center gap-2 shadow-sm transition-all"
+              >
+                <PhoneCall className="w-3.5 h-3.5" />
+                <span>Emergency SOS</span>
+              </button>
+
+            </div>
+          </header>
+
+          {/* Inline Search Expanded Dropdown */}
+          {isSearchFocused && (
+            <div ref={searchRef} className="w-full bg-[#1b1d24] border border-[#2c2f3a] rounded-3xl p-4 shadow-2xl relative animate-in fade-in zoom-in-95 duration-150">
+              <form onSubmit={handleSearchSubmit} className="relative flex items-center">
+                <Search className="w-4 h-4 text-[#8c909d] absolute left-3.5" />
+                <input
+                  id="console-search-input"
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search street, barangay, or flood basin across the Philippines..."
+                  className="w-full bg-[#141519] border border-[#282a34] rounded-2xl py-2.5 pl-10 pr-20 text-sm text-[#f5f6f9] placeholder-[#606470] focus:outline-none focus:border-[#54b2d3]"
+                />
+                <button
+                  type="submit"
+                  className="absolute right-2 px-3 py-1 rounded-xl bg-[#54b2d3] text-[#141519] font-bold text-xs hover:bg-[#54b2d3]/90 transition"
                 >
-                  <Info className="w-3 h-3 text-black/70 shrink-0" />
-                  <span>MODELED BASIN ESTIMATE (NO DIRECT SENSOR)</span>
+                  Locate
+                </button>
+              </form>
+
+              {searchError && (
+                <div className="mt-3 p-2.5 rounded-xl bg-[#2a1b1b] border border-[#e07a3f]/30 text-xs text-[#f59e6c] flex items-center justify-between">
+                  <span>{searchError}</span>
+                  <button onClick={() => setSearchError(null)} className="text-white/60 hover:text-white">✕</button>
+                </div>
+              )}
+
+              {nominatimResults.length > 0 && (
+                <div className="mt-3 space-y-1 max-h-60 overflow-y-auto">
+                  {nominatimResults.map(item => (
+                    <div
+                      key={item.id}
+                      onClick={() => handleSelectLocation(item)}
+                      className="p-2.5 rounded-xl hover:bg-[#23252f] cursor-pointer flex items-center justify-between transition group"
+                    >
+                      <div>
+                        <div className="text-sm font-medium text-white group-hover:text-[#54b2d3]">{item.primaryName}</div>
+                        <div className="text-xs text-[#8c909d]">{item.secondaryName}</div>
+                      </div>
+                      <span className="text-xs text-[#54b2d3] font-mono">Select</span>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
+          )}
 
-            {/* Giant Center Telemetry Readout (Clean, Geometric Bold Sans-Serif) */}
-            <div 
-              key={activeLocation.name || activeMetrics.name} 
-              className="my-auto py-3 animate-telemetry-lock"
-            >
-              <div className="flex items-baseline gap-1">
-                <span className="text-7xl sm:text-8xl font-sans font-extrabold tracking-tight text-[#000000] tabular-nums leading-none">
-                  {activeMetrics.depthMeters?.toFixed(1)}
-                  <span className="text-4xl sm:text-5xl font-sans font-extrabold ml-1 text-[#000000]">m</span>
-                </span>
-              </div>
-              <p className="text-xs sm:text-sm font-sans font-bold tracking-tight text-[#000000]/90 mt-2 flex items-center gap-1.5">
-                <AlertTriangle className="w-4 h-4 fill-[#000000] text-[#FFE142] flex-shrink-0" />
-                <span className="line-clamp-1">{activeMetrics.severityLabel}</span>
-              </p>
-            </div>
-
-            {/* Micro-Stat Pods (Pitch-Black Rounded Rectangles with Ultra-Fine White Icons and Labels) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-3">
-              <div className="bg-[#000000] text-white rounded-2xl p-2.5 sm:p-3 flex flex-col justify-between shadow-md">
-                <div className="flex items-center justify-between text-white/70 mb-1">
-                  <span className="text-[11px] font-sans font-medium">Rain rate</span>
-                  <CloudRain className="w-3.5 h-3.5 text-white/80" />
-                </div>
-                <span className="text-xs sm:text-sm font-sans font-extrabold font-mono tabular-nums text-white">{activeMetrics.rainRate}</span>
-              </div>
-              
-              <div className="bg-[#000000] text-white rounded-2xl p-2.5 sm:p-3 flex flex-col justify-between shadow-md">
-                <div className="flex items-center justify-between text-white/70 mb-1">
-                  <span className="text-[11px] font-sans font-medium">Wind</span>
-                  <Wind className="w-3.5 h-3.5 text-white/80" />
-                </div>
-                <span className="text-xs sm:text-sm font-sans font-extrabold font-mono tabular-nums text-white">{activeMetrics.windSpeed}</span>
-              </div>
-              
-              <div className="bg-[#000000] text-white rounded-2xl p-2.5 sm:p-3 flex flex-col justify-between shadow-md">
-                <div className="flex items-center justify-between text-white/70 mb-1">
-                  <span className="text-[11px] font-sans font-medium">Humidity</span>
-                  <Droplets className="w-3.5 h-3.5 text-white/80" />
-                </div>
-                <span className="text-xs sm:text-sm font-sans font-extrabold font-mono tabular-nums text-white">{activeMetrics.humidity}</span>
-              </div>
-              
-              <div className="bg-[#000000] text-white rounded-2xl p-2.5 sm:p-3 flex flex-col justify-between shadow-md">
-                <div className="flex items-center justify-between text-white/70 mb-1">
-                  <span className="text-[11px] font-sans font-medium">Passable</span>
-                  <ShieldCheck className="w-3.5 h-3.5 text-white/80" />
-                </div>
-                <span className="text-[11px] sm:text-xs font-sans font-extrabold line-clamp-1 text-white">{activeMetrics.passability}</span>
-              </div>
-            </div>
-
-            {/* Direct Action: Open Street Cam */}
-            <button
-              onClick={() => handleOpenStreetCam()}
-              className="mt-3 w-full py-3 px-4 rounded-2xl bg-[#000000] text-[#FFE142] hover:bg-[#000000]/90 active:scale-[0.97] transition-all duration-150 ease-out flex items-center justify-center gap-2 text-xs font-sans font-extrabold shadow-lg border border-black/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black"
-            >
-              <Camera className="w-4 h-4 text-[#FFE142]" />
-              <span>Open Street Cam</span>
-            </button>
-          </div>
-
-          {/* Map Viewport Card */}
-          <div id="map-section" className="md:col-span-7 bg-[#1a1a1e] border border-[#26262b] rounded-4xl p-2 h-[440px] shadow-2xl relative">
-            <MapViewport 
-              activeCorridor={{ ...activeLocation, ...activeMetrics }} 
-              isStreetViewOpen={streetViewData.isOpen}
-              streetViewPosition={streetViewPosition}
-              onToggleStreetView={() => {
-                if (streetViewData.isOpen) {
-                  setStreetViewData(prev => ({ ...prev, isOpen: false }));
-                } else {
-                  handleOpenStreetCam();
-                }
-              }}
-              onMapClick={handleMapClick}
-            />
+          {/* Main Central Layout Grid: Left Heavy Deck (7 cols) + Right Telemetry Modules (5 cols) */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
             
-            {/* Map Floating Legend */}
-            <div className="absolute bottom-5 left-5 right-5 flex justify-between items-center bg-obsidian/90 backdrop-blur-md px-4 py-2.5 rounded-full border border-white/10 text-xs shadow-xl pointer-events-none">
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#ff6b6b]" />
-                <span className="text-gray-300 truncate">Flooded Zone</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#51cf66]" />
-                <span className="text-gray-300 truncate">Elevation Bypass</span>
-              </div>
-              <div className="flex items-center gap-1.5 text-clay-gold font-semibold">
-                <MapPin className="w-3 h-3" />
-                <span className="truncate max-w-[110px]">{activeLocation.name?.split(',')[0]}</span>
-              </div>
-            </div>
-          </div>
-        </div>
+            {/* ================= LEFT COLUMN (7 Cols) ================= */}
+            <div className="lg:col-span-7 flex flex-col gap-5">
+              
+              {/* Hero Atmospheric Storm Backdrop Card */}
+              <div className="relative w-full h-[360px] md:h-[400px] rounded-[28px] overflow-hidden border border-[#2b2d36] shadow-[0_16px_40px_rgba(0,0,0,0.6)] flex flex-col justify-between p-7 md:p-9 group">
+                
+                {/* Atmospheric Dark Storm Clouds Background */}
+                <img 
+                  alt="Atmospheric clouds Manila" 
+                  className="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.75] contrast-[1.1] transition-transform duration-1000 group-hover:scale-105" 
+                  src="/assets/storm_clouds.jpg"
+                />
 
-        {/* Street-Level Surface Cam Modal (Mapillary JS) */}
-        {streetViewData.isOpen && (
-          <StreetViewerModal
-            isOpen={streetViewData.isOpen}
-            onClose={() => setStreetViewData(prev => ({ ...prev, isOpen: false }))}
-            imageId={streetViewData.imageId}
-            activeLocation={{
-              name: streetViewData.locationName || activeLocation.name,
-              coordinates: [
-                typeof streetViewData.lng === 'number' && !isNaN(streetViewData.lng) ? streetViewData.lng : (activeLocation.coordinates ? activeLocation.coordinates[0] : 120.9894),
-                typeof streetViewData.lat === 'number' && !isNaN(streetViewData.lat) ? streetViewData.lat : (activeLocation.coordinates ? activeLocation.coordinates[1] : 14.6091)
-              ],
-              depthMeters: activeMetrics.depthMeters,
-              bearing: streetViewData.bearing ?? streetViewPosition.bearing ?? 48,
-              heading: streetViewData.bearing ?? streetViewPosition.bearing ?? 48,
-            }}
-            onCameraMove={handleCameraMove}
-          />
-        )}
+                {/* Vignette & Dark Radial Gradients */}
+                <div className="absolute inset-0 bg-gradient-to-t from-[#141519]/90 via-[#17191f]/40 to-[#141519]/60 pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-r from-[#141519]/80 via-transparent to-black/40 pointer-events-none" />
 
-        {/* 3. Commute Safety & River Sensor Carousel */}
-        <div id="sensors-section" className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          
-          {/* Card 1: Safe Route Option */}
-          <div className="bg-[#1a1a1e] border border-[#26262b] rounded-3xl p-5 shadow-lg flex flex-col justify-between">
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <span className="font-serif text-xs font-bold tracking-wider uppercase text-[#9ca3af]">Suggested Bypass</span>
-                <ShieldCheck className="w-5 h-5 text-sage-green" />
-              </div>
-              <h3 className="font-serif font-bold text-lg text-white">{bypassInfo.title}</h3>
-              <p className="text-xs text-[#9ca3af] mt-1 leading-relaxed">{bypassInfo.description}</p>
-            </div>
-            <div className="mt-4">
-              <div className="pt-3 border-t border-[#26262b] flex items-center justify-between text-xs font-bold mb-3">
-                <span className="font-mono text-white tabular-nums">{bypassInfo.detour}</span>
-                <span className="text-sage-green font-bold flex items-center gap-1 font-mono"><span className="tabular-nums">100%</span> Flood Free</span>
-              </div>
-              <button
-                onClick={() => handleOpenStreetCam({
-                  name: bypassInfo.title,
-                  coordinates: activeLocation.coordinates
-                })}
-                className="w-full py-2.5 px-3 rounded-xl bg-[#121214] hover:bg-black text-white border border-[#26262b] hover:border-clay-gold/40 active:scale-95 transition-all text-xs font-sans font-bold flex items-center justify-center gap-2 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
-                title="Inspect Bypass Corridor on Street Cam"
-              >
-                <Camera className="w-3.5 h-3.5 text-clay-gold" />
-                <span>Inspect Bypass Street Cam</span>
-              </button>
-            </div>
-          </div>
+                {/* Top Row inside Card: Live Doppler & Status Badges */}
+                <div className="relative z-10 flex items-center justify-between">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1b1d24]/75 backdrop-blur-md border border-[#30333e] text-[11px] font-medium text-[#c4c7d2]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#54b2d3] animate-pulse"></span>
+                    NCR Doppler Active
+                  </span>
+                  <span className="text-[11px] font-mono text-[#8c909d] bg-[#141519]/70 px-2.5 py-0.5 rounded-full border border-white/5">
+                    {activeLocation.heading || 48}° N Sweep
+                  </span>
+                </div>
 
-          {/* Card 2: River Basin Telemetry */}
-          <div 
-            onClick={() => setShowSensorsModal(true)}
-            className="bg-[#1a1a1e] border border-[#26262b] hover:border-clay-amber/50 cursor-pointer rounded-3xl p-5 shadow-lg flex flex-col justify-between transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
-            role="button"
-            tabIndex={0}
-            aria-label="Open River Telemetry Details"
-            onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowSensorsModal(true); }}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <span className="font-serif text-xs font-bold tracking-wider uppercase text-[#9ca3af]">River Telemetry</span>
-              <Waves className="w-5 h-5 text-clay-amber" />
+                {/* Middle/Bottom Main Reading & High/Low Badges */}
+                <div className="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                  
+                  {/* Flood Gauge & Climate Reading */}
+                  <div className="flex flex-col">
+                    <div className="flex items-baseline gap-2">
+                      <span className="font-display font-light text-7xl md:text-8xl leading-none tracking-tight text-white drop-shadow-md">
+                        {activeMetrics.depthMeters !== null ? activeMetrics.depthMeters.toFixed(1) : '0.0'}
+                        <span className="text-3xl md:text-4xl font-normal text-[#c4c7d2] -ml-1">m</span>
+                      </span>
+                    </div>
+
+                    <h2 className="font-display text-2xl md:text-3xl font-semibold text-white tracking-tight mt-1 flex items-center gap-2">
+                      <span>{activeMetrics.passability?.includes('Closed') ? 'Impassable' : activeMetrics.passability?.includes('Caution') ? 'Caution Advised' : 'Passable'}</span>
+                      {activeMetrics.passability?.includes('Closed') && (
+                        <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#ff6b6b]/20 border border-[#ff6b6b]/40 text-[#ff6b6b] font-sans">Submerged</span>
+                      )}
+                    </h2>
+
+                    <p className="text-[14px] md:text-sm font-semibold text-[#abb0bf] font-normal mt-0.5">
+                      {activeMetrics.severityLabel || 'Dry with partly cloudy intervals'}
+                    </p>
+
+                    <div className="flex items-center gap-2.5 mt-3.5">
+                      <span className="px-3.5 py-1 rounded-full bg-[#20232c]/80 backdrop-blur-md border border-[#2f323e] text-[12px] text-[#c7cad5] font-medium font-mono">
+                        H {activeMetrics.depthMeters ? (activeMetrics.depthMeters * 1.3).toFixed(1) : '0.4'}m
+                      </span>
+                      <span className="px-3.5 py-1 rounded-full bg-[#20232c]/80 backdrop-blur-md border border-[#2f323e] text-[12px] text-[#c7cad5] font-medium font-mono">
+                        L 0.0m
+                      </span>
+                      <button
+                        onClick={() => handleOpenStreetCam()}
+                        className="px-3 py-1 rounded-full bg-[#54b2d3]/20 hover:bg-[#54b2d3]/30 border border-[#54b2d3]/40 text-[#54b2d3] text-[11px] font-medium transition flex items-center gap-1"
+                      >
+                        <Camera className="w-3 h-3" />
+                        <span>Inspect Street Cam</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Translucent Glass Explanatory Note */}
+                  <div className="w-full md:w-[220px] p-4 rounded-2xl bg-[#1a1c23]/75 backdrop-blur-xl border border-[#2f333f] text-[#b4b8c6] text-[11px] md:text-[12px] leading-relaxed shadow-lg">
+                    With real-time telemetry and advanced LiDAR sensors, we provide millimeter-accurate flood analysis across NCR sectors.
+                  </div>
+
+                </div>
+
+              </div>
+
+              {/* Bottom Row 1: Hourly Forecast Capsule Pill Row */}
+              <div className="grid grid-cols-4 sm:grid-cols-8 gap-2.5 p-4 rounded-[26px] bg-[#1c1e24] border border-[#262831]">
+                {(liveWeather.hourly && liveWeather.hourly.length > 0 ? liveWeather.hourly : [
+                  { label: 'Now', icon: 'cloud', depthMeters: '0.0m' },
+                  { label: '2 PM', icon: 'cloud', depthMeters: '0.0m' },
+                  { label: '3 PM', icon: 'cloud', depthMeters: '0.1m' },
+                  { label: '4 PM', icon: 'rainy', pop: 60, depthMeters: '0.3m' },
+                  { label: '5 PM', icon: 'rainy', pop: 60, depthMeters: '0.2m' },
+                  { label: '6 PM', icon: 'cloud', depthMeters: '0.1m' },
+                  { label: '7 PM', icon: 'cloud', depthMeters: '0.0m' },
+                  { label: '8 PM', icon: 'nights_stay', depthMeters: '0.0m' },
+                ]).slice(0, 8).map((hour, idx) => (
+                  <div 
+                    key={idx}
+                    className={`flex flex-col items-center py-2 px-1 rounded-2xl transition-colors ${
+                      hour.pop && hour.pop >= 50
+                        ? 'bg-[#23262f] border border-[#2f323d]'
+                        : 'hover:bg-[#23252e]'
+                    }`}
+                  >
+                    <span className="text-[12px] text-[#8e93a0] font-medium">{hour.label}</span>
+                    {hour.pop && hour.pop >= 40 ? (
+                      <span className="text-[10px] text-[#54b2d3] font-semibold -mt-0.5">{hour.pop}%</span>
+                    ) : (
+                      <span className="text-[10px] text-transparent -mt-0.5">·</span>
+                    )}
+                    <span className="material-symbols-outlined text-2xl text-[#c8cbd5] my-1.5">
+                      {hour.icon || 'cloud'}
+                    </span>
+                    <span className="text-[14px] font-display font-semibold text-white font-mono">
+                      {hour.depthMeters || '0.0m'}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Bottom Row 2: 7-Day Forecast Multi-Card Strip */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5">
+                {(liveWeather.daily && liveWeather.daily.length > 0 ? liveWeather.daily : [
+                  { day: 'Sun', icon: 'sunny', high: 28, low: 12 },
+                  { day: 'Mon', icon: 'partly_cloudy_day', high: 26, low: 11 },
+                  { day: 'Tue', icon: 'cloud', high: 27, low: 12 },
+                  { day: 'Wed', icon: 'rainy', high: 23, low: 13, isHighlight: true, pop: 60 },
+                  { day: 'Thu', icon: 'cloud', high: 30, low: 14 },
+                  { day: 'Fri', icon: 'partly_cloudy_day', high: 23, low: 10 },
+                  { day: 'Sat', icon: 'sunny', high: 24, low: 9 },
+                ]).slice(0, 7).map((d, idx) => (
+                  <div 
+                    key={idx}
+                    className={`p-3.5 rounded-[22px] border flex flex-col items-center text-center transition-all ${
+                      d.isHighlight 
+                        ? 'bg-[#22242c] border-[#30333d] shadow-md' 
+                        : 'bg-[#1c1e24] border-[#272932]'
+                    }`}
+                  >
+                    <span className={`text-[12px] font-medium ${d.isHighlight ? 'text-[#c4c7d2]' : 'text-[#8e93a0]'}`}>
+                      {d.day}
+                    </span>
+                    <div className="flex flex-col items-center my-2">
+                      <span className={`material-symbols-outlined text-[26px] ${d.isHighlight ? 'text-[#54b2d3]' : 'text-[#e0a256]'}`}>
+                        {d.icon || 'partly_cloudy_day'}
+                      </span>
+                      {d.pop && d.pop >= 40 && (
+                        <span className="text-[10px] text-[#54b2d3] font-semibold -mt-1">{d.pop}%</span>
+                      )}
+                    </div>
+                    <span className="text-sm font-semibold font-display font-semibold text-white font-mono">
+                      {d.high}°
+                    </span>
+                    <span className="text-[12px] text-[#6b6f7d] font-mono">
+                      {d.low}°
+                    </span>
+                  </div>
+                ))}
+              </div>
+
             </div>
-            <div>
-              <h3 className="font-serif font-bold text-lg text-white">Marikina River</h3>
-              <p className="text-xs text-[#9ca3af] mt-1">Sto. Niño Monitoring Post • Alert Level 2</p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-[#26262b]">
-              <div className="flex items-baseline justify-between mb-2">
-                <span className="text-xs text-[#9ca3af]">Water Level</span>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-sm font-extrabold font-mono text-clay-amber tabular-nums">16.4m</span>
-                  <span className="text-xs font-mono text-[#9ca3af] tabular-nums">/ 18.0m</span>
+
+            {/* ================= RIGHT COLUMN (5 Cols) ================= */}
+            <div className="lg:col-span-5 flex flex-col gap-5">
+              
+              {/* Card 1: Live River & Drainage Conditions with Glowing SVG Wave */}
+              <div className="p-6 rounded-[28px] bg-[#1c1e24] border border-[#272932] shadow-[0_12px_32px_rgba(0,0,0,0.5)] flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-lg text-[#e07a3f]">waves</span>
+                    <h3 className="font-display font-semibold text-[16px] text-white tracking-tight">Live River & Drainage Conditions</h3>
+                  </div>
+                  <div 
+                    onClick={() => setShowSensorsModal(true)}
+                    className="flex items-center gap-1.5 cursor-pointer group"
+                  >
+                    <span className="px-2.5 py-0.5 rounded-full bg-[#54b2d3]/15 text-[#54b2d3] text-[11px] font-medium border border-[#54b2d3]/30">Sensor Stream</span>
+                    <span className="material-symbols-outlined text-lg text-[#767987] group-hover:text-white transition-colors">chevron_right</span>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between mb-2">
+                  <div className="text-xs text-[#8e93a0] font-medium flex items-center gap-1.5">
+                    <span className="text-[#54b2d3] font-semibold">San Juan Riverway</span>
+                    <span className="text-[#abb0bf]">· 2.1m below spillway</span>
+                  </div>
+                  <div className="px-3 py-0.5 rounded-full bg-[#e07a3f]/15 border border-[#e07a3f]/40 text-[#f59e6c] font-medium text-[11px] tracking-wide">
+                    {telemetryMode === 'scenario' ? 'Dangerous Surge Alert' : 'Normal Headway'}
+                  </div>
+                </div>
+
+                {/* Spline Curve Graph (Cyan to Amber glowing gradient wave) */}
+                <div className="w-full h-20 my-1 relative">
+                  <svg className="w-full h-full overflow-visible" preserveAspectRatio="none" viewBox="0 0 360 80">
+                    <defs>
+                      <linearGradient id="curveGradient" x1="0%" x2="100%" y1="0%" y2="0%">
+                        <stop offset="0%" stopColor="#54b2d3" />
+                        <stop offset="65%" stopColor="#878afb" />
+                        <stop offset="100%" stopColor="#e07a3f" />
+                      </linearGradient>
+                      <filter height="200%" id="glow" width="200%" x="-50%" y="-50%">
+                        <feGaussianBlur in="SourceGraphic" result="coloredBlur" stdDeviation="2.5" />
+                        <feMerge>
+                          <feMergeNode in="coloredBlur" />
+                          <feMergeNode in="SourceGraphic" />
+                        </feMerge>
+                      </filter>
+                    </defs>
+                    <path 
+                      d="M 0,56 C 50,56 95,30 145,30 C 190,30 225,48 265,48 C 295,48 325,18 360,16" 
+                      fill="none" 
+                      filter="url(#glow)" 
+                      stroke="url(#curveGradient)" 
+                      strokeLinecap="round" 
+                      strokeWidth="3"
+                    />
+                    <circle cx="265" cy="48" fill="#ffffff" r="4.5" stroke="#1c1e24" strokeWidth="2" />
+                  </svg>
+                </div>
+
+                {/* 3 Bottom Metric Badges */}
+                <div className="grid grid-cols-3 pt-3 border-t border-[#262831] mt-1">
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-lg text-[#8e93a0]">humidity_percentage</span>
+                    <div>
+                      <div className="text-xs font-semibold text-white font-mono">{liveWeather.humidity || 78}%</div>
+                      <div className="text-[10px] text-[#717582]">Humidity</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-lg text-[#8e93a0]">air</span>
+                    <div>
+                      <div className="text-[12px] font-semibold text-white font-mono">{liveWeather.windSpeed || 12} km/h</div>
+                      <div className="text-[10px] text-[#717582]">Wind NW</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="material-symbols-outlined text-lg text-[#8e93a0]">speed</span>
+                    <div>
+                      <div className="text-xs font-semibold text-white font-mono">1012 hPa</div>
+                      <div className="text-[10px] text-[#717582]">Barometer</div>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div className="w-full bg-[#222328] rounded-full h-2 overflow-hidden mb-2">
-                <div 
-                  className="bg-clay-amber h-full rounded-full transition-all duration-700 ease-out-expo" 
-                  style={{ width: '82%' }}
-                />
-              </div>
-              <div className="flex items-center justify-between text-[11px] text-[#9ca3af]">
-                <span className="font-mono">Sensor: EFCOS-MR04</span>
-                <span className="text-clay-amber font-semibold font-mono">Tap for Details →</span>
-              </div>
-            </div>
-          </div>
 
-          {/* Card 3: Mass Transit Alert */}
-          <div className="bg-[#1a1a1e] border border-[#26262b] rounded-3xl p-5 shadow-lg flex flex-col justify-between">
-            <div className="flex items-center justify-between mb-3">
-              <span className="font-serif text-xs font-bold tracking-wider uppercase text-[#9ca3af]">Transit Clearance</span>
-              <Navigation className="w-5 h-5 text-[#9ca3af]" />
-            </div>
-            <div>
-              <h3 className="font-serif font-bold text-lg text-white">LRT-2 & MRT-3</h3>
-              <p className="text-xs text-[#9ca3af] mt-1">Operating normal headway across viaducts</p>
-            </div>
-            <div className="mt-4 pt-3 border-t border-[#26262b] space-y-2">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-[#9ca3af]">Elevated Rail Grid</span>
-                <span className="inline-flex items-center gap-1.5 text-xs font-bold text-sage-green font-mono">
-                  <span className="w-1.5 h-1.5 rounded-full bg-sage-green animate-pulse" />
-                  Normal Service
-                </span>
-              </div>
-              <div className="flex items-center justify-between text-xs pt-1 border-t border-white/5">
-                <span className="text-[#9ca3af]">Footbridge Access</span>
-                <span className="text-xs text-clay-amber font-bold font-mono">Clear / Dry Deck</span>
-              </div>
-            </div>
-          </div>
-        </div>
+              {/* Card 2: Interactive Doppler Radar Map (Polar Grid / MapLibre Toggle) */}
+              <div className="p-5 rounded-[28px] bg-[#1c1e24] border border-[#272932] shadow-[0_12px_32px_rgba(0,0,0,0.5)] flex flex-col gap-3 relative overflow-hidden">
+                <div className="flex items-center justify-between z-10">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-[#202228] border border-[#2b2d36] flex items-center justify-center text-[#54b2d3]">
+                      <span className="material-symbols-outlined text-lg">radar</span>
+                    </div>
+                    <div>
+                      <div className="font-display font-semibold text-sm font-semibold text-white flex items-center gap-2">
+                        Doppler Radar Map
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#54b2d3]/15 text-[#54b2d3] border border-[#54b2d3]/30 font-sans">
+                          {radarViewMode === 'radar' ? 'NCR 0.5° GIS' : 'MapLibre Vector'}
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-[#7a7e8b]">
+                        {activeLocation.lat?.toFixed(4)}° N, {activeLocation.lon?.toFixed(4)}° E · {activeLocation.name?.split(',')[0]} Sweep
+                      </div>
+                    </div>
+                  </div>
 
-        {/* 4. Minimal Bottom Pill Navigation Island (Docked cleanly below cards) */}
-        <div className="w-full flex justify-center mt-6 mb-2 px-3">
-          <nav className="inline-flex items-center gap-1 bg-[#1a1a1e] border border-[#26262b] p-1.5 rounded-full shadow-xl">
-            {/* Viewport Anchors */}
-            <div className="flex items-center gap-1">
-              {['Overview', 'Radar Map'].map((tab) => {
-                const isTabActive = activeTab === tab;
-                return (
-                  <button
-                    key={tab}
-                    onClick={() => handleTabClick(tab)}
-                    className={`px-3 sm:px-4 py-2.5 rounded-full text-xs min-h-[44px] min-w-[44px] transition-all duration-200 active:scale-95 flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold ${
-                      isTabActive
-                        ? 'bg-clay-gold text-pitch-black font-sans font-bold shadow-lg'
-                        : 'text-[#9ca3af] hover:text-white hover:bg-white/5 font-sans font-medium'
-                    }`}
-                    title={tab}
-                    aria-label={tab}
+                  <div className="flex items-center gap-1.5">
+                    <button 
+                      onClick={() => setRadarViewMode(prev => prev === 'radar' ? 'vector' : 'radar')}
+                      className="px-2.5 py-1 rounded-full bg-[#23252d] border border-[#2e303b] text-[#c4c7d2] hover:text-white text-[11px] font-medium transition-colors flex items-center gap-1"
+                    >
+                      <span className="material-symbols-outlined text-[14px]">layers</span>
+                      <span>{radarViewMode === 'radar' ? 'Vector Map' : 'Polar Radar'}</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Radar Viewport with Polar Mesh or Interactive MapLibre */}
+                <div className="relative w-full h-[220px] rounded-2xl bg-[#141519] border border-[#252731] overflow-hidden flex items-center justify-center group">
+                  {radarViewMode === 'radar' ? (
+                    <>
+                      {/* Stylized Polar Rings & Range Rings */}
+                      <svg className="absolute inset-0 w-full h-full opacity-60" preserveAspectRatio="xMidYMid slice" viewBox="0 0 400 180">
+                        <defs>
+                          <radialGradient cx="50%" cy="50%" id="sweepGlow" r="50%">
+                            <stop offset="0%" stopColor="#54b2d3" stopOpacity="0.35" />
+                            <stop offset="60%" stopColor="#878afb" stopOpacity="0.15" />
+                            <stop offset="100%" stopColor="#54b2d3" stopOpacity="0" />
+                          </radialGradient>
+                        </defs>
+                        <circle cx="200" cy="90" fill="none" r="80" stroke="#2c2f3a" strokeDasharray="3 3" strokeWidth="1" />
+                        <circle cx="200" cy="90" fill="none" r="55" stroke="#2a2c37" strokeWidth="1" />
+                        <circle cx="200" cy="90" fill="none" r="30" stroke="#2a2c37" strokeWidth="1" />
+                        <line stroke="#262833" strokeWidth="1" x1="200" x2="200" y1="10" y2="170" />
+                        <line stroke="#262833" strokeWidth="1" x1="80" x2="320" y1="90" y2="90" />
+                        <path d="M 140,60 Q 165,40 190,55 Q 180,85 150,80 Z" fill="#54b2d3" fillOpacity="0.28" />
+                        <path d="M 220,100 Q 255,85 270,110 Q 240,135 215,115 Z" fill="#e07a3f" fillOpacity="0.35" />
+                        <circle cx="168" cy="62" fill="#878afb" fillOpacity="0.45" r="12" />
+                        <path d="M 200,90 L 275,30 A 85 85 0 0 0 200,5 Z" fill="url(#sweepGlow)" />
+                      </svg>
+
+                      {/* Location Overlay Markers */}
+                      <div className="absolute left-[47%] top-[45%] flex flex-col items-center pointer-events-none">
+                        <div className="w-3.5 h-3.5 rounded-full bg-[#54b2d3] ring-4 ring-[#54b2d3]/30 animate-pulse" />
+                        <span className="text-[10px] font-semibold text-white bg-[#1a1c23]/90 px-1.5 py-0.5 rounded mt-1 border border-[#30333e] whitespace-nowrap">
+                          {activeLocation.name?.split(',')[0]}
+                        </span>
+                      </div>
+                      <div className="absolute left-[62%] top-[30%] flex items-center gap-1 pointer-events-none">
+                        <div className="w-2 h-2 rounded-full bg-[#e07a3f]" />
+                        <span className="text-[10px] text-[#f59e6c] font-medium bg-[#141519]/80 px-1 rounded">UST Gate 2</span>
+                      </div>
+                      <div className="absolute left-[30%] top-[65%] flex items-center gap-1 pointer-events-none">
+                        <div className="w-2 h-2 rounded-full bg-[#878afb]" />
+                        <span className="text-[10px] text-[#c0c1ff] font-medium bg-[#141519]/80 px-1 rounded">Lacson St</span>
+                      </div>
+
+                      {/* Range Legends */}
+                      <div className="absolute bottom-2 left-3 flex items-center gap-2 text-[10px] text-[#8e93a0]">
+                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#54b2d3]"></span> Clear (&lt;0.1m)</span>
+                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#e0a256]"></span> Advisory</span>
+                        <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#e07a3f]"></span> Critical</span>
+                      </div>
+                      <div className="absolute bottom-2 right-3 text-[10px] text-[#717582] font-mono">
+                        Radius 5.0 KM
+                      </div>
+                    </>
+                  ) : (
+                    <div className="w-full h-full relative">
+                      <MapViewport
+                        onMapClick={handleMapClick}
+                        streetViewActive={streetViewData.isOpen}
+                        cameraPosition={streetViewPosition}
+                        activeLocation={activeLocation}
+                        depthMeters={activeMetrics.depthMeters}
+                      />
+                    </div>
+                  )}
+                </div>
+
+                {/* Radar Status Toggles */}
+                <div className="flex items-center justify-between text-[11px] text-[#8c909d] pt-1">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2 h-2 rounded-full bg-[#54b2d3]"></span>
+                    <span>Bypass Viaduct: <span className="text-white font-medium">{bypassInfo.title}</span></span>
+                  </div>
+                  <div 
+                    onClick={() => handleOpenStreetCam()}
+                    className="flex items-center gap-1 text-[#54b2d3] font-medium cursor-pointer hover:underline"
                   >
-                    {tab === 'Overview' ? (
-                      <MapPin className={`w-3.5 h-3.5 ${isTabActive ? 'text-pitch-black' : 'text-[#9ca3af]'}`} />
-                    ) : (
-                      <Radio className={`w-3.5 h-3.5 ${isTabActive ? 'text-pitch-black' : 'text-[#9ca3af]'}`} />
-                    )}
-                    <span className={isTabActive ? 'inline' : 'hidden sm:inline'}>{tab}</span>
+                    <span>360° Ground Truth</span>
+                    <span className="material-symbols-outlined text-xs">north_east</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3: Live Ground Observation Feed (CCTV / Mapillary Surface Feed) */}
+              <div className="p-5 rounded-[28px] bg-[#1c1e24] border border-[#272932] shadow-[0_12px_32px_rgba(0,0,0,0.5)] flex flex-col gap-3.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-full bg-[#202228] border border-[#2a2c34] flex items-center justify-center text-[#e0a256]">
+                      <span className="material-symbols-outlined text-lg">videocam</span>
+                    </div>
+                    <div>
+                      <div className="font-display font-semibold text-sm font-semibold text-white tracking-tight flex items-center gap-2">
+                        <span>{activeLocation.name?.split(',')[0]} Feed</span>
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#e07a3f]/20 text-[#f59e6c] text-[10px] font-semibold border border-[#e07a3f]/30">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#e07a3f] animate-pulse"></span> CAM-04 LIVE
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-[#7a7e8b]">
+                        Junction Sensor Hub · Optical Ultrasonic Water Gauge
+                      </div>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => handleOpenStreetCam()}
+                    title="Expand 360° Ground Truth Camera"
+                    className="w-8 h-8 rounded-xl bg-[#23252d] border border-[#2d303b] flex items-center justify-center text-[#8c909d] hover:text-white transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[16px]">fullscreen</span>
                   </button>
-                );
-              })}
+                </div>
 
-              <button
-                onClick={() => handleTabClick('Street View')}
-                className={`px-3 sm:px-4 py-2.5 rounded-full text-xs min-h-[44px] min-w-[44px] transition-all duration-200 active:scale-95 flex items-center justify-center gap-1.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold ${
-                  streetViewData.isOpen
-                    ? 'bg-clay-gold text-pitch-black font-sans font-bold shadow-lg'
-                    : 'text-[#9ca3af] hover:text-white hover:bg-white/5 font-sans font-medium'
-                }`}
-                title="Street Level Ground Truth"
-                aria-label="Street Cam"
-              >
-                <Camera className={`w-3.5 h-3.5 ${streetViewData.isOpen ? 'text-pitch-black' : 'text-[#9ca3af]'}`} />
-                <span className={streetViewData.isOpen ? 'inline' : 'hidden sm:inline'}>Street Cam</span>
-              </button>
+                {/* Live CCTV Surface with Optical Overlay Badges */}
+                <div 
+                  onClick={() => handleOpenStreetCam()}
+                  className="relative w-full h-[150px] rounded-2xl overflow-hidden border border-[#2b2d36] group cursor-pointer"
+                >
+                  <img 
+                    alt="CCTV view" 
+                    className="w-full h-full object-cover object-center filter brightness-[0.8] contrast-[1.1] transition-transform duration-700 group-hover:scale-105" 
+                    src="/assets/cctv_espana.jpg"
+                    onError={(e) => {
+                      e.currentTarget.src = '/assets/storm_clouds.jpg';
+                    }}
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#141519]/90 via-transparent to-black/30 pointer-events-none" />
+
+                  {/* Corner Overlay Metadata */}
+                  <div className="absolute top-2.5 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#141519]/80 backdrop-blur-md border border-[#2d303b] text-[10px] text-[#c4c7d2]">
+                    <span className="material-symbols-outlined text-[12px] text-[#54b2d3]">straighten</span>
+                    <span>Roadway: <span className="text-white font-medium">{activeMetrics.depthMeters ? `${activeMetrics.depthMeters}m (Ponding)` : '0.0m (Dry Asphalt)'}</span></span>
+                  </div>
+
+                  <div className="absolute top-2.5 right-3 px-2 py-0.5 rounded-full bg-[#141519]/80 backdrop-blur-md border border-[#2d303b] text-[10px] text-[#8e93a0] font-mono">
+                    {new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false })} PHT
+                  </div>
+
+                  {/* Ground Level Verification Watermark */}
+                  <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-[11px]">
+                    <div className="flex items-center gap-1.5 text-white/90">
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#54b2d3]"></span>
+                      <span className="font-medium text-[10px] sm:text-[11px]">Submersible Sump Pumps: Operational</span>
+                    </div>
+                    <span className="text-[10px] text-[#b4b8c6] bg-[#1a1c23]/80 px-2 py-0.5 rounded border border-[#2c2f38]">
+                      LiDAR Synced
+                    </span>
+                  </div>
+                </div>
+              </div>
+
             </div>
 
-            {/* Architectural Divider Separating Views from Modals */}
-            <span className="w-px h-5 bg-[#26262b] mx-0.5 shrink-0" aria-hidden="true" />
+          </div>
 
-            {/* Quick Utility Sheets */}
-            <div className="flex items-center gap-1">
-              <button
-                type="button"
-                onClick={handleSearchFocus}
-                className="px-3 sm:px-3.5 py-2.5 rounded-full text-xs min-h-[44px] min-w-[44px] transition-all duration-200 active:scale-95 flex items-center justify-center gap-1.5 text-[#9ca3af] hover:text-white hover:bg-white/5 font-sans font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
-                title="Search Locations (Press /)"
-                aria-label="Search Corridors"
-              >
-                <Search className="w-3.5 h-3.5 text-clay-gold" />
-                <span className="hidden sm:inline">Search</span>
-              </button>
-
-              <button
-                onClick={() => setShowSensorsModal(true)}
-                className="px-3 sm:px-3.5 py-2.5 rounded-full text-xs min-h-[44px] min-w-[44px] transition-all duration-200 active:scale-95 flex items-center justify-center gap-1.5 text-[#9ca3af] hover:text-clay-amber hover:bg-clay-amber/10 font-sans font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-amber"
-                title="Open Live Hydro Sensor Feeds"
-                aria-label="Telemetry Sensors"
-              >
-                <Activity className="w-3.5 h-3.5 text-clay-amber" />
-                <span className="hidden sm:inline">Sensors</span>
-              </button>
-
-              <button
-                onClick={() => setShowEmergencyModal(true)}
-                className="px-3 sm:px-3.5 py-2.5 rounded-full text-xs min-h-[44px] min-w-[44px] transition-all duration-200 active:scale-95 flex items-center justify-center gap-1.5 text-soft-red hover:bg-soft-red/10 font-sans font-bold focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soft-red"
-                title="Open Emergency Rescue Hotlines"
-                aria-label="Emergency Hotlines"
-              >
-                <PhoneCall className="w-3.5 h-3.5 text-soft-red" />
-                <span className="hidden sm:inline">Hotlines</span>
-              </button>
-            </div>
-          </nav>
-        </div>
+        </main>
 
       </div>
 
-      {/* ===================== EMERGENCY RESCUE MODAL ===================== */}
+      {/* ===================== MONITORED CORRIDORS PICKER MODAL ===================== */}
+      {showCorridorsModal && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) setShowCorridorsModal(false);
+          }}
+        >
+          <div className="bg-[#1a1a1e] border border-[#262830] rounded-3xl max-w-md w-full p-6 shadow-2xl relative text-white animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-2xl text-[#54b2d3]">location_on</span>
+                <h3 className="text-lg font-display font-bold">Monitored Corridors</h3>
+              </div>
+              <button
+                onClick={() => setShowCorridorsModal(false)}
+                className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70"
+              >
+                ✕
+              </button>
+            </div>
+
+            <p className="text-xs text-[#8c909d] mb-4">
+              Quickly switch between radar telemetry sectors or press keys [1-5]:
+            </p>
+
+            <div className="space-y-2">
+              {corridorsList.map((corridor, idx) => (
+                <button
+                  key={corridor.name}
+                  onClick={() => handleSelectLocation(corridor)}
+                  className={`w-full p-3 rounded-2xl border text-left flex items-center justify-between transition ${
+                    activeLocation.name === corridor.name
+                      ? 'bg-[#23262f] border-[#54b2d3]/50 text-white'
+                      : 'bg-[#141519] border-[#262831] text-[#c4c7d2] hover:bg-[#1f2129]'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-5 h-5 rounded-md bg-white/5 text-[11px] font-mono flex items-center justify-center text-[#8c909d]">
+                      {idx + 1}
+                    </span>
+                    <span className="font-medium text-sm">{corridor.name}</span>
+                  </div>
+                  <span className="text-xs font-mono text-[#54b2d3]">Active</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===================== STREET VIEWER MODAL ===================== */}
+      {streetViewData.isOpen && (
+        <StreetViewerModal
+          isOpen={streetViewData.isOpen}
+          onClose={() => setStreetViewData(prev => ({ ...prev, isOpen: false }))}
+          lng={streetViewData.lng}
+          lat={streetViewData.lat}
+          bearing={streetViewData.bearing}
+          imageId={streetViewData.imageId}
+          locationName={streetViewData.locationName}
+          depthMeters={activeMetrics.depthMeters}
+          onCameraMove={handleCameraMove}
+        />
+      )}
+
+      {/* ===================== EMERGENCY RESCUE HOTLINES MODAL ===================== */}
       {showEmergencyModal && (
         <div 
           className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
@@ -1194,159 +1224,62 @@ export default function App() {
             if (e.target === e.currentTarget) setShowEmergencyModal(false);
           }}
         >
-          <div className="bg-[#1a1a1e] border border-[#26262b] rounded-4xl max-w-md w-full p-6 sm:p-7 shadow-2xl relative text-white animate-in zoom-in-95 duration-200 ease-out-expo">
-            
+          <div className="bg-[#1a1a1e] border border-[#262830] rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl relative text-white animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="p-2.5 rounded-2xl bg-soft-red/20 text-soft-red">
+                <div className="p-2.5 rounded-2xl bg-[#e07a3f]/20 text-[#f59e6c]">
                   <PhoneCall className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-white leading-none">Emergency Rescue Hotlines</h3>
-                  <p className="text-xs text-[#9ca3af] mt-1">Tap any number to call or copy for dispatch</p>
+                  <p className="text-xs text-[#8c909d] mt-1">24/7 Flood rescue, NDRRMC & MMDA response teams</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowEmergencyModal(false)}
-                aria-label="Close Emergency Hotline Directory"
-                className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-2.5 my-4">
-              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#121214] border border-[#26262b] transition group">
-                <a 
-                  href="tel:136" 
-                  className="flex-1 mr-3 focus-visible:outline-none"
-                  title="Call MMDA Metrobase"
-                >
-                  <div className="font-bold text-sm text-white group-hover:text-clay-gold transition">
-                    MMDA Metrobase (Traffic & Floods)
+            <div className="space-y-2.5 my-5">
+              {[
+                { name: 'MMDA Metrobase Flood Control', desc: 'Drainage clearing & road obstructions', num: '136' },
+                { name: 'Philippine Red Cross Disaster Ops', desc: 'Ambulance, rubber boat rescue', num: '143' },
+                { name: 'NDRRMC Emergency Operations', desc: 'National crisis response', num: '(02) 8911-1406' },
+                { name: 'Philippine Coast Guard Response', desc: 'Urban flood rescue divers', num: '(02) 8527-3877' },
+                { name: 'National Emergency 911', desc: 'Police, BFP fire & swift-water teams', num: '911' },
+              ].map(item => (
+                <div key={item.num} className="flex items-center justify-between p-3 rounded-2xl bg-[#141519] border border-[#262831]">
+                  <div>
+                    <div className="font-bold text-sm text-white">{item.name}</div>
+                    <div className="text-xs text-[#8c909d]">{item.desc}</div>
                   </div>
-                  <div className="text-xs text-[#9ca3af]">Road obstruction, flood towing, emergency pumping</div>
-                </a>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={(e) => handleCopyHotline('136', e)}
-                    className="px-2.5 py-1.5 min-h-[44px] rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs font-mono font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
-                    title="Copy number to clipboard"
-                    aria-label="Copy MMDA hotline number 136"
-                  >
-                    {copiedHotline === '136' ? 'Copied!' : 'Copy'}
-                  </button>
-                  <a 
-                    href="tel:136"
-                    className="text-clay-gold font-mono font-bold text-base tabular-nums px-3 py-1.5 min-h-[44px] flex items-center rounded-xl bg-clay-gold/10 hover:bg-clay-gold/20 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
-                    title="Dial 136"
-                  >
-                    136
-                  </a>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#121214] border border-[#26262b] transition group">
-                <a 
-                  href="tel:143" 
-                  className="flex-1 mr-3 focus-visible:outline-none"
-                  title="Call Philippine Red Cross"
-                >
-                  <div className="font-bold text-sm text-white group-hover:text-soft-red transition">
-                    Philippine Red Cross
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={(e) => handleCopyHotline(item.num, e)}
+                      className="px-2.5 py-1 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 text-xs font-mono font-medium"
+                    >
+                      {copiedHotline === item.num ? 'Copied' : 'Copy'}
+                    </button>
+                    <a
+                      href={`tel:${item.num.replace(/[^0-9]/g, '')}`}
+                      className="text-white font-mono font-bold text-sm px-3 py-1 rounded-xl bg-[#e07a3f] text-[#141519] hover:bg-[#e07a3f]/90 transition"
+                    >
+                      {item.num}
+                    </a>
                   </div>
-                  <div className="text-xs text-[#9ca3af]">Ambulance, rapid response & amphibian boats</div>
-                </a>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={(e) => handleCopyHotline('143', e)}
-                    className="px-2.5 py-1.5 min-h-[44px] rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs font-mono font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soft-red"
-                    title="Copy number to clipboard"
-                    aria-label="Copy Red Cross hotline number 143"
-                  >
-                    {copiedHotline === '143' ? 'Copied!' : 'Copy'}
-                  </button>
-                  <a 
-                    href="tel:143"
-                    className="text-soft-red font-mono font-bold text-base tabular-nums px-3 py-1.5 min-h-[44px] flex items-center rounded-xl bg-soft-red/10 hover:bg-soft-red/20 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-soft-red"
-                    title="Dial 143"
-                  >
-                    143
-                  </a>
                 </div>
-              </div>
-
-              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#121214] border border-[#26262b] transition group">
-                <a 
-                  href="tel:161" 
-                  className="flex-1 mr-3 focus-visible:outline-none"
-                  title="Call Marikina Rescue 161"
-                >
-                  <div className="font-bold text-sm text-white group-hover:text-sage-green transition">
-                    Marikina Rescue 161
-                  </div>
-                  <div className="text-xs text-[#9ca3af]">River overflow rescue & evacuation center coordination</div>
-                </a>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={(e) => handleCopyHotline('161', e)}
-                    className="px-2.5 py-1.5 min-h-[44px] rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs font-mono font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-green"
-                    title="Copy number to clipboard"
-                    aria-label="Copy Marikina Rescue hotline number 161"
-                  >
-                    {copiedHotline === '161' ? 'Copied!' : 'Copy'}
-                  </button>
-                  <a 
-                    href="tel:161"
-                    className="text-sage-green font-mono font-bold text-base tabular-nums px-3 py-1.5 min-h-[44px] flex items-center rounded-xl bg-sage-green/10 hover:bg-sage-green/20 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sage-green"
-                    title="Dial 161"
-                  >
-                    161
-                  </a>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between p-3.5 rounded-2xl bg-[#121214] border border-[#26262b] transition group">
-                <a 
-                  href="tel:911" 
-                  className="flex-1 mr-3 focus-visible:outline-none"
-                  title="Call National Emergency Hotline"
-                >
-                  <div className="font-bold text-sm text-white group-hover:text-white transition">
-                    National Emergency Hotline
-                  </div>
-                  <div className="text-xs text-[#9ca3af]">PNP, BFP fire & swift-water teams</div>
-                </a>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button
-                    type="button"
-                    onClick={(e) => handleCopyHotline('911', e)}
-                    className="px-2.5 py-1.5 min-h-[44px] rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs font-mono font-medium transition active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
-                    title="Copy number to clipboard"
-                    aria-label="Copy National Emergency hotline number 911"
-                  >
-                    {copiedHotline === '911' ? 'Copied!' : 'Copy'}
-                  </button>
-                  <a 
-                    href="tel:911"
-                    className="text-white font-mono font-bold text-base tabular-nums px-3 py-1.5 min-h-[44px] flex items-center rounded-xl bg-white/10 hover:bg-white/20 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
-                    title="Dial 911"
-                  >
-                    911
-                  </a>
-                </div>
-              </div>
+              ))}
             </div>
 
             <button
               onClick={() => setShowEmergencyModal(false)}
-              className="w-full py-3 rounded-2xl bg-clay-gold hover:bg-clay-gold/90 text-obsidian font-bold text-sm transition shadow-lg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
+              className="w-full py-3 rounded-2xl bg-[#e07a3f] text-[#141519] font-bold text-sm transition hover:bg-[#e07a3f]/90"
             >
-              Close Hotline Directory
+              Close Directory
             </button>
           </div>
         </div>
@@ -1360,76 +1293,70 @@ export default function App() {
             if (e.target === e.currentTarget) setShowSensorsModal(false);
           }}
         >
-          <div className="bg-[#1a1a1e] border border-[#26262b] rounded-4xl max-w-lg w-full p-6 sm:p-7 shadow-2xl relative text-white animate-in zoom-in-95 duration-200 ease-out-expo">
-            
+          <div className="bg-[#1a1a1e] border border-[#262830] rounded-3xl max-w-lg w-full p-6 sm:p-7 shadow-2xl relative text-white animate-in zoom-in-95 duration-200">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2.5">
-                <div className="p-2.5 rounded-2xl bg-clay-amber/20 text-clay-amber">
+                <div className="p-2.5 rounded-2xl bg-[#54b2d3]/20 text-[#54b2d3]">
                   <Activity className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="text-lg font-bold text-white leading-none">Metro Manila Hydro Telemetry</h3>
-                  <p className="text-xs text-[#9ca3af] mt-1">Live ultrasonic river gauge & Doppler radar feed</p>
+                  <p className="text-xs text-[#8c909d] mt-1">Live ultrasonic river gauge & Doppler radar feed</p>
                 </div>
               </div>
               <button
                 type="button"
                 onClick={() => setShowSensorsModal(false)}
-                aria-label="Close Hydro Telemetry Feed"
-                className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70 hover:text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
+                className="w-10 h-10 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white/70"
               >
                 ✕
               </button>
             </div>
 
             <div className="space-y-3 my-4 text-xs">
-              {/* Station 1: Marikina River */}
-              <div className="p-3.5 rounded-2xl bg-[#121214] border border-[#26262b]">
+              <div className="p-3.5 rounded-2xl bg-[#141519] border border-[#262831]">
                 <div className="flex items-center justify-between mb-1.5">
                   <span className="font-bold text-sm text-white">Marikina River (Sto. Niño Station)</span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-clay-amber/20 text-clay-amber font-mono font-bold text-xs tabular-nums">
+                  <span className="px-2.5 py-0.5 rounded-full bg-[#f7b731]/20 text-[#f7b731] font-mono font-bold text-xs">
                     16.4m (2nd Alarm)
                   </span>
                 </div>
                 <div className="w-full bg-[#222328] rounded-full h-2 overflow-hidden my-2">
-                  <div className="bg-clay-amber h-full w-[82%] rounded-full transition-all duration-700 ease-out-expo" />
+                  <div className="bg-[#f7b731] h-full w-[82%] rounded-full" />
                 </div>
-                <div className="flex items-center justify-between text-xs text-[#9ca3af] font-mono tabular-nums">
+                <div className="flex items-center justify-between text-xs text-[#8c909d] font-mono">
                   <span>15m (Alert)</span>
-                  <span className="text-clay-amber font-bold">16m (Alarm)</span>
-                  <span className="text-soft-red">18m (Evacuate)</span>
+                  <span className="text-[#f7b731] font-bold">16m (Alarm)</span>
+                  <span className="text-[#ff6b6b]">18m (Evacuate)</span>
                 </div>
               </div>
 
-              {/* Station 2: Manggahan Floodway */}
-              <div className="p-3.5 rounded-2xl bg-[#121214] border border-[#26262b] flex items-center justify-between">
+              <div className="p-3.5 rounded-2xl bg-[#141519] border border-[#262831] flex items-center justify-between">
                 <div>
                   <div className="font-bold text-sm text-white">Manggahan Floodway Discharge</div>
-                  <div className="text-[#9ca3af] mt-0.5">8 of 8 Sluice Gates Raised towards Laguna Lake</div>
+                  <div className="text-[#8c909d] mt-0.5">8 of 8 Sluice Gates Raised towards Laguna Lake</div>
                 </div>
-                <span className="font-mono font-bold text-clay-gold text-sm tabular-nums">
+                <span className="font-mono font-bold text-[#54b2d3] text-sm">
                   1,420 m³/s
                 </span>
               </div>
 
-              {/* Station 3: Pasig River */}
-              <div className="p-3.5 rounded-2xl bg-[#121214] border border-[#26262b] flex items-center justify-between">
+              <div className="p-3.5 rounded-2xl bg-[#141519] border border-[#262831] flex items-center justify-between">
                 <div>
                   <div className="font-bold text-sm text-white">Pasig River (Napindan Hydraulic Gate)</div>
-                  <div className="text-[#9ca3af] mt-0.5">Water elevation elevated; Ferry service suspended</div>
+                  <div className="text-[#8c909d] mt-0.5">Water elevation elevated; Ferry service suspended</div>
                 </div>
-                <span className="font-mono font-bold text-soft-red text-sm tabular-nums">
+                <span className="font-mono font-bold text-[#ff6b6b] text-sm">
                   11.2m (High Current)
                 </span>
               </div>
 
-              {/* Station 4: PAGASA Radar */}
-              <div className="p-3.5 rounded-2xl bg-[#121214] border border-[#26262b] flex items-center justify-between">
+              <div className="p-3.5 rounded-2xl bg-[#141519] border border-[#262831] flex items-center justify-between">
                 <div>
                   <div className="font-bold text-sm text-white">PAGASA Tanay Doppler Radar</div>
-                  <div className="text-[#9ca3af] mt-0.5">Monsoon surge over CAMANAVA & Manila Basin</div>
+                  <div className="text-[#8c909d] mt-0.5">Monsoon surge over CAMANAVA & Manila Basin</div>
                 </div>
-                <span className="font-mono font-bold text-clay-amber text-sm tabular-nums">
+                <span className="font-mono font-bold text-[#e07a3f] text-sm">
                   45 mm/hr
                 </span>
               </div>
@@ -1437,7 +1364,7 @@ export default function App() {
 
             <button
               onClick={() => setShowSensorsModal(false)}
-              className="w-full py-3 rounded-2xl bg-clay-gold hover:bg-clay-gold/90 text-obsidian font-bold text-sm transition shadow-lg active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold"
+              className="w-full py-3 rounded-2xl bg-[#54b2d3] text-[#141519] font-bold text-sm transition hover:bg-[#54b2d3]/90"
             >
               Close Telemetry Feed
             </button>

@@ -68,7 +68,9 @@ export default function StreetViewerModal({
   }, [isOpen, onClose]);
 
   const locationTitle = activeLocation?.name || 'Active Floodway Corridor';
-  const depthMeters = typeof activeLocation?.depthMeters === 'number' ? activeLocation.depthMeters : 1.2;
+  const depthMeters = typeof activeLocation?.depthMeters === 'number' && !Number.isNaN(activeLocation.depthMeters)
+    ? activeLocation.depthMeters
+    : null;
 
   // -------------------------------------------------------------
   // Mapillary Image Discovery & Fallback Trigger
@@ -402,12 +404,12 @@ export default function StreetViewerModal({
             {resolvedImageId && token && !viewerError && (
               <div className="absolute top-4 left-4 right-4 z-20 pointer-events-none flex flex-wrap items-center justify-between gap-2">
                 <div className="bg-obsidian/95 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 shadow-xl flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${depthMeters > 0.35 ? 'bg-[#f7b731] animate-pulse' : 'bg-emerald-400'}`} />
+                  <div className={`w-2 h-2 rounded-full ${depthMeters == null ? 'bg-gray-500' : depthMeters > 0.35 ? 'bg-[#f7b731] animate-pulse' : 'bg-emerald-400'}`} />
                   <span className="text-xs font-mono font-bold text-white tracking-wide">
                     PRE-FLOOD 360° CURB BENCHMARK (NOT LIVE CCTV)
                   </span>
                   <span className="hidden sm:inline-block text-[11px] text-[#9ca3af] border-l border-white/15 pl-2 font-mono">
-                    CURB WATERLINE: {depthMeters.toFixed(1)}m
+                    {depthMeters == null ? 'CURB WATERLINE: —' : `CURB WATERLINE: ${depthMeters.toFixed(1)}m`}
                   </span>
                 </div>
                 <div className="bg-obsidian/95 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 shadow-xl flex items-center gap-2">
@@ -424,14 +426,14 @@ export default function StreetViewerModal({
               <div className="absolute bottom-4 left-4 right-4 z-20 pointer-events-none flex items-center justify-between">
                 <div className="bg-obsidian/95 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 shadow-2xl flex items-center gap-3">
                   <div className="flex items-center gap-2.5">
-                    <Waves className={`w-4 h-4 ${depthMeters > 0.35 ? 'text-soft-red' : depthMeters > 0.15 ? 'text-clay-amber' : 'text-sage-green'}`} />
+                    <Waves className={`w-4 h-4 ${depthMeters == null ? 'text-gray-400' : depthMeters > 0.35 ? 'text-soft-red' : depthMeters > 0.15 ? 'text-clay-amber' : 'text-sage-green'}`} />
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">
-                          LIVE WATERLINE: {depthMeters.toFixed(1)}m
+                          {depthMeters == null ? 'LIVE WATERLINE: —' : `LIVE WATERLINE: ${depthMeters.toFixed(1)}m`}
                         </span>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${depthMeters > 0.35 ? 'bg-soft-red/20 text-soft-red' : depthMeters > 0.15 ? 'bg-clay-amber/20 text-clay-amber' : 'bg-sage-green/20 text-sage-green'}`}>
-                          {depthMeters > 0.35 ? 'CRITICAL SUBMERSION' : depthMeters > 0.15 ? 'CAUTION: GUTTER LINE' : 'SURFACE CLEAR'}
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${depthMeters == null ? 'bg-white/10 text-gray-300' : depthMeters > 0.35 ? 'bg-soft-red/20 text-soft-red' : depthMeters > 0.15 ? 'bg-clay-amber/20 text-clay-amber' : 'bg-sage-green/20 text-sage-green'}`}>
+                          {depthMeters == null ? 'NO SENSOR DATA' : depthMeters > 0.35 ? 'CRITICAL SUBMERSION' : depthMeters > 0.15 ? 'CAUTION: GUTTER LINE' : 'SURFACE CLEAR'}
                         </span>
                       </div>
                       <p className="text-[10px] text-[#9ca3af] mt-0.5">
@@ -544,20 +546,24 @@ export default function StreetViewerModal({
                 <div className="my-auto py-2">
                   <div className="flex items-baseline gap-1">
                     <span className="text-6xl sm:text-7xl font-sans font-extrabold tracking-tight text-pitch-black tabular-nums leading-none">
-                      {depthMeters.toFixed(1)}
-                      <span className="text-3xl sm:text-4xl font-sans font-bold ml-1 text-black">m</span>
+                      {depthMeters == null ? '—' : depthMeters.toFixed(1)}
+                      {depthMeters != null && (
+                        <span className="text-3xl sm:text-4xl font-sans font-bold ml-1 text-black">m</span>
+                      )}
                     </span>
                   </div>
                   <p className="text-xs sm:text-sm font-sans font-bold tracking-tight text-black/90 mt-1 flex items-center gap-1.5">
                     <AlertTriangle className="w-4 h-4 fill-black text-[#FFE142] flex-shrink-0" />
                     <span>
-                      {depthMeters >= 1.2 
-                        ? 'Critical Inundation • Above Hood Level' 
-                        : depthMeters >= 0.75 
-                          ? 'Severe Inundation • Chest Depth' 
-                          : depthMeters >= 0.35 
-                            ? 'Moderate Runoff • Knee Depth' 
-                            : 'Gutter Inundation • Minor Ponding'}
+                      {depthMeters == null
+                        ? 'Depth unavailable — no sensor coverage'
+                        : depthMeters >= 1.2 
+                          ? 'Critical Inundation • Above Hood Level' 
+                          : depthMeters >= 0.75 
+                            ? 'Severe Inundation • Chest Depth' 
+                            : depthMeters >= 0.35 
+                              ? 'Moderate Runoff • Knee Depth' 
+                              : 'Gutter Inundation • Minor Ponding'}
                     </span>
                   </p>
                 </div>
@@ -572,7 +578,7 @@ export default function StreetViewerModal({
               <div className="md:col-span-6 bg-[#121214] border border-[#26262b] rounded-3xl p-6 shadow-xl flex flex-col justify-between text-white min-h-[220px]">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-serif font-bold uppercase tracking-wider text-[#9ca3af]">
+                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#9ca3af]">
                       River Basin Spill Risk (EFCOS)
                     </span>
                     <Gauge className="w-5 h-5 text-clay-gold" />
@@ -618,7 +624,7 @@ export default function StreetViewerModal({
             <div className="mb-5">
               <div className="flex items-center gap-2 mb-3">
                 <Car className="w-4 h-4 text-clay-gold" />
-                <h4 className="font-serif text-sm font-bold text-white uppercase tracking-wider">
+                <h4 className="font-mono text-sm font-bold text-white uppercase tracking-wider">
                   Corridor Passability Matrix
                 </h4>
               </div>

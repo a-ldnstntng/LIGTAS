@@ -5,7 +5,7 @@ import { Eye } from 'lucide-react';
 import floodZones from '../data/floodPolygons.json';
 
 // Compute dynamic flood polygons and contrasting routes for any location in the Philippines
-function computeLocationGeometries(lon, lat, depthMeters = 1.2, locationName = '') {
+function computeLocationGeometries(lon, lat, depthMeters = 0, locationName = '') {
   const name = (locationName || '').toLowerCase();
 
   // 1. España, Manila
@@ -296,11 +296,14 @@ export default function MapViewport({
 
     let targetCoords = null;
     let locationName = '';
-    let depth = 1.2;
+    let depth = 0;
+    if (typeof loc.depthMeters === 'number' && !Number.isNaN(loc.depthMeters)) {
+      depth = loc.depthMeters;
+    }
 
     if (typeof loc === 'object') {
       locationName = loc.name || '';
-      depth = loc.depthMeters || 1.2;
+      depth = typeof loc.depthMeters === 'number' && !Number.isNaN(loc.depthMeters) ? loc.depthMeters : 0;
       if (loc.coordinates) {
         targetCoords = loc.coordinates;
       } else if (loc.lon && loc.lat) {

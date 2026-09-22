@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Ligtas NCR Flood &amp; Weather Dashboard</title>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&amp;family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<style>
+    @layer base {
+      html, body {
+        margin: 0;
+        padding: 0;
+        background-color: #111215;
+      }
+      ::-webkit-scrollbar { display: none; }
+    }
+  </style>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "surface-dim": "#111215",
+            "surface": "#16171b",
+            "surface-card": "#1d1f25",
+            "surface-card-hover": "#24262d",
+            "surface-border": "#282a32",
+            "surface-subtle": "#2c2e37",
+            "surface-pill": "#282a33",
+            "text-primary": "#f5f6f9",
+            "text-secondary": "#8c909d",
+            "text-muted": "#606470",
+            "accent-orange": "#e07a3f",
+            "accent-orange-bg": "rgba(224, 122, 63, 0.16)",
+            "accent-orange-border": "rgba(224, 122, 63, 0.35)",
+            "accent-cyan": "#54b2d3",
+            "accent-blue": "#4575f6"
+          },
+          borderRadius: {
+            "card": "24px",
+            "subcard": "18px",
+            "pill": "9999px"
+          },
+          fontFamily: {
+            sans: ["DM Sans", "sans-serif"],
+            display: ["Manrope", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+</head>
+<body class="bg-[#111215] text-[#f5f6f9] font-sans antialiased selection:bg-[#e07a3f]/30 min-h-screen p-3 md:p-6 lg:p-8 flex items-center justify-center">
+<!-- Master Smart-Display Tablet Container (Matches Image Reference) -->
+<div class="w-full max-w-[1540px] bg-[#17181d] border border-[#262830] rounded-[32px] md:rounded-[40px] shadow-[0_25px_70px_rgba(0,0,0,0.85),0_2px_4px_rgba(255,255,255,0.03)_inset] overflow-hidden flex flex-col md:flex-row min-h-[920px]">
+<!-- Left Slim Dock / Sidebar -->
+<aside class="w-full md:w-24 bg-[#141519] border-b md:border-b-0 md:border-r border-[#24262d] flex md:flex-col items-center justify-between p-4 md:py-8 flex-shrink-0 z-20">
+<!-- User Profile Avatar -->
+<div class="flex flex-col items-center">
+<div class="w-12 h-12 rounded-full ring-2 ring-[#2e303a] p-0.5 overflow-hidden transition-transform hover:scale-105 cursor-pointer shadow-lg">
+<img alt="User Avatar" class="w-full h-full object-cover rounded-full" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDO6UrYhknxvfnaoyVMpkR3Y5CBCc2nfhGph5q7SK3R9nXsMS-67Yn1vbTzTVtWEIaUUnW7_tzbcCVpIj3ACI4Qi6tcUYzF9KrnLIGPMfpGHL1pDUP8QPMLNnPQtLgUUTSUNjs0X3h5u0LY2nrTbYQJ4cLyNyM0EXo07hd0r-1Zl4j95aWEntNbOCvvfayaglPJ3ZTB1VePikMyDG70i5GvsSdweWTEYtcUfadTJJS_Ildla0M7ErI"/>
+</div>
+</div>
+<!-- Vertical Nav Icon Cluster -->
+<nav class="flex md:flex-col items-center gap-3 md:gap-4 my-auto">
+<!-- Active Nav Button (Home) -->
+<button class="w-12 h-12 rounded-2xl bg-[#2a2c35] text-[#ffffff] flex items-center justify-center shadow-[inset_0_1px_1px_rgba(255,255,255,0.12),0_4px_12px_rgba(0,0,0,0.4)] transition-all">
+<span class="material-symbols-outlined text-[24px]">home</span>
+</button>
+<!-- Location Pin -->
+<button class="w-12 h-12 rounded-2xl bg-transparent hover:bg-[#202228] text-[#8c909d] hover:text-[#f5f6f9] flex items-center justify-center transition-all">
+<span class="material-symbols-outlined text-[23px]">location_on</span>
+</button>
+<!-- Radar / Crosshair -->
+<button class="w-12 h-12 rounded-2xl bg-transparent hover:bg-[#202228] text-[#8c909d] hover:text-[#f5f6f9] flex items-center justify-center transition-all">
+<span class="material-symbols-outlined text-[23px]">radar</span>
+</button>
+<!-- Analytics / Bar Chart -->
+<button class="w-12 h-12 rounded-2xl bg-transparent hover:bg-[#202228] text-[#8c909d] hover:text-[#f5f6f9] flex items-center justify-center transition-all">
+<span class="material-symbols-outlined text-[23px]">bar_chart</span>
+</button>
+<!-- Settings / Gear -->
+<button class="w-12 h-12 rounded-2xl bg-transparent hover:bg-[#202228] text-[#8c909d] hover:text-[#f5f6f9] flex items-center justify-center transition-all">
+<span class="material-symbols-outlined text-[23px]">settings</span>
+</button>
+</nav>
+<!-- Bottom Status Refresh Sync -->
+<div class="hidden md:flex flex-col items-center text-center gap-1.5 cursor-pointer group">
+<div class="w-9 h-9 rounded-full bg-[#1b1c22] border border-[#272932] group-hover:border-[#383a45] flex items-center justify-center text-[#8c909d] group-hover:text-[#f5f6f9] transition-all">
+<span class="material-symbols-outlined text-[18px] group-hover:rotate-180 transition-transform duration-500">sync</span>
+</div>
+<div class="text-[10px] tracking-tight leading-tight text-[#707482]">
+<span class="block text-[#8c909d] font-medium">Updated</span>
+<span>Just now</span>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 p-5 md:p-8 lg:p-10 flex flex-col gap-6 md:gap-7 overflow-y-auto">
+<!-- Top Minimal Header Bar -->
+<header class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+<!-- Location Breadcrumb & Date -->
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-full bg-[#202228] border border-[#2a2c34] flex items-center justify-center text-[#f5f6f9]">
+<span class="material-symbols-outlined text-[18px]">location_on</span>
+</div>
+<div>
+<div class="text-[16px] md:text-[18px] font-display font-semibold tracking-tight text-[#f5f6f9]">
+              España, Manila, PH
+            </div>
+<div class="text-[12px] md:text-[13px] text-[#848794]">
+              Friday, January 4
+            </div>
+</div>
+</div>
+<!-- Top Right Actions: Search Pill & Download Report / App Pill -->
+<div class="flex items-center gap-3">
+<!-- Search Pill Button -->
+<button class="w-11 h-11 rounded-full bg-[#23252d] border border-[#2c2f38] hover:bg-[#2b2d37] text-[#8c909d] hover:text-[#ffffff] flex items-center justify-center transition-all shadow-sm">
+<span class="material-symbols-outlined text-[20px]">search</span>
+</button>
+<!-- Download App Pill Button -->
+<button class="h-11 px-5 rounded-full bg-[#2a2c35] border border-[#353842] hover:bg-[#343742] text-[#f5f6f9] font-medium text-[13px] tracking-wide flex items-center gap-2 shadow-[inset_0_1px_1px_rgba(255,255,255,0.08)] transition-all">
+<span>Download Report</span>
+</button>
+</div>
+</header>
+<!-- Main Central Layout Grid: Left Heavy Atmospheric Deck + Right Telemetry Modules -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+<!-- ================= LEFT COLUMN (7 Cols) ================= -->
+<div class="lg:col-span-7 flex flex-col gap-5">
+<!-- Hero Atmospheric Storm Backdrop Card -->
+<div class="relative w-full h-[360px] md:h-[400px] rounded-[28px] overflow-hidden border border-[#2b2d36] shadow-[0_16px_40px_rgba(0,0,0,0.6)] flex flex-col justify-between p-7 md:p-9 group">
+<!-- Atmospheric Dark Stormy Clouds Background Image -->
+<img alt="Stormy monsoon clouds in Manila" class="absolute inset-0 w-full h-full object-cover object-center filter brightness-[0.75] contrast-[1.1] transition-transform duration-1000 group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAazHOTQGpkVZmDQMR5s-FcLM3Ml943M8GMgLiUeqliDROUF3BfuyiCiMVzYZtIJXi9xHFdlvPAmxjxYIMmS5RgP9NIzZ_poQ7MA0iLL4EsF2BfFERQxLUcZtzxR79Ng_6yG1cAci_RjluEKrGfYn4PcporqcjeCSu3o6876FnWA362uzwjOvz7YNnUiZj9LzTml9dsN-jyllHJGXIdh6ZnDAn7CFC6vADWl6uX-RI3f5U913EX84"/>
+<!-- Vignette & Dark Radial Gradients to preserve legibility -->
+<div class="absolute inset-0 bg-gradient-to-t from-[#141519]/90 via-[#17191f]/40 to-[#141519]/60 pointer-events-none"></div>
+<div class="absolute inset-0 bg-gradient-to-r from-[#141519]/80 via-transparent to-black/40 pointer-events-none"></div>
+<!-- Top Row inside Card: (Empty or Micro-status) -->
+<div class="relative z-10 flex items-center justify-between">
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#1b1d24]/75 backdrop-blur-md border border-[#30333e] text-[11px] font-medium text-[#c4c7d2]">
+<span class="w-1.5 h-1.5 rounded-full bg-[#54b2d3] animate-pulse"></span>
+                NCR Doppler Active
+              </span>
+</div>
+<!-- Middle/Bottom Main Reading & Typography -->
+<div class="relative z-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
+<!-- Flood Gauge & Climate Reading -->
+<div class="flex flex-col">
+<!-- Massive Hero Metric -->
+<div class="flex items-baseline gap-2">
+<span class="font-display font-light text-[76px] md:text-[96px] leading-none tracking-tight text-white drop-shadow-md">
+                    0.0<span class="text-[34px] md:text-[40px] font-normal text-[#c4c7d2] -ml-1">m</span>
+</span>
+</div>
+<!-- Condition Title -->
+<h2 class="font-display text-[26px] md:text-[32px] font-semibold text-white tracking-tight mt-1">
+                  Passable
+                </h2>
+<!-- Condition Subtitle -->
+<p class="text-[14px] md:text-[15px] text-[#abb0bf] font-normal">
+                  Dry with partly cloudy intervals
+                </p>
+<!-- High / Low Badges -->
+<div class="flex items-center gap-2.5 mt-3.5">
+<span class="px-3.5 py-1 rounded-full bg-[#20232c]/80 backdrop-blur-md border border-[#2f323e] text-[12px] text-[#c7cad5] font-medium">
+                    H 0.4m
+                  </span>
+<span class="px-3.5 py-1 rounded-full bg-[#20232c]/80 backdrop-blur-md border border-[#2f323e] text-[12px] text-[#c7cad5] font-medium">
+                    L 0.0m
+                  </span>
+</div>
+</div>
+<!-- Sleek Translucent Glass Explanatory Note (as seen in image reference right corner) -->
+<div class="w-full md:w-[220px] p-4 rounded-2xl bg-[#1a1c23]/75 backdrop-blur-xl border border-[#2f333f] text-[#b4b8c6] text-[11px] md:text-[12px] leading-relaxed shadow-lg">
+                With real-time telemetry and advanced LiDAR sensors, we provide millimeter-accurate flood analysis across NCR sectors.
+              </div>
+</div>
+</div>
+<!-- Bottom Row 1: Hourly Forecast Capsule Pill Row -->
+<div class="grid grid-cols-4 sm:grid-cols-8 gap-2.5 p-4 rounded-[26px] bg-[#1c1e24] border border-[#262831]">
+<!-- Hourly Item 1: Now -->
+<div class="flex flex-col items-center py-2 px-1 rounded-2xl hover:bg-[#23252e] transition-colors">
+<span class="text-[12px] text-[#8e93a0] font-medium">Now</span>
+<span class="material-symbols-outlined text-[24px] text-[#c8cbd5] my-2">cloud</span>
+<span class="text-[14px] font-display font-semibold text-white">0.0m</span>
+</div>
+<!-- Hourly Item 2: 2 PM -->
+<div class="flex flex-col items-center py-2 px-1 rounded-2xl hover:bg-[#23252e] transition-colors">
+<span class="text-[12px] text-[#8e93a0] font-medium">2 PM</span>
+<span class="material-symbols-outlined text-[24px] text-[#c8cbd5] my-2">cloud</span>
+<span class="text-[14px] font-display font-semibold text-white">0.0m</span>
+</div>
+<!-- Hourly Item 3: 3 PM -->
+<div class="flex flex-col items-center py-2 px-1 rounded-2xl hover:bg-[#23252e] transition-colors">
+<span class="text-[12px] text-[#8e93a0] font-medium">3 PM</span>
+<span class="material-symbols-outlined text-[24px] text-[#c8cbd5] my-2">cloud</span>
+<span class="text-[14px] font-display font-semibold text-white">0.1m</span>
+</div>
+<!-- Hourly Item 4: 4 PM (60%) -->
+<div class="flex flex-col items-center py-2 px-1 rounded-2xl bg-[#23262f] border border-[#2f323d]">
+<span class="text-[11px] text-[#8e93a0] font-medium">4 PM</span>
+<span class="text-[10px] text-[#54b2d3] font-semibold -mt-0.5">60%</span>
+<span class="material-symbols-outlined text-[24px] text-[#54b2d3] my-1.5">rainy</span>
+<span class="text-[14px] font-display font-semibold text-white">0.3m</span>
+</div>
+<!-- Hourly Item 5: 5 PM (60%) -->
+<div class="flex flex-col items-center py-2 px-1 rounded-2xl bg-[#23262f] border border-[#2f323d]">
+<span class="text-[11px] text-[#8e93a0] font-medium">5 PM</span>
+<span class="text-[10px] text-[#54b2d3] font-semibold -mt-0.5">60%</span>
+<span class="material-symbols-outlined text-[24px] text-[#54b2d3] my-1.5">rainy</span>
+<span class="text-[14px] font-display font-semibold text-white">0.2m</span>
+</div>
+<!-- Hourly Item 6: 6 PM -->
+<div class="flex flex-col items-center py-2 px-1 rounded-2xl hover:bg-[#23252e] transition-colors">
+<span class="text-[12px] text-[#8e93a0] font-medium">6 PM</span>
+<span class="material-symbols-outlined text-[24px] text-[#c8cbd5] my-2">cloud</span>
+<span class="text-[14px] font-display font-semibold text-white">0.1m</span>
+</div>
+<!-- Hourly Item 7: 7 PM -->
+<div class="flex flex-col items-center py-2 px-1 rounded-2xl hover:bg-[#23252e] transition-colors">
+<span class="text-[12px] text-[#8e93a0] font-medium">7 PM</span>
+<span class="material-symbols-outlined text-[24px] text-[#c8cbd5] my-2">cloud</span>
+<span class="text-[14px] font-display font-semibold text-white">0.0m</span>
+</div>
+<!-- Hourly Item 8: 8 PM -->
+<div class="flex flex-col items-center py-2 px-1 rounded-2xl hover:bg-[#23252e] transition-colors">
+<span class="text-[12px] text-[#8e93a0] font-medium">8 PM</span>
+<span class="material-symbols-outlined text-[24px] text-[#8e93a0] my-2">nights_stay</span>
+<span class="text-[14px] font-display font-semibold text-white">0.0m</span>
+</div>
+</div>
+<!-- Bottom Row 2: 7-Day Forecast Multi-Card Strip -->
+<div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-2.5">
+<!-- Day 1: Sun -->
+<div class="p-3.5 rounded-[22px] bg-[#1c1e24] border border-[#272932] flex flex-col items-center text-center">
+<span class="text-[12px] font-medium text-[#8e93a0]">Sun</span>
+<span class="material-symbols-outlined text-[28px] text-[#e07a3f] my-2.5">sunny</span>
+<span class="text-[15px] font-display font-semibold text-white">28°</span>
+<span class="text-[12px] text-[#6b6f7d]">12°</span>
+</div>
+<!-- Day 2: Mon -->
+<div class="p-3.5 rounded-[22px] bg-[#1c1e24] border border-[#272932] flex flex-col items-center text-center">
+<span class="text-[12px] font-medium text-[#8e93a0]">Mon</span>
+<span class="material-symbols-outlined text-[28px] text-[#e0a256] my-2.5">partly_cloudy_day</span>
+<span class="text-[15px] font-display font-semibold text-white">26°</span>
+<span class="text-[12px] text-[#6b6f7d]">11°</span>
+</div>
+<!-- Day 3: Tue -->
+<div class="p-3.5 rounded-[22px] bg-[#1c1e24] border border-[#272932] flex flex-col items-center text-center">
+<span class="text-[12px] font-medium text-[#8e93a0]">Tue</span>
+<span class="material-symbols-outlined text-[28px] text-[#c2c5d1] my-2.5">cloud</span>
+<span class="text-[15px] font-display font-semibold text-white">27°</span>
+<span class="text-[12px] text-[#6b6f7d]">12°</span>
+</div>
+<!-- Day 4: Wed (Active Storm Highlight) -->
+<div class="p-3.5 rounded-[22px] bg-[#22242c] border border-[#30333d] flex flex-col items-center text-center shadow-md">
+<span class="text-[12px] font-medium text-[#c4c7d2]">Wed</span>
+<div class="flex flex-col items-center my-1.5">
+<span class="material-symbols-outlined text-[28px] text-[#54b2d3]">rainy</span>
+<span class="text-[10px] text-[#54b2d3] font-semibold -mt-1">60%</span>
+</div>
+<span class="text-[15px] font-display font-semibold text-white">23°</span>
+<span class="text-[12px] text-[#6b6f7d]">13°</span>
+</div>
+<!-- Day 5: Thu -->
+<div class="p-3.5 rounded-[22px] bg-[#1c1e24] border border-[#272932] flex flex-col items-center text-center">
+<span class="text-[12px] font-medium text-[#8e93a0]">Thu</span>
+<span class="material-symbols-outlined text-[28px] text-[#c2c5d1] my-2.5">cloud</span>
+<span class="text-[15px] font-display font-semibold text-white">30°</span>
+<span class="text-[12px] text-[#6b6f7d]">14°</span>
+</div>
+<!-- Day 6: Fri -->
+<div class="p-3.5 rounded-[22px] bg-[#1c1e24] border border-[#272932] flex flex-col items-center text-center">
+<span class="text-[12px] font-medium text-[#8e93a0]">Fri</span>
+<span class="material-symbols-outlined text-[28px] text-[#e0a256] my-2.5">partly_cloudy_day</span>
+<span class="text-[15px] font-display font-semibold text-white">23°</span>
+<span class="text-[12px] text-[#6b6f7d]">10°</span>
+</div>
+<!-- Day 7: Sat -->
+<div class="p-3.5 rounded-[22px] bg-[#1c1e24] border border-[#272932] flex flex-col items-center text-center">
+<span class="text-[12px] font-medium text-[#8e93a0]">Sat</span>
+<span class="material-symbols-outlined text-[28px] text-[#e07a3f] my-2.5">sunny</span>
+<span class="text-[15px] font-display font-semibold text-white">24°</span>
+<span class="text-[12px] text-[#6b6f7d]">9°</span>
+</div>
+</div>
+</div>
+<!-- ================= RIGHT COLUMN (5 Cols) ================= -->
+<div class="lg:col-span-5 flex flex-col gap-5"><!-- Card 1: Live River & Waterway Conditions with Dual-Tone Glow Wave -->
+<div class="p-6 rounded-[28px] bg-[#1c1e24] border border-[#272932] shadow-[0_12px_32px_rgba(0,0,0,0.5)] flex flex-col justify-between">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[19px] text-[#e07a3f]">waves</span>
+<h3 class="font-display font-semibold text-[16px] text-white tracking-tight">Live River &amp; Drainage Conditions</h3>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-0.5 rounded-full bg-[#54b2d3]/15 text-[#54b2d3] text-[11px] font-medium border border-[#54b2d3]/30">Sensor Stream</span>
+<span class="material-symbols-outlined text-[18px] text-[#767987] hover:text-white cursor-pointer transition-colors">chevron_right</span>
+</div>
+</div>
+<div class="flex items-center justify-between mb-2">
+<div class="text-[13px] text-[#8e93a0] font-medium flex items-center gap-1.5">
+<span class="text-[#54b2d3]">San Juan Riverway</span>
+<span class="text-[#abb0bf]">· 2.1m below spillway</span>
+</div>
+<div class="px-3 py-0.5 rounded-full bg-[#e07a3f]/15 border border-[#e07a3f]/40 text-[#f59e6c] font-medium text-[11px] tracking-wide">
+      Dangerous Surge Alert
+    </div>
+</div>
+<!-- Spline Curve Graph (Cyan to Amber glowing gradient wave) -->
+<div class="w-full h-20 my-1 relative">
+<svg class="w-full h-full overflow-visible" preserveaspectratio="none" viewbox="0 0 360 80">
+<defs>
+<lineargradient id="curveGradient" x1="0%" x2="100%" y1="0%" y2="0%">
+<stop offset="0%" stop-color="#54b2d3"></stop>
+<stop offset="65%" stop-color="#878afb"></stop>
+<stop offset="100%" stop-color="#e07a3f"></stop>
+</lineargradient>
+<filter height="200%" id="glow" width="200%" x="-50%" y="-50%">
+<fegaussianblur in="SourceGraphic" result="coloredBlur" stddeviation="2.5"></fegaussianblur>
+<femerge>
+<femergenode in="coloredBlur"></femergenode>
+<femergenode in="SourceGraphic"></femergenode>
+</femerge>
+</filter>
+</defs>
+<path d="M 0,56 C 50,56 95,30 145,30 C 190,30 225,48 265,48 C 295,48 325,18 360,16" fill="none" filter="url(#glow)" stroke="url(#curveGradient)" stroke-linecap="round" stroke-width="3"></path>
+<circle cx="265" cy="48" fill="#ffffff" r="4.5" stroke="#1c1e24" stroke-width="2"></circle>
+</svg>
+</div>
+<!-- 3 Bottom Metric Badges -->
+<div class="grid grid-cols-3 pt-3 border-t border-[#262831] mt-1">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-[#8e93a0]">humidity_percentage</span>
+<div>
+<div class="text-[13px] font-semibold text-white">78%</div>
+<div class="text-[10px] text-[#717582]">Humidity</div>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-[#8e93a0]">air</span>
+<div>
+<div class="text-[12px] font-semibold text-white">12 km/h</div>
+<div class="text-[10px] text-[#717582]">Wind NW</div>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px] text-[#8e93a0]">speed</span>
+<div>
+<div class="text-[13px] font-semibold text-white">1012 hPa</div>
+<div class="text-[10px] text-[#717582]">Barometer</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 2: Interactive Doppler Radar Map (Velvet Slate Polar Grid & Sensor Sweep) -->
+<div class="p-5 rounded-[28px] bg-[#1c1e24] border border-[#272932] shadow-[0_12px_32px_rgba(0,0,0,0.5)] flex flex-col gap-3 relative overflow-hidden">
+<div class="flex items-center justify-between z-10">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-[#202228] border border-[#2b2d36] flex items-center justify-center text-[#54b2d3]">
+<span class="material-symbols-outlined text-[18px]">radar</span>
+</div>
+<div>
+<div class="font-display font-semibold text-[15px] text-white flex items-center gap-2">
+          Doppler Radar Map
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-[#54b2d3]/15 text-[#54b2d3] border border-[#54b2d3]/30 font-sans">NCR 0.5° GIS</span>
+</div>
+<div class="text-[11px] text-[#7a7e8b]">14.6091° N, 120.9899° E · España Sweep</div>
+</div>
+</div>
+<div class="flex items-center gap-1.5">
+<button class="px-2.5 py-1 rounded-full bg-[#23252d] border border-[#2e303b] text-[#c4c7d2] hover:text-white text-[11px] font-medium transition-colors flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">layers</span>
+        Radar View
+      </button>
+</div>
+</div>
+<!-- Doppler Radar Viewport with Polar Mesh, Range Rings & Sweep Beam -->
+<div class="relative w-full h-[180px] rounded-2xl bg-[#141519] border border-[#252731] overflow-hidden flex items-center justify-center group">
+<!-- Stylized Grid Backdrop & Polar Rings -->
+<svg class="absolute inset-0 w-full h-full opacity-60" preserveaspectratio="xMidYMid slice" viewbox="0 0 400 180">
+<defs>
+<radialgradient cx="50%" cy="50%" id="sweepGlow" r="50%">
+<stop offset="0%" stop-color="#54b2d3" stop-opacity="0.35"></stop>
+<stop offset="60%" stop-color="#878afb" stop-opacity="0.15"></stop>
+<stop offset="100%" stop-color="#54b2d3" stop-opacity="0"></stop>
+</radialgradient>
+</defs>
+<!-- Concentric Range Rings -->
+<circle cx="200" cy="90" fill="none" r="80" stroke="#2c2f3a" stroke-dasharray="3 3" stroke-width="1"></circle>
+<circle cx="200" cy="90" fill="none" r="55" stroke="#2a2c37" stroke-width="1"></circle>
+<circle cx="200" cy="90" fill="none" r="30" stroke="#2a2c37" stroke-width="1"></circle>
+<line stroke="#262833" stroke-width="1" x1="200" x2="200" y1="10" y2="170"></line>
+<line stroke="#262833" stroke-width="1" x1="80" x2="320" y1="90" y2="90"></line>
+<!-- Active Radar Rain Echo Cells -->
+<path d="M 140,60 Q 165,40 190,55 Q 180,85 150,80 Z" fill="#54b2d3" fill-opacity="0.28"></path>
+<path d="M 220,100 Q 255,85 270,110 Q 240,135 215,115 Z" fill="#e07a3f" fill-opacity="0.35"></path>
+<circle cx="168" cy="62" fill="#878afb" fill-opacity="0.45" r="12"></circle>
+<!-- Rotating Sweep Fan (Artistic CSS Transform simulation) -->
+<path d="M 200,90 L 275,30 A 85 85 0 0 0 200,5 Z" fill="url(#sweepGlow)"></path>
+</svg>
+<!-- Location Overlay Markers with Glowing Radar Pulses -->
+<div class="absolute left-[47%] top-[45%] flex flex-col items-center pointer-events-none">
+<div class="w-3.5 h-3.5 rounded-full bg-[#54b2d3] ring-4 ring-[#54b2d3]/30 animate-pulse"></div>
+<span class="text-[9px] font-semibold text-white bg-[#1a1c23]/90 px-1.5 py-0.5 rounded mt-1 border border-[#30333e] whitespace-nowrap">España Blvd</span>
+</div>
+<div class="absolute left-[62%] top-[30%] flex items-center gap-1 pointer-events-none">
+<div class="w-2 h-2 rounded-full bg-[#e07a3f]"></div>
+<span class="text-[9px] text-[#f59e6c] font-medium bg-[#141519]/80 px-1 rounded">UST Gate 2</span>
+</div>
+<div class="absolute left-[30%] top-[65%] flex items-center gap-1 pointer-events-none">
+<div class="w-2 h-2 rounded-full bg-[#878afb]"></div>
+<span class="text-[9px] text-[#c0c1ff] font-medium bg-[#141519]/80 px-1 rounded">Lacson St</span>
+</div>
+<!-- Range Legends inside Radar -->
+<div class="absolute bottom-2 left-3 flex items-center gap-2 text-[10px] text-[#8e93a0]">
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#54b2d3]"></span> Clear (&lt;0.1m)</span>
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#e0a256]"></span> Advisory</span>
+<span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-[#e07a3f]"></span> Critical</span>
+</div>
+<div class="absolute bottom-2 right-3 text-[10px] text-[#717582] font-mono">
+      Radius 5.0 KM
+    </div>
+</div>
+<!-- Radar Status Toggles -->
+<div class="flex items-center justify-between text-[11px] text-[#8c909d] pt-1">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-[#54b2d3]"></span>
+<span>Bypass Viaduct: <span class="text-white font-medium">Clear</span></span>
+</div>
+<div class="flex items-center gap-1.5 text-[#54b2d3] font-medium cursor-pointer hover:underline">
+<span>360° Ground Truth</span>
+<span class="material-symbols-outlined text-[13px]">north_east</span>
+</div>
+</div>
+</div>
+<!-- Card 3: Live Ground Observation Feed (CCTV / Telemetry Camera with Real-time Depth Gauge) -->
+<div class="p-5 rounded-[28px] bg-[#1c1e24] border border-[#272932] shadow-[0_12px_32px_rgba(0,0,0,0.5)] flex flex-col gap-3.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2.5">
+<div class="w-8 h-8 rounded-full bg-[#202228] border border-[#2a2c34] flex items-center justify-center text-[#e0a256]">
+<span class="material-symbols-outlined text-[18px]">videocam</span>
+</div>
+<div>
+<div class="font-display font-semibold text-[15px] text-white tracking-tight flex items-center gap-2">
+          UST - Lacson Underpass Feed
+          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#e07a3f]/20 text-[#f59e6c] text-[10px] font-semibold border border-[#e07a3f]/30">
+<span class="w-1.5 h-1.5 rounded-full bg-[#e07a3f] animate-pulse"></span> CAM-04 LIVE
+          </span>
+</div>
+<div class="text-[11px] text-[#7a7e8b]">España Boulevard Junction · Optical Ultrasonic Gauge</div>
+</div>
+</div>
+<button class="w-8 h-8 rounded-xl bg-[#23252d] border border-[#2d303b] flex items-center justify-center text-[#8e93a0] hover:text-white transition-colors">
+<span class="material-symbols-outlined text-[16px]">fullscreen</span>
+</button>
+</div>
+<!-- Live CCTV Surface with Optical Overlay Badges -->
+<div class="relative w-full h-[140px] rounded-2xl overflow-hidden border border-[#2b2d36] group">
+<img alt="CCTV view España Blvd Manila" class="w-full h-full object-cover object-center filter brightness-[0.8] contrast-[1.1] transition-transform duration-700 group-hover:scale-105" onerror="this.onerror=null; this.src='https://lh3.googleusercontent.com/aida-public/AB6AXuCAazHOTQGpkVZmDQMR5s-FcLM3Ml943M8GMgLiUeqliDROUF3BfuyiCiMVzYZtIJXi9xHFdlvPAmxjxYIMmS5RgP9NIzZ_poQ7MA0iLL4EsF2BfFERQxLUcZtzxR79Ng_6yG1cAci_RjluEKrGfYn4PcporqcjeCSu3o6876FnWA362uzwjOvz7YNnUiZj9LzTml9dsN-jyllHJGXIdh6ZnDAn7CFC6vADWl6uX-RI3f5U913EX84';" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCKwLp0W_H3Z6j5jY7R7Y8Oa8KqS_L1mD6mG_k1wX9xT4_l4R3Z3s8tP6vF1mX8mD4rB0vK5jL7xQ8sT1wR4vP7nK9yZ0"/>
+<div class="absolute inset-0 bg-gradient-to-t from-[#141519]/90 via-transparent to-black/30 pointer-events-none"></div>
+<!-- Corner Overlay Metadata -->
+<div class="absolute top-2.5 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#141519]/80 backdrop-blur-md border border-[#2d303b] text-[10px] text-[#c4c7d2]">
+<span class="material-symbols-outlined text-[12px] text-[#54b2d3]">straighten</span>
+<span>Roadway: <span class="text-white font-medium">0.0m (Dry Asphalt)</span></span>
+</div>
+<div class="absolute top-2.5 right-3 px-2 py-0.5 rounded-full bg-[#141519]/80 backdrop-blur-md border border-[#2d303b] text-[10px] text-[#8e93a0] font-mono">
+      14:48:22 PHT
+    </div>
+<!-- Ground Level Verification Watermark -->
+<div class="absolute bottom-2.5 left-3 right-3 flex items-center justify-between text-[11px]">
+<div class="flex items-center gap-1.5 text-white/90">
+<span class="w-1.5 h-1.5 rounded-full bg-[#54b2d3]"></span>
+<span class="font-medium">Submersible Sump Pumps: Operational</span>
+</div>
+<span class="text-[10px] text-[#b4b8c6] bg-[#1a1c23]/80 px-2 py-0.5 rounded border border-[#2c2f38]">LiDAR Synced</span>
+</div>
+</div>
+</div></div>
+</div>
+</main>
+</div>
+</body></html>

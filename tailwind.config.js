@@ -7,6 +7,16 @@ export default {
   theme: {
     extend: {
       colors: {
+        'surface-dim': '#111215',
+        'surface': '#16171b',
+        'surface-card': '#1c1e24',
+        'surface-card-hover': '#23252e',
+        'surface-border': '#262831',
+        'surface-subtle': '#2c2e37',
+        'surface-pill': '#282a33',
+        'accent-orange': '#e07a3f',
+        'accent-cyan': '#54b2d3',
+        'accent-blue': '#878afb',
         obsidian: '#121214',
         graphite: '#1a1a1e',
         'pitch-black': '#000000',
@@ -23,10 +33,14 @@ export default {
       borderRadius: {
         '3xl': '24px',
         '4xl': '32px',
+        card: '28px',
+        subcard: '18px',
+        pill: '9999px',
       },
       fontFamily: {
+        sans: ["'DM Sans'", '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        display: ["'Manrope'", 'sans-serif'],
         serif: ["'Ledger'", 'Georgia', 'serif'],
-        sans: ['-apple-system', 'BlinkMacSystemFont', "'SF Pro Display'", "'SF Compact Display'", 'sans-serif'],
         mono: ["'JetBrains Mono'", 'monospace'],
       },
       transitionTimingFunction: {
