@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useMemo } from 'react';
+import React, { useEffect, useRef, useState, useMemo, useCallback } from 'react';
 import { Viewer } from 'mapillary-js';
 import 'mapillary-js/dist/mapillary.css';
 import { 
@@ -6,8 +6,13 @@ import {
   Waves, Loader2, Radio, Activity, CloudRain,
   ArrowRight, Gauge, Car
 } from 'lucide-react';
-import { RoadwayGlassIcon, CctvGlassIcon, TelemetryMetricsGlassIcon } from './glass-icons';
 import { fetchNearbyImageId } from '../services/mapillaryService';
+
+function getBearingCardinal(deg) {
+  const normalized = ((deg % 360) + 360) % 360;
+  const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+  return directions[Math.round(normalized / 45) % 8];
+}
 
 export default function StreetViewerModal({
   isOpen,
@@ -15,6 +20,7 @@ export default function StreetViewerModal({
   imageId: propImageId,
   activeLocation,
   accessToken: propToken,
+  depthMeters: propDepthMeters,
   onCameraMove
 }) {
   const viewerContainerRef = useRef(null);
@@ -34,8 +40,7 @@ export default function StreetViewerModal({
   const [isQuerying, setIsQuerying] = useState(false);
   const [viewerError, setViewerError] = useState(false);
 
-  // Active Mode: 'mapillary' | 'telemetry'
-  // Tab 1: 'mapillary' is active by default. If no photo is found within range, fallback to 'telemetry'.
+  // Active Mode: 'mapillary' (360° Baseline) | 'telemetry' (Corridor Sensors)
   const [activeMode, setActiveMode] = useState('mapillary');
 
   // Derive coordinates accurately
@@ -45,7 +50,7 @@ export default function StreetViewerModal({
 
   // Real initial bearing: use location heading or corridor default
   const [bearing, setBearing] = useState(() => {
-    return activeLocation?.bearing ?? activeLocation?.heading ?? (activeLocation?.name?.toLowerCase().includes('españa') ? 48 : 0);
+    return activeLocation?.bearing ?? activeLocation?.heading ?? (activeLocation?.name?.toLowerCase().includes('españa') ? 44 : 0);
   });
 
   useEffect(() => {
@@ -68,13 +73,15 @@ export default function StreetViewerModal({
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
-  const locationTitle = activeLocation?.name || 'Active Floodway Corridor';
-  const depthMeters = typeof activeLocation?.depthMeters === 'number' && !Number.isNaN(activeLocation.depthMeters)
-    ? activeLocation.depthMeters
-    : null;
+  const locationTitle = activeLocation?.name || 'España, Manila';
+  const depthMeters = typeof propDepthMeters === 'number' && !Number.isNaN(propDepthMeters)
+    ? propDepthMeters
+    : (typeof activeLocation?.depthMeters === 'number' && !Number.isNaN(activeLocation.depthMeters)
+        ? activeLocation.depthMeters
+        : null);
 
   // -------------------------------------------------------------
-  // Mapillary Image Discovery & Fallback Trigger
+  // Mapillary Image Discovery
   // -------------------------------------------------------------
   useEffect(() => {
     if (!isOpen) {
@@ -84,13 +91,11 @@ export default function StreetViewerModal({
 
     if (propImageId) {
       setResolvedImageId(propImageId);
-      setActiveMode('mapillary');
       return;
     }
 
     if (!token) {
       setResolvedImageId(null);
-      setActiveMode('telemetry');
       return;
     }
 
@@ -106,18 +111,14 @@ export default function StreetViewerModal({
         if (!isMounted) return;
         if (id) {
           setResolvedImageId(id);
-          setActiveMode('mapillary');
         } else {
           setResolvedImageId(null);
-          // Automatically display the Sensor Telemetry view when Mapillary has no ground photo
-          setActiveMode('telemetry');
         }
       })
       .catch((err) => {
         console.warn('Error querying nearby Mapillary image:', err);
         if (isMounted) {
           setResolvedImageId(null);
-          setActiveMode('telemetry');
         }
       })
       .finally(() => {
@@ -170,7 +171,7 @@ export default function StreetViewerModal({
         component: {
           cover: false,
           direction: true,
-          sequence: false, // Prevents sequence jumping
+          sequence: false,
         },
       });
 
@@ -226,12 +227,36 @@ export default function StreetViewerModal({
     };
   }, [isOpen, token, resolvedImageId]);
 
-  // -------------------------------------------------------------
-  // River Basin & Sensor Telemetry Computations
-  // -------------------------------------------------------------
+  const handleZoomIn = useCallback(() => {
+    if (viewerRef.current && typeof viewerRef.current.getZoom === 'function') {
+      viewerRef.current.getZoom().then(z => {
+        if (typeof viewerRef.current?.setZoom === 'function') {
+          viewerRef.current.setZoom(Math.min(z + 0.5, 3));
+        }
+      }).catch(() => {});
+    }
+  }, []);
+
+  const handleZoomOut = useCallback(() => {
+    if (viewerRef.current && typeof viewerRef.current.getZoom === 'function') {
+      viewerRef.current.getZoom().then(z => {
+        if (typeof viewerRef.current?.setZoom === 'function') {
+          viewerRef.current.setZoom(Math.max(z - 0.5, 0));
+        }
+      }).catch(() => {});
+    }
+  }, []);
+
+  const handleResetBearing = useCallback(() => {
+    const defaultHeading = activeLocation?.bearing ?? activeLocation?.heading ?? 44;
+    setBearing(defaultHeading);
+    onCameraMoveRef.current?.({ bearing: defaultHeading });
+  }, [activeLocation]);
+
+  // River Basin Telemetry Computations
   const nearestBasin = useMemo(() => {
     const searchStr = locationTitle.toLowerCase();
-    if (searchStr.includes('marikina') || searchStr.includes('katipunan') || searchStr.includes('tumana') || (lat > 14.62 && lng > 121.05)) {
+    if (searchStr.includes('marikina') || searchStr.includes('katipunan') || (lat > 14.62 && lng > 121.05)) {
       return {
         name: 'Marikina River Basin',
         station: 'Sto. Niño Monitoring Post (EFCOS Station 02)',
@@ -239,7 +264,7 @@ export default function StreetViewerModal({
         criticalLevel: '18.0m',
         alarmState: '2ND ALARM (EVACUATION WATCH)',
         percentage: 91,
-        color: '#f7b731',
+        color: '#e07a3f',
         delta: '+0.3m in last hr'
       };
     }
@@ -251,7 +276,7 @@ export default function StreetViewerModal({
         criticalLevel: '13.0m',
         alarmState: 'ALERT LEVEL 1 (MONSOON OVERFLOW)',
         percentage: 84,
-        color: '#f7b731',
+        color: '#e07a3f',
         delta: '+0.15m in last hr'
       };
     }
@@ -262,7 +287,7 @@ export default function StreetViewerModal({
       criticalLevel: '14.5m',
       alarmState: 'HIGH TIDE CONVERGENCE',
       percentage: 76,
-      color: '#42C6FF',
+      color: '#54b2d3',
       delta: 'Tide Crest Peak'
     };
   }, [locationTitle, lat, lng]);
@@ -286,322 +311,374 @@ export default function StreetViewerModal({
 
   return (
     <div 
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-black/75 backdrop-blur-md animate-in fade-in duration-200"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onClose?.();
         }
       }}
     >
-      
-      {/* Modal Shell */}
-      <div className="relative w-full max-w-4xl bg-[#17181f]/95 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-[600px] sm:h-[660px] animate-in zoom-in-95 duration-200 ease-out-expo">
+      {/* Roadway Inspection Modal Dialog */}
+      <main 
+        style={{
+          background: 'radial-gradient(120% 120% at 50% 0%, #1e2026 0%, #121316 60%, #0d0e11 100%)',
+          border: '1px solid rgba(255, 255, 255, 0.09)',
+          boxShadow: 'inset 0 1px 1px 0 rgba(255, 255, 255, 0.16), 0 24px 60px -12px rgba(0, 0, 0, 0.85), 0 0 1px 1px rgba(255, 255, 255, 0.04)',
+        }}
+        className="relative z-10 w-full max-w-5xl rounded-[28px] overflow-hidden p-4 md:p-6 transition-all duration-300 flex flex-col max-h-[92vh] overflow-y-auto"
+      >
         
-        {/* Modal Top Header Bar */}
-        <div className="px-5 py-3.5 bg-[#121318]/95 border-b border-white/[0.06] flex flex-wrap items-center justify-between gap-3 z-30">
-          
-          {/* Location & Title */}
-          <div className="flex items-center gap-3">
-            <RoadwayGlassIcon className="w-10 h-10 shrink-0 drop-shadow-md" />
+        {/* Modal Header Section */}
+        <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-white/[0.07]">
+          {/* Roadway Identity & Geographic Coordinates */}
+          <div className="flex items-center gap-3.5">
+            {/* Roadway Glyph Badge */}
+            <div className="w-11 h-11 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-[#e07a3f] shadow-inner shrink-0">
+              <img alt="Roadway Icon" className="w-10 h-10 object-contain rounded-xl" src="/assets/icons/roadway_truth.png" />
+            </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h3 className="font-serif text-base sm:text-lg font-bold text-white tracking-tight">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h1 className="text-base sm:text-lg font-semibold tracking-tight text-[#f5f6f9]">
                   Roadway Ground Truth & Baseline
-                </h3>
-                <span className="hidden sm:inline-block px-2 py-0.5 rounded-full text-xs font-mono font-bold bg-[#26262b] text-[#FFE142] border border-white/5">
-                  METRO MANILA
+                </h1>
+                {/* Frosted Location Capsule */}
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium tracking-wide uppercase bg-white/[0.06] border border-white/10 text-slate-300">
+                  Metro Manila
                 </span>
               </div>
-              <p className="text-xs text-[#9ca3af] mt-0.5 truncate max-w-xs sm:max-w-md">
-                <span className="font-serif text-white/90">{locationTitle}</span> • <span className="font-mono tabular-nums">{lat.toFixed(4)}°N, {lng.toFixed(4)}°E</span>
+              <p className="text-xs text-[#9da3af] font-normal flex items-center gap-1.5 mt-0.5">
+                <span>{locationTitle}</span>
+                <span className="w-1 h-1 rounded-full bg-slate-600"></span>
+                <span className="font-mono text-[11px] text-slate-400">{lat.toFixed(4)}°N, {lng.toFixed(4)}°E</span>
               </p>
             </div>
           </div>
 
-          {/* Dual Mode Switcher Tabs & Close Button */}
-          <div className="flex items-center gap-2 ml-auto">
-            
-            {/* True Dual-Mode Tabs */}
-            <div className="flex items-center bg-[#0d0d0f] p-1 rounded-2xl border border-white/[0.08] shadow-inner">
-              <button
+          {/* Segmented View Modes & Window Dismiss */}
+          <div className="flex items-center gap-2 self-end sm:self-auto">
+            {/* Segmented Tab Group */}
+            <nav aria-label="Inspection Modes" className="flex items-center p-1 rounded-full bg-black/40 border border-white/[0.08]">
+              {/* Active Baseline Pill */}
+              <button 
                 type="button"
                 onClick={() => setActiveMode('mapillary')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                style={activeMode === 'mapillary' ? {
+                  background: 'rgba(224, 122, 63, 0.16)',
+                  backdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(224, 122, 63, 0.45)',
+                  boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 0 18px -3px rgba(224, 122, 63, 0.35)',
+                } : {}}
+                className={`text-xs font-semibold px-3.5 py-1.5 rounded-full flex items-center gap-1.5 transition-all ${
                   activeMode === 'mapillary'
-                    ? 'bg-clay-gold text-pitch-black shadow-sm'
-                    : 'text-[#9ca3af] hover:text-white hover:bg-white/5'
+                    ? 'text-[#fbe9dc]'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
-                title="Ground-Truth 360° (Mapillary)"
-                aria-label="Ground-Truth 360° (Mapillary)"
               >
-                <CctvGlassIcon className="w-4 h-4 shrink-0" transparent={true} />
-                <span className="tracking-wide">360° BASELINE</span>
+                <span className="w-1.5 h-1.5 rounded-full bg-[#e07a3f] animate-pulse"></span>
+                <span>360° Baseline</span>
               </button>
 
-              <button
+              {/* Secondary Corridor Sensors Pill */}
+              <button 
                 type="button"
                 onClick={() => setActiveMode('telemetry')}
-                className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                style={activeMode === 'telemetry' ? {
+                  background: 'rgba(224, 122, 63, 0.16)',
+                  backdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(224, 122, 63, 0.45)',
+                  boxShadow: 'inset 0 1px 1px rgba(255, 255, 255, 0.2), 0 0 18px -3px rgba(224, 122, 63, 0.35)',
+                } : {}}
+                className={`text-xs font-medium px-3.5 py-1.5 rounded-full flex items-center gap-1.5 transition-colors ${
                   activeMode === 'telemetry'
-                    ? 'bg-clay-gold text-pitch-black shadow-sm'
-                    : 'text-[#9ca3af] hover:text-white hover:bg-white/5'
+                    ? 'text-[#fbe9dc] font-semibold'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
-                title="Corridor Sensor Telemetry"
-                aria-label="Corridor Sensor Telemetry"
               >
-                <TelemetryMetricsGlassIcon className="w-4 h-4 shrink-0" transparent={true} />
-                <span className="tracking-wide">CORRIDOR SENSORS</span>
+                <svg className="w-3.5 h-3.5 opacity-70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path d="M13 10V3L4 14h7v7l9-11h-7z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
+                </svg>
+                <span>Corridor Sensors</span>
               </button>
-            </div>
+            </nav>
 
-            {/* Modal Dismiss Button */}
-            <button
+            {/* Dismiss Modal Button */}
+            <button 
+              type="button"
               onClick={onClose}
-              className="p-2 rounded-2xl bg-[#222328] hover:bg-[#2c2d33] text-gray-300 hover:text-white transition active:scale-95 border border-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold min-h-[44px] min-w-[44px] flex items-center justify-center"
-              title="Close Viewer (Esc)"
-              aria-label="Close Viewer"
+              aria-label="Close modal" 
+              className="w-9 h-9 rounded-full bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 flex items-center justify-center text-slate-400 hover:text-white transition-colors ml-1 focus:outline-none"
             >
-              <X className="w-5 h-5" />
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M6 18L18 6M6 6l12 12" strokeLinecap="round" strokeLinejoin="round"></path>
+              </svg>
             </button>
           </div>
-        </div>
+        </header>
 
-        {/* Viewport Display Area */}
-        <div className="relative flex-1 bg-[#090a0d] overflow-hidden min-h-[380px]">
-
-          {/* ========================================================================= */}
-          {/* TAB 1: GROUND-TRUTH 360° (MAPILLARY) ENGINE                                */}
-          {/* ========================================================================= */}
-          <div 
-            className={`relative w-full h-full ${activeMode === 'mapillary' ? 'flex flex-col' : 'hidden'}`}
+        {/* 360° Streetview Viewport Area */}
+        {activeMode === 'mapillary' ? (
+          <section 
+            aria-label="360 Panorama Viewport" 
+            style={{
+              boxShadow: 'inset 0 0 0 1px rgba(255, 255, 255, 0.08), inset 0 2px 8px rgba(0, 0, 0, 0.7)'
+            }}
+            className="mt-4 relative rounded-2xl overflow-hidden aspect-[16/9] sm:aspect-[21/10] bg-[#111215] border border-white/[0.07] group"
           >
-            {/* Mapillary WebGL Container */}
+            {/* Live Mapillary WebGL Container */}
             <div 
               ref={viewerContainerRef} 
-              className={`w-full h-full min-h-[380px] ${(resolvedImageId && token && !viewerError) ? 'block' : 'hidden'}`}
-              style={{ position: 'relative', width: '100%', height: '100%', minHeight: '380px' }}
+              className={`w-full h-full ${(resolvedImageId && token && !viewerError) ? 'block' : 'hidden'}`}
+              style={{ position: 'relative', width: '100%', height: '100%' }}
             />
 
-            {/* Atmospheric Storm Weather Vignette Overlay */}
-            {resolvedImageId && token && !viewerError && depthMeters > 0.15 && (
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#090a0d]/85 via-transparent to-black/40 mix-blend-multiply" />
-            )}
-
-            {/* Projected Waterline Visual Plane (Ground Reflection Shader) */}
-            {resolvedImageId && token && !viewerError && depthMeters > 0.15 && (
-              <div 
-                className={`pointer-events-none absolute inset-x-0 bottom-0 border-t ${
-                  depthMeters > 0.35 
-                    ? 'bg-gradient-to-t from-[#ff6b6b]/20 via-[#ff6b6b]/5 to-transparent border-[#ff6b6b]/40' 
-                    : 'bg-gradient-to-t from-[#f7b731]/20 via-[#f7b731]/5 to-transparent border-[#f7b731]/40'
-                }`}
-                style={{ height: `${Math.min(Math.max(depthMeters * 65, 45), 160)}px` }}
+            {/* Fallback Manila Corridor Baseline Photo when Mapillary is loading or has no direct sphere */}
+            {(!resolvedImageId || !token || viewerError) && (
+              <img 
+                alt="Pre-flood benchmark panorama of Manila street corridor showing curbs, roadway, and red tricycle" 
+                className="w-full h-full object-cover object-center select-none scale-[1.01] transition-transform duration-700 ease-out group-hover:scale-105" 
+                src="/assets/manila_corridor_baseline.jpg"
               />
             )}
 
-            {/* Overlaid Telemetry Heads-Up Pill (when Mapillary photo is active) */}
-            {resolvedImageId && token && !viewerError && (
-              <div className="absolute top-4 left-4 right-4 z-20 pointer-events-none flex flex-wrap items-center justify-between gap-2">
-                <div className="bg-obsidian/95 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 shadow-xl flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${depthMeters == null ? 'bg-gray-500' : depthMeters > 0.35 ? 'bg-[#f7b731] animate-pulse' : 'bg-emerald-400'}`} />
-                  <span className="text-xs font-mono font-bold text-white tracking-wide">
-                    PRE-FLOOD 360° CURB BENCHMARK (NOT LIVE CCTV)
-                  </span>
-                  <span className="hidden sm:inline-block text-[11px] text-[#9ca3af] border-l border-white/15 pl-2 font-mono">
-                    {depthMeters == null ? 'CURB WATERLINE: —' : `CURB WATERLINE: ${depthMeters.toFixed(1)}m`}
-                  </span>
-                </div>
-                <div className="bg-obsidian/95 backdrop-blur-md px-3.5 py-1.5 rounded-full border border-white/10 shadow-xl flex items-center gap-2">
-                  <Compass className="w-3.5 h-3.5 text-clay-gold" />
-                  <span className="text-xs font-mono font-bold text-white tabular-nums">
-                    BEARING: {bearing}°
-                  </span>
-                </div>
-              </div>
+            {/* Ambient Viewport Inner Vignette */}
+            <div className="absolute inset-0 pointer-events-none bg-gradient-to-t from-black/80 via-transparent to-black/50"></div>
+
+            {/* Projected Waterline Visual Plane (Ground Reflection Shader when depth > 0) */}
+            {depthMeters && depthMeters > 0.05 && (
+              <div 
+                className={`pointer-events-none absolute inset-x-0 bottom-0 border-t transition-all ${
+                  depthMeters > 0.35 
+                    ? 'bg-gradient-to-t from-[#e07a3f]/25 via-[#e07a3f]/10 to-transparent border-[#e07a3f]/50' 
+                    : 'bg-gradient-to-t from-[#54b2d3]/25 via-[#54b2d3]/10 to-transparent border-[#54b2d3]/50'
+                }`}
+                style={{ height: `${Math.min(Math.max(depthMeters * 80, 50), 160)}px` }}
+              />
             )}
 
-            {/* Augmented Telemetry Waterline Plane Overlay */}
-            {resolvedImageId && token && !viewerError && (
-              <div className="absolute bottom-4 left-4 right-4 z-20 pointer-events-none flex items-center justify-between">
-                <div className="bg-obsidian/95 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/10 shadow-2xl flex items-center gap-3">
-                  <div className="flex items-center gap-2.5">
-                    <Waves className={`w-4 h-4 ${depthMeters == null ? 'text-gray-400' : depthMeters > 0.35 ? 'text-soft-red' : depthMeters > 0.15 ? 'text-clay-amber' : 'text-sage-green'}`} />
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-bold text-white font-mono uppercase tracking-wider">
-                          {depthMeters == null ? 'LIVE WATERLINE: —' : `LIVE WATERLINE: ${depthMeters.toFixed(1)}m`}
-                        </span>
-                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${depthMeters == null ? 'bg-white/10 text-gray-300' : depthMeters > 0.35 ? 'bg-soft-red/20 text-soft-red' : depthMeters > 0.15 ? 'bg-clay-amber/20 text-clay-amber' : 'bg-sage-green/20 text-sage-green'}`}>
-                          {depthMeters == null ? 'NO SENSOR DATA' : depthMeters > 0.35 ? 'CRITICAL SUBMERSION' : depthMeters > 0.15 ? 'CAUTION: GUTTER LINE' : 'SURFACE CLEAR'}
-                        </span>
-                      </div>
-                      <p className="text-[10px] text-[#9ca3af] mt-0.5">
-                        Daylight panorama serves as structural curb elevation reference. Translucent waterline shows live flood level against curbs.
-                      </p>
+            {/* Top Overlay Controls & Telemetry */}
+            <div className="absolute top-3 inset-x-3 sm:inset-x-4 flex items-center justify-between gap-2 pointer-events-none">
+              {/* Left HUD: Benchmark Metadata */}
+              <div 
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  backdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  boxShadow: 'inset 0 1px 0.5px rgba(255, 255, 255, 0.12)',
+                }}
+                className="pointer-events-auto px-3 py-1.5 rounded-full flex items-center gap-2.5 max-w-[85%] sm:max-w-none shadow-lg"
+              >
+                <span className="font-mono text-[11px] font-medium tracking-tight text-white/90 truncate">
+                  PRE-FLOOD 360° CURB BENCHMARK (CALIBRATED)
+                </span>
+                <span className="text-white/20 hidden sm:inline">|</span>
+                <span className="font-mono text-[11px] text-slate-300 hidden sm:inline">
+                  CURB WATERLINE: <span className="text-white font-semibold">{depthMeters == null ? '—' : `${depthMeters.toFixed(2)}m`}</span>
+                </span>
+              </div>
+
+              {/* Right HUD: Compass & Heading */}
+              <div 
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  backdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  boxShadow: 'inset 0 1px 0.5px rgba(255, 255, 255, 0.12)',
+                }}
+                className="pointer-events-auto px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-lg shrink-0"
+              >
+                <img alt="Bearing" className="w-5 h-5 object-contain" src="/assets/icons/compass.png" />
+                <span className="font-mono text-[11px] font-semibold text-white tracking-wide">
+                  BEARING: {bearing}° {getBearingCardinal(bearing)}
+                </span>
+              </div>
+            </div>
+
+            {/* Center Gyroscope Guidance (Subtle) */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-40 transition-opacity duration-300">
+              <div className="w-16 h-16 rounded-full border border-white/25 flex items-center justify-center">
+                <div className="w-2 h-2 rounded-full bg-white/70"></div>
+              </div>
+            </div>
+
+            {/* Right Floating Navigation & Zoom Dock */}
+            <aside 
+              aria-label="Viewport Navigation" 
+              style={{
+                background: 'rgba(255, 255, 255, 0.05)',
+                backdropFilter: 'blur(16px)',
+                border: '1px solid rgba(255, 255, 255, 0.08)',
+                boxShadow: 'inset 0 1px 0.5px rgba(255, 255, 255, 0.12)',
+              }}
+              className="absolute right-3 sm:right-4 top-1/2 -translate-y-1/2 flex flex-col gap-1.5 p-1 rounded-full pointer-events-auto shadow-2xl z-20"
+            >
+              <button 
+                type="button"
+                onClick={handleZoomIn}
+                aria-label="Zoom in" 
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M12 4v16m8-8H4" strokeLinecap="round" strokeLinejoin="round"></path>
+                </svg>
+              </button>
+              <div className="w-4 mx-auto border-t border-white/10"></div>
+              <button 
+                type="button"
+                onClick={handleZoomOut}
+                aria-label="Zoom out" 
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-300 hover:text-white hover:bg-white/10 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <path d="M20 12H4" strokeLinecap="round" strokeLinejoin="round"></path>
+                </svg>
+              </button>
+              <div className="w-4 mx-auto border-t border-white/10"></div>
+              <button 
+                type="button"
+                onClick={handleResetBearing}
+                aria-label="360 Gyro Look Around" 
+                className="w-8 h-8 rounded-full flex items-center justify-center text-[#e07a3f] hover:bg-white/10 transition-colors" 
+                title="360° Gyroscope"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="9" strokeDasharray="2 2"></circle>
+                  <path d="M12 3a9 9 0 0 1 9 9" strokeLinecap="round"></path>
+                </svg>
+              </button>
+            </aside>
+
+            {/* Bottom HUD Glass Shelf: Live Waterline Sensor Sync Status */}
+            <footer className="absolute bottom-3 inset-x-3 sm:inset-x-4 pointer-events-auto">
+              <div 
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  backdropFilter: 'blur(16px)',
+                  border: '1px solid rgba(255, 255, 255, 0.09)',
+                  boxShadow: 'inset 0 1px 0.5px rgba(255, 255, 255, 0.12)',
+                }}
+                className="p-3 sm:p-3.5 rounded-xl sm:rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-2xl"
+              >
+                <div className="flex items-start sm:items-center gap-3">
+                  {/* Ripple/Water Indicator Icon */}
+                  <div className="w-8 h-8 rounded-xl bg-white/[0.06] border border-white/10 flex items-center justify-center text-slate-300 shrink-0 mt-0.5 sm:mt-0">
+                    <img alt="Live Waterline" className="w-8 h-8 object-contain" src="/assets/icons/hydro.png" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-semibold text-white tracking-wide">LIVE WATERLINE:</span>
+                      <span className="font-mono text-xs text-slate-300">{depthMeters == null ? '—' : `${depthMeters.toFixed(2)}m`}</span>
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-mono tracking-wider font-semibold border ${
+                        depthMeters == null 
+                          ? 'bg-white/[0.06] border-white/10 text-slate-400' 
+                          : depthMeters > 0.35 
+                            ? 'bg-[#e07a3f]/20 border-[#e07a3f]/40 text-[#f59e6c]' 
+                            : 'bg-[#54b2d3]/20 border-[#54b2d3]/40 text-[#54b2d3]'
+                      }`}>
+                        {depthMeters == null ? 'NO SENSOR DATA' : depthMeters > 0.35 ? 'CRITICAL SUBMERSION' : 'SURFACE CLEAR'}
+                      </span>
                     </div>
+                    <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">
+                      Daylight panorama serves as structural curb elevation reference. Translucent waterline shows live flood level against curbs.
+                    </p>
                   </div>
                 </div>
-              </div>
-            )}
 
-            {/* Loading Spinner during Mapillary Query */}
-            {isQuerying && (
-              <div className="absolute inset-0 z-30 flex flex-col items-center justify-center bg-obsidian/90 backdrop-blur-md p-6 text-center">
-                <Loader2 className="w-8 h-8 text-clay-gold animate-spin mb-3" />
-                <h4 className="font-serif text-lg font-bold text-white mb-1">
-                  Querying Mapillary Ground Image...
-                </h4>
-                <p className="text-xs text-[#9ca3af] max-w-sm">
-                  Checking spherical photographic records within 300m of {lat.toFixed(4)}°N, {lng.toFixed(4)}°E.
-                </p>
-              </div>
-            )}
-
-            {/* Fallback Banner & State When Mapillary Has No Photo */}
-            {!isQuerying && (!resolvedImageId || !token || viewerError) && (
-              <div className="relative w-full h-full min-h-[380px] flex flex-col items-center justify-center p-6 text-center bg-[#0d0d0f] overflow-y-auto">
-                
-                {/* Subtle Grid Background */}
-                <div 
-                  className="absolute inset-0 opacity-15 pointer-events-none" 
-                  style={{
-                    backgroundImage: 'radial-gradient(rgba(255, 225, 66, 0.15) 1px, transparent 1px)',
-                    backgroundSize: '24px 24px'
-                  }} 
-                />
-
-                {/* Graceful Fallback Card */}
-                <div className="relative z-10 max-w-lg w-full bg-[#121214]/95 backdrop-blur-2xl border border-[#26262b] rounded-4xl p-6 sm:p-8 shadow-2xl flex flex-col items-center">
-                  
-                  {/* Status Icon */}
-                  <div className="w-14 h-14 rounded-3xl bg-[#1a1a1e] border border-white/10 flex items-center justify-center shadow-xl text-clay-gold mb-4">
-                    <Radio className="w-7 h-7 text-clay-gold" />
-                  </div>
-
-                  {/* Clean Status Banner as Requested */}
-                  <div className="w-full bg-[#FFE142]/10 border border-[#FFE142]/25 rounded-2xl p-3.5 mb-4 text-left">
-                    <div className="flex items-start gap-2.5">
-                      <AlertTriangle className="w-4 h-4 text-clay-gold shrink-0 mt-0.5" />
-                      <div>
-                        <p className="text-xs font-bold text-white font-sans">
-                          No ground-level photographic record within this corridor.
-                        </p>
-                        <p className="text-xs text-[#9ca3af] mt-0.5">
-                          Relying on Project NOAH hazard modeling and real-time hydrological telemetry.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Direct Switch to Corridor Sensor Telemetry */}
-                  <button
-                    type="button"
-                    onClick={() => setActiveMode('telemetry')}
-                    className="w-full py-3 px-4 rounded-2xl bg-clay-gold hover:bg-clay-gold/90 text-pitch-black font-sans font-extrabold text-xs flex items-center justify-center gap-2 shadow-lg transition active:scale-95"
-                  >
-                    <Activity className="w-4 h-4 text-pitch-black" />
-                    <span>VIEW CORRIDOR SENSOR TELEMETRY</span>
-                    <ArrowRight className="w-4 h-4 text-pitch-black ml-1" />
-                  </button>
+                {/* Quick Elevation Datum Tag */}
+                <div className="flex items-center gap-2 shrink-0 border-t sm:border-t-0 border-white/[0.06] pt-2 sm:pt-0">
+                  <span className="text-[11px] font-mono text-slate-400">BENCHMARK ELEV:</span>
+                  <span className="text-xs font-mono font-medium text-[#f5f6f9] bg-white/[0.06] border border-white/10 px-2.5 py-1 rounded-full">+2.42m MSL</span>
                 </div>
               </div>
-            )}
-          </div>
-
-          {/* ========================================================================= */}
-          {/* TAB 2: CORRIDOR SENSOR TELEMETRY PANEL (HONEST SENSOR DATA)                */}
-          {/* ========================================================================= */}
-          <div 
-            className={`relative w-full h-full p-4 sm:p-6 overflow-y-auto ${activeMode === 'telemetry' ? 'block' : 'hidden'}`}
-          >
-            {/* Top Status Banner: Doppler Radar Status & Signal */}
-            <div className="flex flex-wrap items-center justify-between gap-2.5 pb-4 border-b border-white/10 mb-5">
+            </footer>
+          </section>
+        ) : (
+          /* Corridor Sensors Telemetry View */
+          <section className="mt-4 p-4 rounded-2xl bg-[#111215] border border-white/[0.07] flex flex-col gap-4">
+            
+            {/* Top Status Banner */}
+            <div className="flex flex-wrap items-center justify-between gap-2.5 pb-3 border-b border-white/10">
               <div className="flex items-center gap-2">
-                <span className="bg-[#FFE142] text-[#000000] px-3 py-1 rounded-full text-xs font-sans font-extrabold flex items-center gap-1.5 shadow-sm">
-                  <span className="w-2 h-2 rounded-full bg-black" />
+                <span className="bg-white/[0.08] text-white border border-white/10 px-3 py-1 rounded-full text-xs font-sans font-medium flex items-center gap-1.5 shadow-sm">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
                   SIGNAL NO. 1
                 </span>
-                <span className="text-xs font-sans font-bold text-white tracking-wide">
+                <span className="text-xs font-sans font-semibold text-white tracking-wide">
                   Southwest Monsoon / Habagat Active over NCR
                 </span>
               </div>
-              <span className="text-xs font-mono font-bold text-[#9ca3af] tabular-nums">
-                PAGASA • PROJECT NOAH HYDRO TELEMETRY
+              <span className="text-xs font-mono font-medium text-[#9da3af] tabular-nums">
+                PAGASA · PROJECT NOAH HYDRO TELEMETRY
               </span>
             </div>
 
-            {/* Grid 1: Water Inundation Level Hero Card + River Basin Spill Risk Gauge */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 mb-5">
-              
-              {/* Card A: Water Inundation Level (High-Contrast Editorial Yellow Card) */}
-              <div className="md:col-span-6 bg-[#FFE142] text-[#000000] rounded-3xl p-6 shadow-xl flex flex-col justify-between min-h-[220px]">
+            {/* Grid 1: Water Inundation Level + River Basin Spill Risk Gauge */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+              {/* Card A: Water Inundation Level */}
+              <div className="md:col-span-6 bg-[#16171d] border border-[#2b2d36] rounded-2xl p-5 shadow-xl flex flex-col justify-between text-white min-h-[200px]">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-sans font-extrabold uppercase tracking-wider text-black/80">
+                  <span className="text-xs font-mono font-medium uppercase tracking-wider text-[#9da3af]">
                     Water Inundation Level
                   </span>
-                  <Waves className="w-5 h-5 text-black" />
+                  <Waves className="w-5 h-5 text-[#54b2d3]" />
                 </div>
 
                 <div className="my-auto py-2">
                   <div className="flex items-baseline gap-1">
-                    <span className="text-6xl sm:text-7xl font-sans font-extrabold tracking-tight text-pitch-black tabular-nums leading-none">
-                      {depthMeters == null ? '—' : depthMeters.toFixed(1)}
-                      {depthMeters != null && (
-                        <span className="text-3xl sm:text-4xl font-sans font-bold ml-1 text-black">m</span>
-                      )}
+                    <span className="text-6xl font-display font-bold tracking-tight text-white tabular-nums leading-none">
+                      {depthMeters == null ? '0.0' : depthMeters.toFixed(1)}
+                      <span className="text-3xl font-normal ml-1 text-[#9da3af]">m</span>
                     </span>
                   </div>
-                  <p className="text-xs sm:text-sm font-sans font-bold tracking-tight text-black/90 mt-1 flex items-center gap-1.5">
-                    <AlertTriangle className="w-4 h-4 fill-black text-[#FFE142] flex-shrink-0" />
+                  <p className="text-xs font-semibold tracking-tight text-[#f5f6f9] mt-1 flex items-center gap-1.5">
+                    <AlertTriangle className="w-4 h-4 text-[#e07a3f] flex-shrink-0" />
                     <span>
                       {depthMeters == null
                         ? 'Depth unavailable — no sensor coverage'
                         : depthMeters >= 1.2 
-                          ? 'Critical Inundation • Above Hood Level' 
+                          ? 'Critical Inundation · Above Hood Level' 
                           : depthMeters >= 0.75 
-                            ? 'Severe Inundation • Chest Depth' 
+                            ? 'Severe Inundation · Chest Depth' 
                             : depthMeters >= 0.35 
-                              ? 'Moderate Runoff • Knee Depth' 
-                              : 'Gutter Inundation • Minor Ponding'}
+                              ? 'Moderate Runoff · Knee Depth' 
+                              : 'Gutter Inundation · Minor Ponding'}
                     </span>
                   </p>
                 </div>
 
-                <div className="pt-3 border-t border-black/15 flex items-center justify-between text-xs font-sans font-bold text-black/80">
+                <div className="pt-3 border-t border-white/10 flex items-center justify-between text-xs text-[#9da3af]">
                   <span>Sensor ID: NOAH_METRO_{Math.abs(Math.round(lat * 100)) % 100}</span>
                   <span className="font-mono tabular-nums">Confidence: 98.4%</span>
                 </div>
               </div>
 
-              {/* Card B: River Basin Spill Risk Gauge (EFCOS Station) */}
-              <div className="md:col-span-6 bg-[#121214] border border-[#26262b] rounded-3xl p-6 shadow-xl flex flex-col justify-between text-white min-h-[220px]">
+              {/* Card B: River Basin Spill Risk Gauge */}
+              <div className="md:col-span-6 bg-[#16171d] border border-[#2b2d36] rounded-2xl p-5 shadow-xl flex flex-col justify-between text-white min-h-[200px]">
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-mono font-bold uppercase tracking-wider text-[#9ca3af]">
+                    <span className="text-xs font-mono font-medium uppercase tracking-wider text-[#9da3af]">
                       River Basin Spill Risk (EFCOS)
                     </span>
-                    <Gauge className="w-5 h-5 text-clay-gold" />
+                    <Gauge className="w-5 h-5 text-[#54b2d3]" />
                   </div>
-                  <h4 className="font-serif text-lg font-bold text-white">
+                  <h4 className="font-display text-base font-bold text-white">
                     {nearestBasin.name}
                   </h4>
-                  <p className="text-xs text-[#9ca3af] mt-0.5">
+                  <p className="text-xs text-[#9da3af] mt-0.5">
                     {nearestBasin.station}
                   </p>
                 </div>
 
                 <div className="my-3">
                   <div className="flex items-baseline justify-between mb-1.5">
-                    <span className="text-xs font-bold text-clay-gold tracking-wide uppercase">
+                    <span className="text-xs font-bold text-[#e07a3f] tracking-wide uppercase">
                       {nearestBasin.alarmState}
                     </span>
-                    <span className="text-base font-mono font-extrabold text-white tabular-nums">
+                    <span className="text-sm font-mono font-bold text-white tabular-nums">
                       {nearestBasin.currentLevel} / {nearestBasin.criticalLevel}
                     </span>
                   </div>
 
-                  {/* Visual Progress Bar */}
-                  <div className="w-full bg-[#222328] rounded-full h-3 overflow-hidden p-0.5 border border-white/5">
+                  <div className="w-full bg-[#222328] rounded-full h-2.5 overflow-hidden p-0.5 border border-white/5">
                     <div 
                       className="h-full rounded-full transition-all duration-700 ease-out"
                       style={{ 
@@ -612,155 +689,98 @@ export default function StreetViewerModal({
                   </div>
                 </div>
 
-                <div className="pt-2.5 border-t border-white/10 flex items-center justify-between text-xs text-[#9ca3af]">
+                <div className="pt-2.5 border-t border-white/10 flex items-center justify-between text-xs text-[#9da3af]">
                   <span>Spill Delta: <strong className="text-white font-mono">{nearestBasin.delta}</strong></span>
-                  <span className="font-mono text-clay-gold">Capacity: {nearestBasin.percentage}%</span>
+                  <span className="font-mono text-[#54b2d3]">Capacity: {nearestBasin.percentage}%</span>
                 </div>
               </div>
             </div>
 
-            {/* Section 2: Passability Matrix */}
-            <div className="mb-5">
-              <div className="flex items-center gap-2 mb-3">
-                <Car className="w-4 h-4 text-clay-gold" />
-                <h4 className="font-mono text-sm font-bold text-white uppercase tracking-wider">
-                  Corridor Passability Matrix
-                </h4>
+            {/* Passability Matrix */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="bg-[#16171d] border border-[#2b2d36] rounded-xl p-3.5 flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-bold text-white">Sedans & City Cars</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ff6b6b]/20 text-[#ff6b6b] border border-[#ff6b6b]/30">
+                    IMPASSABLE
+                  </span>
+                </div>
+                <p className="text-[11px] text-[#9da3af] leading-relaxed">
+                  Exhaust submersion hazard. Water level exceeds safe intake draft (0.25m).
+                </p>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                
-                {/* Sedans Card */}
-                <div className="bg-[#121214] border border-[#26262b] rounded-2xl p-4 flex flex-col justify-between">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-white">Sedans & City Cars</span>
-                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-soft-red/20 text-soft-red border border-soft-red/30">
-                      IMPASSABLE
-                    </span>
-                  </div>
-                  <p className="text-xs text-[#9ca3af] leading-relaxed">
-                    Exhaust submersion hazard. Water level exceeds safe intake draft (0.25m).
-                  </p>
-                  <div className="mt-3 pt-2 border-t border-white/5 text-xs text-soft-red font-mono font-bold">
-                    DO NOT ATTEMPT CROSSING
-                  </div>
+              <div className="bg-[#16171d] border border-[#2b2d36] rounded-xl p-3.5 flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-bold text-white">High Clearance 4x4</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#e07a3f]/20 text-[#f59e6c] border border-[#e07a3f]/30">
+                    CAUTION
+                  </span>
                 </div>
+                <p className="text-[11px] text-[#9da3af] leading-relaxed">
+                  High-axle trucks only. Maintain low-gear crawl to prevent wake inundation.
+                </p>
+              </div>
 
-                {/* High Clearance 4x4 */}
-                <div className="bg-[#121214] border border-[#26262b] rounded-2xl p-4 flex flex-col justify-between">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-white">High Clearance 4x4</span>
-                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-clay-amber/20 text-clay-amber border border-clay-amber/30">
-                      CAUTION
-                    </span>
-                  </div>
-                  <p className="text-xs text-[#9ca3af] leading-relaxed">
-                    High-axle trucks only. Maintain low-gear crawl to prevent wake inundation of nearby homes.
-                  </p>
-                  <div className="mt-3 pt-2 border-t border-white/5 text-xs text-clay-amber font-mono font-bold">
-                    SLOW WAKE SPEED ONLY
-                  </div>
+              <div className="bg-[#16171d] border border-[#2b2d36] rounded-xl p-3.5 flex flex-col justify-between">
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="text-xs font-bold text-white">Pedestrian Transit</span>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#ff6b6b]/20 text-[#ff6b6b] border border-[#ff6b6b]/30">
+                    DANGER
+                  </span>
                 </div>
-
-                {/* Pedestrian Transit */}
-                <div className="bg-[#121214] border border-[#26262b] rounded-2xl p-4 flex flex-col justify-between">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-bold text-white">Pedestrian Transit</span>
-                    <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-soft-red/20 text-soft-red border border-soft-red/30">
-                      DANGER
-                    </span>
-                  </div>
-                  <p className="text-xs text-[#9ca3af] leading-relaxed">
-                    Strong surface runoff. Open drainage grates and dislodged manhole covers reported.
-                  </p>
-                  <div className="mt-3 pt-2 border-t border-white/5 text-xs text-soft-red font-mono font-bold">
-                    EVACUATION PROTOCOL ACTIVE
-                  </div>
-                </div>
-
+                <p className="text-[11px] text-[#9da3af] leading-relaxed">
+                  Strong surface runoff. Open drainage grates and dislodged covers reported.
+                </p>
               </div>
             </div>
 
-            {/* Section 3: Rainfall Accumulation Graph (Clean SVG Sparkline) */}
-            <div className="bg-[#121214] border border-[#26262b] rounded-3xl p-5 shadow-xl">
-              <div className="flex items-center justify-between mb-4">
+            {/* Rainfall Accumulation Sparkline */}
+            <div className="bg-[#16171d] border border-[#2b2d36] rounded-2xl p-4 shadow-xl">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
-                  <CloudRain className="w-4 h-4 text-clay-gold" />
+                  <CloudRain className="w-4 h-4 text-[#54b2d3]" />
                   <div>
-                    <h4 className="font-serif text-sm font-bold text-white">
+                    <h4 className="text-xs font-bold text-white">
                       6-Hour Rainfall Rate & Accumulation Sparkline
                     </h4>
-                    <p className="text-xs text-[#9ca3af]">
+                    <p className="text-[11px] text-[#9da3af]">
                       Real-time precipitation telemetry in millimeters per hour (mm/h)
                     </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <span className="text-xs font-mono font-bold text-clay-gold tabular-nums">
-                    Peak: {Math.max(...rainfallSparklineData.map(d => d.rate))} mm/h
-                  </span>
-                </div>
+                <span className="text-xs font-mono font-bold text-[#54b2d3] tabular-nums">
+                  Peak: {Math.max(...rainfallSparklineData.map(d => d.rate))} mm/h
+                </span>
               </div>
 
-              {/* Responsive SVG Sparkline Chart */}
-              <div className="w-full h-24 relative">
+              <div className="w-full h-20 relative">
                 <svg className="w-full h-full overflow-visible" viewBox="0 0 500 80" preserveAspectRatio="none">
                   <defs>
                     <linearGradient id="rainGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#FFE142" stopOpacity="0.35" />
-                      <stop offset="100%" stopColor="#FFE142" stopOpacity="0.0" />
+                      <stop offset="0%" stopColor="#54b2d3" stopOpacity="0.35" />
+                      <stop offset="100%" stopColor="#54b2d3" stopOpacity="0.0" />
                     </linearGradient>
                   </defs>
-
-                  {/* Horizontal Guide Grid Lines */}
-                  <line x1="0" y1="20" x2="500" y2="20" stroke="#26262b" strokeDasharray="4 4" strokeWidth="1" />
-                  <line x1="0" y1="50" x2="500" y2="50" stroke="#26262b" strokeDasharray="4 4" strokeWidth="1" />
-                  <line x1="0" y1="78" x2="500" y2="78" stroke="#333" strokeWidth="1" />
-
-                  {/* Area Fill */}
-                  <polygon
-                    fill="url(#rainGradient)"
-                    points={`
-                      0,80
-                      ${rainfallSparklineData.map((d, i) => {
-                        const x = (i / (rainfallSparklineData.length - 1)) * 500;
-                        const y = 75 - (d.rate / maxRate) * 65;
-                        return `${x},${y}`;
-                      }).join(' ')}
-                      500,80
-                    `}
-                  />
-
-                  {/* Sparkline Curve */}
                   <polyline
                     fill="none"
-                    stroke="#FFE142"
-                    strokeWidth="3"
+                    stroke="#54b2d3"
+                    strokeWidth="2.5"
                     strokeLinecap="round"
                     strokeLinejoin="round"
                     points={rainfallSparklineData.map((d, i) => {
                       const x = (i / (rainfallSparklineData.length - 1)) * 500;
-                      const y = 75 - (d.rate / maxRate) * 65;
+                      const y = 75 - (d.rate / maxRate) * 60;
                       return `${x},${y}`;
                     }).join(' ')}
                   />
-
-                  {/* Data Points */}
                   {rainfallSparklineData.map((d, i) => {
                     const x = (i / (rainfallSparklineData.length - 1)) * 500;
-                    const y = 75 - (d.rate / maxRate) * 65;
+                    const y = 75 - (d.rate / maxRate) * 60;
                     return (
                       <g key={i}>
-                        <circle cx={x} cy={y} r="4" fill="#FFE142" stroke="#121214" strokeWidth="2" />
-                        <text 
-                          x={x} 
-                          y={y - 8} 
-                          textAnchor="middle" 
-                          fill="#ffffff" 
-                          fontSize="9" 
-                          fontFamily="monospace"
-                          fontWeight="bold"
-                        >
+                        <circle cx={x} cy={y} r="3.5" fill="#54b2d3" stroke="#121214" strokeWidth="1.5" />
+                        <text x={x} y={y - 6} textAnchor="middle" fill="#ffffff" fontSize="9" fontFamily="monospace">
                           {d.rate}
                         </text>
                       </g>
@@ -768,21 +788,122 @@ export default function StreetViewerModal({
                   })}
                 </svg>
               </div>
-
-              {/* Timeline Axis Labels */}
-              <div className="flex justify-between items-center text-xs font-mono text-[#9ca3af] mt-2 pt-2 border-t border-white/5">
-                {rainfallSparklineData.map((d, i) => (
-                  <span key={i}>{d.hour}</span>
-                ))}
-              </div>
             </div>
 
+          </section>
+        )}
+
+        {/* Telemetry Micro-Cards Strip */}
+        <section aria-label="Roadway Benchmark Telemetry" className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-2.5">
+          {/* Datum 1: Curb Lip Height */}
+          <article 
+            style={{
+              background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.015) 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+              boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.06)',
+            }}
+            className="rounded-xl p-2.5 sm:p-3 flex items-center justify-between"
+          >
+            <div>
+              <p className="text-[10px] uppercase font-mono tracking-wider text-slate-400">Curb Height</p>
+              <p className="text-sm sm:text-base font-mono font-semibold text-[#f5f6f9] mt-0.5">0.25 m</p>
+            </div>
+            <div className="w-7 h-7 rounded-lg bg-white/[0.03] border border-white/[0.06] flex items-center justify-center text-slate-400">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M19 14l-7 7m0 0l-7-7m7 7V3" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8"></path>
+              </svg>
+            </div>
+          </article>
+
+          {/* Datum 2: Invert Elevation */}
+          <article 
+            style={{
+              background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.015) 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+              boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.06)',
+            }}
+            className="rounded-xl p-2.5 sm:p-3 flex items-center justify-between"
+          >
+            <div>
+              <p className="text-[10px] uppercase font-mono tracking-wider text-slate-400">Drainage Invert</p>
+              <p className="text-sm sm:text-base font-mono font-semibold text-[#f5f6f9] mt-0.5">-0.40 m</p>
+            </div>
+            <div className="w-7 h-7 rounded-lg bg-white/[0.03] border border-white/[0.06] flex items-center justify-center text-slate-400">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M8 7l4-4m0 0l4 4m-4-4v18" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8"></path>
+              </svg>
+            </div>
+          </article>
+
+          {/* Datum 3: Sensor Pairing */}
+          <article 
+            style={{
+              background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.015) 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+              boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.06)',
+            }}
+            className="rounded-xl p-2.5 sm:p-3 flex items-center justify-between"
+          >
+            <div>
+              <p className="text-[10px] uppercase font-mono tracking-wider text-slate-400">Telemetry Sync</p>
+              <p className="text-xs sm:text-sm font-semibold text-slate-200 mt-0.5">Ultrasonic-04</p>
+            </div>
+            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-mono tracking-wider text-slate-200 uppercase bg-white/[0.06] border border-white/10">ONLINE</span>
+          </article>
+
+          {/* Datum 4: Last Calibration */}
+          <article 
+            style={{
+              background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.015) 100%)',
+              border: '1px solid rgba(255, 255, 255, 0.06)',
+              boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.06)',
+            }}
+            className="rounded-xl p-2.5 sm:p-3 flex items-center justify-between"
+          >
+            <div>
+              <p className="text-[10px] uppercase font-mono tracking-wider text-slate-400">Corridor Survey</p>
+              <p className="text-xs sm:text-sm font-semibold text-slate-200 mt-0.5">March 2026</p>
+            </div>
+            <div className="w-7 h-7 rounded-lg bg-white/[0.03] border border-white/[0.06] flex items-center justify-center text-slate-400">
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.8"></path>
+              </svg>
+            </div>
+          </article>
+        </section>
+
+        {/* Modal Footer Action Controls */}
+        <footer className="mt-4 pt-4 border-t border-white/[0.07] flex flex-col-reverse sm:flex-row items-center justify-between gap-3">
+          <div className="flex items-center gap-2 text-slate-400 text-xs w-full sm:w-auto justify-center sm:justify-start">
+            <svg className="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"></path>
+            </svg>
+            <span>Press <kbd className="px-1.5 py-0.5 text-[10px] font-mono bg-white/[0.08] rounded border border-white/10 text-slate-300">ESC</kbd> to return to live command grid</span>
           </div>
+          <div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">
+            {/* Close Baseline View Button */}
+            <button 
+              type="button"
+              onClick={onClose}
+              className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:text-white bg-white/[0.04] hover:bg-white/[0.08] border border-white/10 transition-all focus:outline-none cursor-pointer"
+            >
+              Close Baseline View
+            </button>
+            {/* Compare Live Flood Stage Action */}
+            <button 
+              type="button"
+              onClick={() => setActiveMode(prev => prev === 'mapillary' ? 'telemetry' : 'mapillary')}
+              className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-semibold text-white bg-white/[0.08] hover:bg-white/[0.14] border border-white/10 shadow-sm transition-all flex items-center justify-center gap-1.5 focus:outline-none cursor-pointer"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" strokeLinecap="round" strokeLinejoin="round"></path>
+              </svg>
+              <span>{activeMode === 'mapillary' ? 'Compare Live Flood Stage' : 'Return to 360° Baseline'}</span>
+            </button>
+          </div>
+        </footer>
 
-        </div>
-
-      </div>
-
+      </main>
     </div>
   );
 }
