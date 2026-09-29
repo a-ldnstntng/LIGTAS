@@ -6,11 +6,15 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const PORT = 8088;
+const PORT = 8090;
+const ALT_PORT = 8088;
 const APK_PATH = path.resolve(__dirname, '../android/app/build/outputs/apk/debug/app-debug.apk');
 
-const server = http.createServer((req, res) => {
-  if (req.url === '/app-debug.apk') {
+function handleRequest(req, res) {
+  res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+  res.setHeader('Pragma', 'no-cache');
+
+  if (req.url === '/app-debug.apk' || req.url === '/download-apk') {
     if (!fs.existsSync(APK_PATH)) {
       res.writeHead(404, { 'Content-Type': 'text/plain' });
       res.end('APK file not found. Please build the project first.');
@@ -21,6 +25,7 @@ const server = http.createServer((req, res) => {
       'Content-Type': 'application/vnd.android.package-archive',
       'Content-Length': stat.size,
       'Content-Disposition': 'attachment; filename="LIGTAS-debug.apk"',
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
     });
     fs.createReadStream(APK_PATH).pipe(res);
     return;
@@ -143,13 +148,32 @@ const server = http.createServer((req, res) => {
     </div>
     <a href="/app-debug.apk" class="btn">Download APK</a>
   </div>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (let registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+  </script>
 </body>
 </html>`;
 
-  res.writeHead(200, { 'Content-Type': 'text/html' });
+  res.writeHead(200, { 
+    'Content-Type': 'text/html; charset=utf-8',
+    'Clear-Site-Data': '"cache", "storage"',
+    'Cache-Control': 'no-store, no-cache, must-revalidate',
+  });
   res.end(html);
+}
+
+const server1 = http.createServer(handleRequest);
+server1.listen(PORT, '0.0.0.0', () => {
+  console.log(`LIGTAS APK distribution server listening on http://0.0.0.0:${PORT}`);
 });
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`LIGTAS APK distribution server listening on http://0.0.0.0:${PORT}`);
+const server2 = http.createServer(handleRequest);
+server2.listen(ALT_PORT, '0.0.0.0', () => {
+  console.log(`LIGTAS APK distribution server listening on http://0.0.0.0:${ALT_PORT}`);
 });
