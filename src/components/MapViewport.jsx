@@ -4,6 +4,7 @@ import 'maplibre-gl/dist/maplibre-gl.css';
 import { Eye, Layers, X, Check, Play, Pause, RotateCcw, Clock } from 'lucide-react';
 import floodZones from '../data/floodPolygons.json';
 import { DEFAULT_TIMELINE, computeLiveInundation } from '../services/weatherService';
+import { useSmoothNumber } from '../utils/interpolation';
 
 // Canonical Metro Manila Hydro Telemetry Stations
 export const RIVER_STATIONS = [
@@ -342,10 +343,13 @@ export default function MapViewport({
     ? computeLiveInundation(locName, currentFrame.precip).depthMeters
     : (depthMeters ?? activeLocation?.depthMeters ?? 0);
 
+  // Smoothly interpolate depth during timeline scrubbing and synoptic updates
+  const animatedDepth = useSmoothNumber(effectiveLocationDepth, 400);
+
   const rawLocation = activeCorridor || activeLocation;
   const targetLocation = rawLocation ? {
     ...rawLocation,
-    depthMeters: effectiveLocationDepth,
+    depthMeters: animatedDepth,
     isReplay,
     replayHourLabel: isReplay ? currentFrame.hourLabel : null,
   } : null;
@@ -637,6 +641,8 @@ export default function MapViewport({
         paint: {
           'fill-color': '#ff6b6b',
           'fill-opacity': 0.42,
+          'fill-opacity-transition': { duration: 400, delay: 0 },
+          'fill-color-transition': { duration: 400, delay: 0 },
         },
       });
 
@@ -648,6 +654,8 @@ export default function MapViewport({
           'line-color': '#ff6b6b',
           'line-width': 2.5,
           'line-dasharray': [3, 2],
+          'line-color-transition': { duration: 400, delay: 0 },
+          'line-opacity-transition': { duration: 400, delay: 0 },
         },
       });
 

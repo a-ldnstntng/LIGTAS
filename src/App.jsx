@@ -4,6 +4,7 @@ import StreetViewerModal from './components/StreetViewerModal';
 import floodData from './data/floodPolygons.json';
 import { fetchNearbyImageId } from './services/mapillaryService';
 import { fetchLiveWeather, computeLiveInundation, formatDataFreshness, DEFAULT_TIMELINE } from './services/weatherService';
+import { useSmoothNumber } from './utils/interpolation';
 import { 
   Search, SlidersHorizontal, Droplets, CloudRain,
   Wind, AlertTriangle, ShieldCheck, Waves,
@@ -595,6 +596,9 @@ export default function App() {
       isReplay: false,
     };
   }, [activeLocation, telemetryMode, liveWeather, timelineStep]);
+
+  // Smooth 60fps interpolation for hero flood depth readout
+  const animatedHeroDepth = useSmoothNumber(activeMetrics.depthMeters, 400);
 
   const bypassInfo = useMemo(() => {
     const name = activeMetrics.name || 'Current Location';
@@ -1189,7 +1193,7 @@ export default function App() {
                   <div className="flex flex-col">
                     <div className="flex items-baseline gap-1 sm:gap-2">
                       <span className="font-display font-light text-[34px] sm:text-[54px] md:text-[88px] leading-none tracking-tight text-white drop-shadow-md">
-                        {activeMetrics.depthMeters !== null ? activeMetrics.depthMeters.toFixed(1) : '0.0'}
+                        {activeMetrics.depthMeters !== null ? animatedHeroDepth.toFixed(1) : '0.0'}
                         <span className="text-[15px] sm:text-[22px] md:text-[30px] font-normal text-[#c4c7d2] -ml-0.5 sm:-ml-1">m</span>
                       </span>
                     </div>
