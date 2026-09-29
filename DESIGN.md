@@ -39,6 +39,11 @@ typography:
     fontSize: "76px"
     fontWeight: 300
     lineHeight: 1
+  display-compact:
+    fontFamily: "'Manrope', sans-serif"
+    fontSize: "64px"
+    fontWeight: 300
+    lineHeight: 1
   display-title:
     fontFamily: "'Manrope', sans-serif"
     fontSize: "32px"

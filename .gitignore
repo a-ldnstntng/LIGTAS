@@ -30,3 +30,7 @@ dist-ssr
 .agents
 .impeccable
 
+# Binary packages & APKs
+*.apk
+apk_server/*.apk
+

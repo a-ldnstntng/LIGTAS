@@ -1,0 +1,411 @@
+Title: Live Content
+
+Description: Fetched live
+
+Source: https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ6Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpZCiVodG1sXzMxNTg4Y2ZjZGRmOTRjYWE4N2I3NzNmYWYxNmRmZmEyEgsSBxCZ9LaI3BwYAZIBIgoKcHJvamVjdF9pZBIUQhI0MTk2NDcyMTkzNTk2MTQwOTI&filename=&opi=96797242
+
+---
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>LIGTAS METRO Mobile App - Current Production</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Manrope', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            obsidian: '#0b0c0e',
+            graphite: '#121418',
+            surface: {
+              card: 'rgba(23, 26, 32, 0.72)',
+              subtle: 'rgba(255, 255, 255, 0.04)',
+              border: 'rgba(255, 255, 255, 0.08)',
+              glass: 'rgba(25, 28, 35, 0.85)',
+            },
+            accent: {
+              terracotta: '#e07a3f',
+              amber: '#f59e0b',
+              emerald: '#10b981',
+              cyan: '#38bdf8',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      background-color: #0b0c0e;
+      color: #f3f4f6;
+      font-family: 'Manrope', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
+      user-select: none;
+    }
+    .glass-card {
+      background: rgba(20, 23, 29, 0.78);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+    }
+    .pill-btn {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      backdrop-filter: blur(12px);
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .pill-btn:active {
+      transform: scale(0.96);
+      background: rgba(255, 255, 255, 0.1);
+    }
+    .custom-scroll::-webkit-scrollbar {
+      display: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-[#0b0c0e] text-slate-100 flex justify-center selection:bg-orange-500/20">
+
+  <!-- Mobile Device Shell -->
+  <main class="w-full max-w-[420px] min-h-screen pb-28 pt-3 px-4 flex flex-col relative bg-[#0b0c0e] shadow-2xl">
+
+    <!-- Top Status Bar Simulation -->
+    <div class="flex items-center justify-between px-2 pt-1 pb-2 text-[12px] font-mono text-zinc-400 select-none">
+      <span class="font-bold text-zinc-200">9:41</span>
+      <div class="flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5 fill-current text-zinc-300" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 4.03-9 9 0 2.12.74 4.07 1.97 5.61L4.35 18.25l1.41 1.41 1.25-1.25C8.42 19.38 10.12 20 12 20c4.97 0 9-4.03 9-9s-4.03-9-9-9zm0 2c3.87 0 7 3.13 7 7 0 1.58-.52 3.04-1.41 4.22l-9.81-9.81C8.96 5.52 10.42 5 12 5zm-7 7c0-1.58.52-3.04 1.41-4.22l9.81 9.81C15.04 18.48 13.58 19 12 19c-3.87 0-7-3.13-7-7z"/></svg>
+        <svg class="w-3.5 h-3.5 fill-current text-zinc-300" viewBox="0 0 24 24"><path d="M12 4C7.31 4 3.07 5.9 0 8.98L12 21 24 8.98C20.93 5.9 16.69 4 12 4zm0 3.32c3.84 0 7.33 1.42 10.02 3.78L12 18.22 1.98 11.1C4.67 8.74 8.16 7.32 12 7.32z"/></svg>
+        <div class="w-5 h-2.5 border border-zinc-400 rounded-sm p-[1px] flex items-center">
+          <div class="h-full w-full bg-emerald-500 rounded-[1px]"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1. Header Bar -->
+    <header class="mb-4 mt-1">
+      <div class="flex items-center justify-between mb-3 px-1">
+        <!-- Location and Date -->
+        <div>
+          <button class="flex items-center gap-1.5 group text-left">
+            <span class="text-[20px] font-extrabold tracking-tight text-white group-hover:text-zinc-200 transition-colors">España, Manila</span>
+            <svg class="w-4 h-4 text-zinc-400 group-hover:text-zinc-200 transition-transform group-hover:translate-y-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+          <p class="text-[12px] font-medium text-zinc-400 tracking-wide mt-0.5">Tuesday, September 29</p>
+        </div>
+
+        <!-- System Online Badge -->
+        <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-[11px] font-medium text-emerald-400">
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Live Net</span>
+        </div>
+      </div>
+
+      <!-- Quick Action Cluster -->
+      <div class="flex items-center gap-2">
+        <!-- GPS Squircle Button -->
+        <button title="My Location / GPS" class="pill-btn w-11 h-11 rounded-[16px] flex items-center justify-center text-zinc-300 hover:text-white shrink-0 shadow-sm" aria-label="Center on GPS">
+          <svg class="w-5 h-5 text-zinc-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="7"/>
+            <line x1="12" y1="1" x2="12" y2="5"/>
+            <line x1="12" y1="19" x2="12" y2="23"/>
+            <line x1="1" y1="12" x2="5" y2="12"/>
+            <line x1="19" y1="12" x2="23" y2="12"/>
+            <circle cx="12" cy="12" r="2" fill="currentColor"/>
+          </svg>
+        </button>
+
+        <!-- Emergency Hotlines Button -->
+        <button title="Emergency Hotlines" class="pill-btn w-11 h-11 rounded-[16px] flex items-center justify-center text-zinc-300 hover:text-white shrink-0 shadow-sm" aria-label="Emergency Hotlines">
+          <svg class="w-5 h-5 text-amber-500/90" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/>
+          </svg>
+        </button>
+
+        <!-- Search Location Input / Button -->
+        <div class="relative flex-1">
+          <div class="pill-btn h-11 rounded-[16px] px-3.5 flex items-center gap-2 cursor-pointer text-zinc-400 hover:text-zinc-200">
+            <svg class="w-4 h-4 text-zinc-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.2">
+              <circle cx="11" cy="11" r="7"/>
+              <line x1="21" y1="21" x2="16.65" y2="16.65" stroke-linecap="round"/>
+            </svg>
+            <span class="text-[13px] font-medium text-zinc-400 truncate">Search location...</span>
+          </div>
+        </div>
+
+        <!-- Hazard Report Button -->
+        <button class="pill-btn h-11 px-3.5 rounded-[16px] flex items-center gap-1.5 bg-orange-500/10 border-orange-500/25 hover:bg-orange-500/20 text-orange-400 font-semibold text-[13px] shrink-0">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/>
+            <line x1="12" y1="9" x2="12" y2="13"/>
+            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          </svg>
+          <span>Report</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- 2. Telemetry Hero Card -->
+    <section class="glass-card rounded-[28px] p-5 mb-4 relative overflow-hidden border border-white/10 group">
+      <!-- Background Image with vignette and dramatic overcast/twilight storm sky -->
+      <div class="absolute inset-0 z-0 bg-cover bg-center pointer-events-none opacity-45 mix-blend-luminosity filter contrast-125"
+           style="background-image: url('https://lh3.googleusercontent.com/aida/AEtjO1V9Rbka3TxQiOBGmRWn7IzBheLZE110w9lhTqV_BadgOlWDYsDco6b_NizJ_phrzJd4U4x2Nck29iRbfRFRMJaMh1dWDdMsUVwZX39qYexGJhriv4fhvbiTkyAUAN0OgtEdWZeGRV3fq6Pahf9exK2AIg4rk-1wMsw8fRIB7uNKxSpLa6iCOoYaXgG7SdnJLqFrN8FNXFCPrvcLWSykPf-vz3G39nfXIEkTWM7CQyFguqbQR-PufCInfA');"></div>
+      <div class="absolute inset-0 z-0 bg-gradient-to-t from-[#0e1117] via-[#0e1117]/85 to-transparent pointer-events-none"></div>
+      <div class="absolute inset-0 z-0 bg-gradient-to-r from-[#0e1117]/70 via-transparent to-[#0e1117]/70 pointer-events-none"></div>
+
+      <div class="relative z-10 flex flex-col justify-between min-h-[220px]">
+        <!-- Top Status Badges -->
+        <div class="flex items-center justify-between gap-2">
+          <!-- NCR Doppler Active -->
+          <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/50 border border-white/10 backdrop-blur-md">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
+            <span class="text-[11.5px] font-semibold tracking-wide text-zinc-200">NCR Doppler Active</span>
+          </div>
+
+          <!-- Radar Angle Badge -->
+          <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/50 border border-white/10 backdrop-blur-md">
+            <span class="text-[11.5px] font-mono font-medium text-zinc-300">48° N España Sweep</span>
+          </div>
+        </div>
+
+        <!-- Center Water Level Telemetry -->
+        <div class="my-5">
+          <div class="flex items-baseline gap-1">
+            <span class="text-[64px] font-extrabold tracking-tighter text-white font-mono leading-none">0.0</span>
+            <span class="text-[28px] font-bold text-zinc-400 font-mono tracking-tight">m</span>
+          </div>
+          <div class="mt-1">
+            <h2 class="text-[24px] font-bold text-white tracking-tight leading-tight">Passable</h2>
+            <p class="text-[13px] font-medium text-emerald-400/90 tracking-wide mt-0.5 flex items-center gap-1.5">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+              Dry / Normal Gutter Clearance
+            </p>
+          </div>
+        </div>
+
+        <!-- Action Footer Pills -->
+        <div class="flex items-center justify-between pt-2 border-t border-white/10 gap-2">
+          <div class="flex items-center gap-1.5">
+            <!-- H 0.4m -->
+            <div class="px-2.5 py-1 rounded-xl bg-black/40 border border-white/10 text-[11px] font-mono text-zinc-300 flex items-center gap-1">
+              <span class="text-zinc-500 font-bold">H</span>
+              <span class="font-bold text-zinc-200">0.4m</span>
+            </div>
+            <!-- L 0.0m -->
+            <div class="px-2.5 py-1 rounded-xl bg-black/40 border border-white/10 text-[11px] font-mono text-zinc-300 flex items-center gap-1">
+              <span class="text-zinc-500 font-bold">L</span>
+              <span class="font-bold text-zinc-200">0.0m</span>
+            </div>
+          </div>
+
+          <!-- Inspect Street Cam Button -->
+          <button class="pill-btn px-3 py-1.5 rounded-xl bg-white/[0.07] border-white/15 hover:bg-white/[0.12] flex items-center gap-1.5 text-zinc-200 font-medium text-[12px] shadow-sm">
+            <svg class="w-3.5 h-3.5 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="23 7 16 12 23 17 23 7"/>
+              <rect x="1" y="5" width="15" height="14" rx="2" ry="2"/>
+            </svg>
+            <span>Inspect Street Cam</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. Hourly Flood & Precipitation Forecast -->
+    <section class="mb-5">
+      <div class="flex items-center justify-between px-1 mb-2.5">
+        <h3 class="text-[12px] font-bold tracking-wider text-zinc-400 uppercase font-mono">Hourly Risk & Rain Forecast</h3>
+        <span class="text-[11px] text-zinc-500 font-mono">Next 8 Hours</span>
+      </div>
+
+      <!-- 2x4 Grid -->
+      <div class="grid grid-cols-4 gap-2">
+        <!-- 1. Now -->
+        <div class="glass-card rounded-[20px] p-2.5 flex flex-col items-center justify-between text-center min-h-[110px] border border-white/10">
+          <div class="w-full flex items-center justify-between text-[11px] font-mono">
+            <span class="text-zinc-300 font-bold">Now</span>
+            <span class="text-sky-400 font-semibold">76%</span>
+          </div>
+          <div class="my-1.5 flex items-center justify-center">
+            <!-- Sun + White Cloud Glass Icon -->
+            <img src="https://lh3.googleusercontent.com/aida/AEtjO1VkUBH0xG8LSAyyJMdsi5gPgtoN0M8Q3339mUCdlPlUSGwWR9QDWGh_V6_hfoxcd8tvpW-PKHS49P0OHRgl4IEaudWkH0oOrzbsz-ah6Tq5fsUet4z9wj3PmhSsAgECKMNXygdgfUl7G9eKEkMTSYAdHyvfPwel__pipwOfokyBo0d8Ss7AsWkAP58hy9QGWgJUvty3yJibcjUjbKo9kxInVfwlIBhhMAut103X0yaLrsm62M2zsJZDGA" alt="Partly Cloudy" class="w-9 h-9 object-contain drop-shadow-md">
+          </div>
+          <span class="text-[12px] font-mono font-bold text-zinc-200">0.0m</span>
+        </div>
+
+        <!-- 2. 3 PM -->
+        <div class="glass-card rounded-[20px] p-2.5 flex flex-col items-center justify-between text-center min-h-[110px] border border-white/10">
+          <div class="w-full flex items-center justify-between text-[11px] font-mono">
+            <span class="text-zinc-400">3 PM</span>
+            <span class="text-sky-400 font-semibold">85%</span>
+          </div>
+          <div class="my-1.5 flex items-center justify-center">
+            <!-- Rain Storm Icon -->
+            <img src="https://lh3.googleusercontent.com/aida/AEtjO1VZ672lVVUb7nKjdKmL4nJ6-i92m05bHmxn3raxA59Fod0kkQfhRYY0KttU6Wm85cy-l64_xxBBvzyOJVi7Iz0-Uj-AZrccmY27B7jcWQsufySCp0GShsiOXUqjluKv7TFMFWCDTPs0TiWNVzyqtlJZ6eCvjtQxZWa4Xyy3SfsT7S9CvmG1dTAQD0XjvYL_Ay-AV734ZrRBHMSTqRMFxRqOZk_p6hjruCe_97xJNa12VX4scVOoU8oqDw" alt="Rain Storm" class="w-9 h-9 object-contain drop-shadow-md">
+          </div>
+          <span class="text-[12px] font-mono font-bold text-zinc-200">0.0m</span>
+        </div>
+
+        <!-- 3. 4 PM (Higher Accumulation) -->
+        <div class="glass-card rounded-[20px] p-2.5 flex flex-col items-center justify-between text-center min-h-[110px] border border-sky-500/30 bg-sky-500/[0.04]">
+          <div class="w-full flex items-center justify-between text-[11px] font-mono">
+            <span class="text-zinc-300 font-bold">4 PM</span>
+            <span class="text-amber-400 font-bold">91%</span>
+          </div>
+          <div class="my-1.5 flex items-center justify-center">
+            <img src="https://lh3.googleusercontent.com/aida/AEtjO1VZ672lVVUb7nKjdKmL4nJ6-i92m05bHmxn3raxA59Fod0kkQfhRYY0KttU6Wm85cy-l64_xxBBvzyOJVi7Iz0-Uj-AZrccmY27B7jcWQsufySCp0GShsiOXUqjluKv7TFMFWCDTPs0TiWNVzyqtlJZ6eCvjtQxZWa4Xyy3SfsT7S9CvmG1dTAQD0XjvYL_Ay-AV734ZrRBHMSTqRMFxRqOZk_p6hjruCe_97xJNa12VX4scVOoU8oqDw" alt="Rain Storm" class="w-9 h-9 object-contain drop-shadow-md">
+          </div>
+          <span class="text-[12px] font-mono font-bold text-amber-300">0.1m</span>
+        </div>
+
+        <!-- 4. 5 PM (Higher Accumulation) -->
+        <div class="glass-card rounded-[20px] p-2.5 flex flex-col items-center justify-between text-center min-h-[110px] border border-sky-500/30 bg-sky-500/[0.04]">
+          <div class="w-full flex items-center justify-between text-[11px] font-mono">
+            <span class="text-zinc-300 font-bold">5 PM</span>
+            <span class="text-amber-400 font-bold">92%</span>
+          </div>
+          <div class="my-1.5 flex items-center justify-center">
+            <img src="https://lh3.googleusercontent.com/aida/AEtjO1VZ672lVVUb7nKjdKmL4nJ6-i92m05bHmxn3raxA59Fod0kkQfhRYY0KttU6Wm85cy-l64_xxBBvzyOJVi7Iz0-Uj-AZrccmY27B7jcWQsufySCp0GShsiOXUqjluKv7TFMFWCDTPs0TiWNVzyqtlJZ6eCvjtQxZWa4Xyy3SfsT7S9CvmG1dTAQD0XjvYL_Ay-AV734ZrRBHMSTqRMFxRqOZk_p6hjruCe_97xJNa12VX4scVOoU8oqDw" alt="Rain Storm" class="w-9 h-9 object-contain drop-shadow-md">
+          </div>
+          <span class="text-[12px] font-mono font-bold text-amber-300">0.1m</span>
+        </div>
+
+        <!-- 5. 6 PM -->
+        <div class="glass-card rounded-[20px] p-2.5 flex flex-col items-center justify-between text-center min-h-[110px] border border-white/10">
+          <div class="w-full flex items-center justify-between text-[11px] font-mono">
+            <span class="text-zinc-400">6 PM</span>
+            <span class="text-sky-400 font-semibold">88%</span>
+          </div>
+          <div class="my-1.5 flex items-center justify-center">
+            <img src="https://lh3.googleusercontent.com/aida/AEtjO1VZ672lVVUb7nKjdKmL4nJ6-i92m05bHmxn3raxA59Fod0kkQfhRYY0KttU6Wm85cy-l64_xxBBvzyOJVi7Iz0-Uj-AZrccmY27B7jcWQsufySCp0GShsiOXUqjluKv7TFMFWCDTPs0TiWNVzyqtlJZ6eCvjtQxZWa4Xyy3SfsT7S9CvmG1dTAQD0XjvYL_Ay-AV734ZrRBHMSTqRMFxRqOZk_p6hjruCe_97xJNa12VX4scVOoU8oqDw" alt="Rain Storm" class="w-9 h-9 object-contain drop-shadow-md">
+          </div>
+          <span class="text-[12px] font-mono font-bold text-zinc-200">0.0m</span>
+        </div>
+
+        <!-- 6. 7 PM -->
+        <div class="glass-card rounded-[20px] p-2.5 flex flex-col items-center justify-between text-center min-h-[110px] border border-white/10">
+          <div class="w-full flex items-center justify-between text-[11px] font-mono">
+            <span class="text-zinc-400">7 PM</span>
+            <span class="text-sky-400 font-semibold">80%</span>
+          </div>
+          <div class="my-1.5 flex items-center justify-center">
+            <img src="https://lh3.googleusercontent.com/aida/AEtjO1VZ672lVVUb7nKjdKmL4nJ6-i92m05bHmxn3raxA59Fod0kkQfhRYY0KttU6Wm85cy-l64_xxBBvzyOJVi7Iz0-Uj-AZrccmY27B7jcWQsufySCp0GShsiOXUqjluKv7TFMFWCDTPs0TiWNVzyqtlJZ6eCvjtQxZWa4Xyy3SfsT7S9CvmG1dTAQD0XjvYL_Ay-AV734ZrRBHMSTqRMFxRqOZk_p6hjruCe_97xJNa12VX4scVOoU8oqDw" alt="Rain Storm" class="w-9 h-9 object-contain drop-shadow-md">
+          </div>
+          <span class="text-[12px] font-mono font-bold text-zinc-200">0.0m</span>
+        </div>
+
+        <!-- 7. 8 PM (Overcast Cloud) -->
+        <div class="glass-card rounded-[20px] p-2.5 flex flex-col items-center justify-between text-center min-h-[110px] border border-white/10">
+          <div class="w-full flex items-center justify-between text-[11px] font-mono">
+            <span class="text-zinc-400">8 PM</span>
+            <span class="text-zinc-400">67%</span>
+          </div>
+          <div class="my-1.5 flex items-center justify-center">
+            <img src="https://lh3.googleusercontent.com/aida/AEtjO1XOy9CLuz6M3fcP9_fQLuDYBdmCvYnKcSdSFrJVrCY30tedxYUh5XghjA6sJ8N4iwabb6DXxbtJiBBojQxcJrGzwdhtPxZf0AgDJokkVSZ2jWxyxM_3ydil7DOT-uDFmCsnQ9fsyp7K21PZFWWqOqckzUz8WNhcxPvfjjdsEYeRamj3zQxQPkIMyheDMvgMJvAws47tULIog7Sce53StHGplLVtwySfY9Jhfpw5roxitDKEt5t0eAri3w" alt="Overcast Cloud" class="w-9 h-9 object-contain drop-shadow-md">
+          </div>
+          <span class="text-[12px] font-mono font-bold text-zinc-300">0.0m</span>
+        </div>
+
+        <!-- 8. 9 PM (Night Cloud / Calming) -->
+        <div class="glass-card rounded-[20px] p-2.5 flex flex-col items-center justify-between text-center min-h-[110px] border border-white/10">
+          <div class="w-full flex items-center justify-between text-[11px] font-mono">
+            <span class="text-zinc-400">9 PM</span>
+            <span class="text-zinc-500">42%</span>
+          </div>
+          <div class="my-1.5 flex items-center justify-center">
+            <img src="https://lh3.googleusercontent.com/aida/AEtjO1XOy9CLuz6M3fcP9_fQLuDYBdmCvYnKcSdSFrJVrCY30tedxYUh5XghjA6sJ8N4iwabb6DXxbtJiBBojQxcJrGzwdhtPxZf0AgDJokkVSZ2jWxyxM_3ydil7DOT-uDFmCsnQ9fsyp7K21PZFWWqOqckzUz8WNhcxPvfjjdsEYeRamj3zQxQPkIMyheDMvgMJvAws47tULIog7Sce53StHGplLVtwySfY9Jhfpw5roxitDKEt5t0eAri3w" alt="Night Cloud" class="w-9 h-9 object-contain opacity-75 drop-shadow-md">
+          </div>
+          <span class="text-[12px] font-mono font-bold text-zinc-300">0.0m</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Secondary Quick Status Snapshot: Drainage & Ground Truth preview -->
+    <section class="glass-card rounded-[24px] p-3.5 mb-2 flex items-center justify-between border border-white/10">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-2xl bg-black/40 border border-white/10 flex items-center justify-center p-1.5">
+          <img src="https://lh3.googleusercontent.com/aida/AEtjO1WvbKYKXylTTv15Pf12oHSpQ-PeJLDCrZiLuIiK8PMompgBxwZAwWFbDQ-XVkLzGomwuPpbJNTKr7AhnD33IQYlI73doqwOLAutTF2zi6QPVPjqnnfQmja7tm3b8M_Vrk8QbFxgZkJWZ7Iqxd3281hnD_hd-iPtq_2YFfcy7bvT5s7KtN3DcJzZguBKCyMZKWc1vOyFfZ0guHMaTsINVScmFM3UTFF6vpVJbYWT9Pko4N4yzeo2RbKZmQ" alt="River Telemetry" class="w-full h-full object-contain">
+        </div>
+        <div>
+          <h4 class="text-[13px] font-bold text-white leading-tight">San Juan Riverway Catchment</h4>
+          <p class="text-[11.5px] text-zinc-400 mt-0.5">Headway normal &bull; Sump pumps running</p>
+        </div>
+      </div>
+      <div class="text-right font-mono">
+        <span class="text-[14px] font-bold text-zinc-100">2.1m</span>
+        <span class="block text-[10px] text-zinc-500">below spillway</span>
+      </div>
+    </section>
+
+    <!-- 4. Docked Bottom Navigation Bar -->
+    <nav class="fixed bottom-4 left-1/2 -translate-x-1/2 w-[calc(100%-32px)] max-w-[388px] z-50">
+      <div class="glass-card rounded-full px-3 py-2 flex items-center justify-around border border-white/15 shadow-[0_12px_40px_rgba(0,0,0,0.8)] backdrop-blur-2xl bg-[#121418]/90">
+        
+        <!-- Tab 1: Home (Active with emerald dot) -->
+        <button class="flex flex-col items-center justify-center relative p-1.5 rounded-full transition-transform active:scale-95" aria-label="Home">
+          <div class="w-8 h-8 flex items-center justify-center">
+            <img src="https://lh3.googleusercontent.com/aida/AEtjO1Uog4PiqbPtPVqGS0NdxX8daWrn2fJ1WoUga7vvQLRf4evp6rzKvnKCIgNTQpZ-x2LB94Yc_xjW74ypRVVsnCMIBrqtnjQs6T4Gc2bo_bnZ7U44zaQa7y_JWZIHp-VllxmyzVJqznyTfM5uPjOX8lDNn0_5UMIEUsMpmai4Pzh9gZfJqFZLlmqiiAQHLCcRwcRYv8HRu5ifwj62UjwGpj9Hwaq3VVQYR4hIyeQFPjDQoJXIw2UBBwJRyw" alt="Home" class="w-6 h-6 object-contain">
+          </div>
+          <span class="w-1 h-1 rounded-full bg-emerald-400 mt-0.5 shadow-[0_0_6px_#34d399]"></span>
+        </button>
+
+        <!-- Tab 2: Map View -->
+        <button class="flex flex-col items-center justify-center p-1.5 rounded-full opacity-70 hover:opacity-100 transition-opacity active:scale-95" aria-label="Map View">
+          <div class="w-8 h-8 flex items-center justify-center">
+            <img src="https://lh3.googleusercontent.com/aida/AEtjO1Xqu5mY9OY7gmA1pDQtw7klzcJK5FyhnigD66m9HxYC6bX9MgYzNPhtaadlLssm5i1zMsNJMEof_-AqufbsUqDEkRnri4SqEF6VwGkeXQFXyCQAsvinXtaJXfe6LY3fs8Sg6CZxcB9EqmgeA_xitcC1vTToTYL8p8ERftB4SBvlJ_TFcTUB9zAROOrhriwEaqoaNu3pqKe-vwWg7haowfNowRC9T1QaxKzTJQCubclylTgl8TA7ELIL4Q" alt="Map View" class="w-6 h-6 object-contain">
+          </div>
+          <span class="w-1 h-1 rounded-full bg-transparent mt-0.5"></span>
+        </button>
+
+        <!-- Tab 3: Doppler Radar -->
+        <button class="flex flex-col items-center justify-center p-1.5 rounded-full opacity-70 hover:opacity-100 transition-opacity active:scale-95" aria-label="Doppler Radar">
+          <div class="w-8 h-8 flex items-center justify-center">
+            <img src="https://lh3.googleusercontent.com/aida/AEtjO1X-f72iOv5SE9gV2IIDkW9INl06pN-NlgGXMvmzH-Whjqh2IK20cEGzhXio60vNjVymro9kgO1wNPm9gvyyaNP-FxHjOJ4bV3wHUhqBJNaQzRdiQy-0IdARyRtMC1Xy9m66b5JY-AEznR_cfcAxaFjlAA7k4YM8lqsDe7CitHGnz1pmpoUa5M2FZuY2mv8jHWXQ17M15BiJqOt2gadq0KkyQzWN-5sxn5G9kOOjmvpASGsrjRRREwq0vw" alt="Doppler Radar" class="w-6 h-6 object-contain">
+          </div>
+          <span class="w-1 h-1 rounded-full bg-transparent mt-0.5"></span>
+        </button>
+
+        <!-- Tab 4: River Telemetry -->
+        <button class="flex flex-col items-center justify-center p-1.5 rounded-full opacity-70 hover:opacity-100 transition-opacity active:scale-95" aria-label="River Telemetry">
+          <div class="w-8 h-8 flex items-center justify-center">
+            <img src="https://lh3.googleusercontent.com/aida/AEtjO1XQrYcRPhxTj6ZFVjPF3JP18d7bLohEKCxgaAYy6um8HqVtXPBOg5hcPQq09qj-8LYgJoWi0DuDOTyfO3CBNg583xTTsNjtJEkiqZzgxnX5NiyqI_UbDcDNrB8UWhSJcvUZPcNXpJUIDYxeICGZU_1KFu09LuhO36ZY2tsl8g9d54cj2oPvNsoPbajX4ZGIB_FFUux7h2L38L37HjJyW4y2WArlF0hzTlQOL_mVdXP0qWmr50ERDQ7xuQ" alt="River Telemetry" class="w-6 h-6 object-contain">
+          </div>
+          <span class="w-1 h-1 rounded-full bg-transparent mt-0.5"></span>
+        </button>
+
+        <!-- Tab 5: Street CCTV -->
+        <button class="flex flex-col items-center justify-center p-1.5 rounded-full opacity-70 hover:opacity-100 transition-opacity active:scale-95" aria-label="Street CCTV">
+          <div class="w-8 h-8 flex items-center justify-center">
+            <img src="https://lh3.googleusercontent.com/aida/AEtjO1XCWxF6ePgdDcD498uvZ9vCOUhTq9IxAbL3PrC9es7MZVRFdClUm8oLnHVmuc-oHtlseZMkiyYKo1s77JQcmBvkaEmnT7lT_mjGGavTDBioPOlO65XxJ8R7CS6SIRJGpMFAMK5hj9H6gSJ32dSf0NkYL7U7Cj9i36WPtvK5x0LnXov6_5MzVljsisaDfaCNCIcK-830m1VY2fQa3LhcjuPTh1LflZCZGiNghvm6Ug02CMxoYU7Ef87IMg" alt="Street CCTV" class="w-6 h-6 object-contain">
+          </div>
+          <span class="w-1 h-1 rounded-full bg-transparent mt-0.5"></span>
+        </button>
+
+        <!-- Tab 6: Hotlines -->
+        <button class="flex flex-col items-center justify-center p-1.5 rounded-full opacity-70 hover:opacity-100 transition-opacity active:scale-95" aria-label="Hotlines">
+          <div class="w-8 h-8 flex items-center justify-center">
+            <img src="https://lh3.googleusercontent.com/aida/AEtjO1V__y0JF9WpMkyrrwh8QVz9eOV_scVvn-MD9T9QG6isa1gPREX6pJM3aVTVYF8i0eU6JFb0zdsNOq-tclwBrgOunfpBLEfsKRpGlt9s9N6caC5O46u9cIZ7TX8cCdFAVCS43HEPzTQiCuH3h1nYXZcpnthQ9lRSg8kBuo2kMdEM_GOAW9-5RanuUqBTCnlWvcgWaFnigXn_sk_UiCL1b7huxpCVWNzWzPeV4B8xuHc_7b0x4OqoRE7KGg" alt="Hotlines" class="w-6 h-6 object-contain">
+          </div>
+          <span class="w-1 h-1 rounded-full bg-transparent mt-0.5"></span>
+        </button>
+
+      </div>
+    </nav>
+
+  </main>
+
+</body>
+</html>
+
+
