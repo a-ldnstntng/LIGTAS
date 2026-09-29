@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "proxy": "node server/proxy.js",
+    "apk-serve": "node server/apkServer.js",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
