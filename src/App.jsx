@@ -3,7 +3,7 @@ import MapViewport from './components/MapViewport';
 import StreetViewerModal from './components/StreetViewerModal';
 import floodData from './data/floodPolygons.json';
 import { fetchNearbyImageId } from './services/mapillaryService';
-import { fetchLiveWeather, computeLiveInundation, formatDataFreshness, DEFAULT_TIMELINE } from './services/weatherService';
+import { fetchLiveWeather, computeLiveInundation, formatDataFreshness, getCachedWeather, DEFAULT_TIMELINE } from './services/weatherService';
 import { useSmoothNumber } from './utils/interpolation';
 import { 
   Search, SlidersHorizontal, Droplets, CloudRain,
@@ -11,7 +11,7 @@ import {
   MapPin, Navigation, PhoneCall, Activity,
   Radio, Info, ArrowUpRight, Loader2, Camera,
   RefreshCw, Layers, Maximize2, ChevronRight, X,
-  Clock, Calendar
+  Clock, Calendar, WifiOff
 } from 'lucide-react';
 
 // Fallback for corridors outside sensor coverage (Fail-Safe: Never default to passable)
@@ -97,20 +97,32 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showEmergencyModal, showSensorsModal, showCorridorsModal, isSearchFocused]);
 
-  // Real-Time Doppler Weather & Radar Telemetry State (Open-Meteo)
-  const [liveWeather, setLiveWeather] = useState({
-    temperature: 27,
-    feelsLike: 31,
-    humidity: 85,
-    precipitation: 0.0,
-    windSpeed: 11,
-    weatherCode: 0,
-    condition: 'Clear Sky',
-    lastUpdated: 'Connecting...',
-    isOffline: false,
-    hourly: [],
-    daily: [],
-    timeline: DEFAULT_TIMELINE,
+  // Real-Time Doppler Weather & Radar Telemetry State (Open-Meteo & Offline Cache)
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator !== 'undefined' ? navigator.onLine : true));
+  const [liveWeather, setLiveWeather] = useState(() => {
+    const cached = getCachedWeather();
+    if (cached) {
+      return {
+        ...cached,
+        isCached: true,
+        isOffline: typeof navigator !== 'undefined' ? !navigator.onLine : false,
+      };
+    }
+    return {
+      temperature: 27,
+      feelsLike: 31,
+      humidity: 85,
+      precipitation: 0.0,
+      windSpeed: 11,
+      weatherCode: 0,
+      condition: 'Clear Sky',
+      lastUpdated: 'Connecting...',
+      isOffline: false,
+      isCached: false,
+      hourly: [],
+      daily: [],
+      timeline: DEFAULT_TIMELINE,
+    };
   });
   const [timelineStep, setTimelineStep] = useState(6);
   const [isPlayingTimeline, setIsPlayingTimeline] = useState(false);
@@ -152,6 +164,23 @@ export default function App() {
       updateWeather();
     }, 30000);
     return () => clearInterval(interval);
+  }, [updateWeather]);
+
+  // Network Connectivity Event Listeners (PWA Offline / Online detection)
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      updateWeather();
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, [updateWeather]);
 
   // Dynamic Data Freshness & Staleness Tracker (Master Plan Section 4)
@@ -1157,6 +1186,41 @@ export default function App() {
             </div>
           )}
 
+          {/* ================= OFFLINE & TELEMETRY DISCONNECT BANNER ================= */}
+          {(!isOnline || liveWeather.isOffline) && (
+            <div 
+              role="status"
+              aria-live="polite"
+              className="w-full bg-[#1e1713]/95 border border-[#f59e6c]/40 text-[#f5f6f9] backdrop-blur-md rounded-xl sm:rounded-2xl px-3.5 py-2.5 flex items-center justify-between gap-3 text-[12px] sm:text-[13px] shadow-lg shrink-0 transition-all duration-300"
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <div className="w-7 h-7 rounded-full bg-[#f59e6c]/20 border border-[#f59e6c]/50 flex items-center justify-center shrink-0 text-[#f59e6c]">
+                  <WifiOff className="w-3.5 h-3.5" />
+                </div>
+                <div className="truncate">
+                  <span className="font-semibold text-[#f59e6c]">
+                    {!isOnline ? 'Offline Mode' : 'Telemetry Disconnected'}:
+                  </span>{' '}
+                  <span className="text-[#d8dbe5]">
+                    {liveWeather.updatedAt 
+                      ? `Viewing telemetry cached from ${dataFreshness.label.toLowerCase()}`
+                      : 'Viewing unverified baseline telemetry. Live updates paused.'}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => updateWeather()}
+                disabled={isRefreshingWeather}
+                className="shrink-0 px-3 py-1 rounded-lg bg-[#2e241f] hover:bg-[#3d302a] active:scale-[0.98] border border-[#f59e6c]/40 text-[#f59e6c] font-medium text-[11px] sm:text-[12px] flex items-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                title="Attempt to reconnect and fetch fresh telemetry"
+              >
+                <RefreshCw className={`w-3 h-3 ${isRefreshingWeather ? 'animate-spin' : ''}`} />
+                <span>{isRefreshingWeather ? 'Connecting...' : 'Reconnect'}</span>
+              </button>
+            </div>
+          )}
+
           {/* ================= TAB 1: OVERVIEW & WEATHER ================= */}
           {activeTab === 'Overview' && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start animate-in fade-in duration-200">
@@ -1182,26 +1246,28 @@ export default function App() {
                 <div className="relative z-10 flex items-center justify-between gap-1.5 flex-wrap">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full backdrop-blur-md border text-[9px] sm:text-[11px] font-medium transition-colors ${
-                      liveWeather.isOffline || dataFreshness.isStale
+                      !isOnline || liveWeather.isOffline || dataFreshness.isStale
                         ? 'bg-[#2a1717]/85 border-[#4d2424] text-[#ff7b7b]'
                         : 'bg-[#1b1d24]/80 border-[#30333e] text-[#c4c7d2]'
                     }`}>
                       <span className={`w-1.5 h-1.5 rounded-full ${
-                        liveWeather.isOffline || dataFreshness.isStale 
+                        !isOnline || liveWeather.isOffline || dataFreshness.isStale 
                           ? 'bg-[#ff6b6b]' 
                           : 'bg-[#54b2d3] animate-pulse'
                       }`}></span>
                       <span>
-                        {liveWeather.isOffline 
-                          ? 'Offline Telemetry' 
-                          : `NCR Doppler · ${dataFreshness.badgeText}`}
+                        {!isOnline
+                          ? `Offline Cache · ${dataFreshness.badgeText}`
+                          : liveWeather.isOffline 
+                            ? `Disconnected · ${dataFreshness.badgeText}`
+                            : `NCR Doppler · ${dataFreshness.badgeText}`}
                       </span>
                     </span>
 
-                    {(dataFreshness.isStale || liveWeather.isOffline) && (
+                    {(dataFreshness.isStale || liveWeather.isOffline || !isOnline) && (
                       <span className="text-[9px] sm:text-[10px] font-mono px-2 py-0.5 rounded-full bg-[#3d2417] text-[#f59e6c] border border-[#5a341e] flex items-center gap-1">
                         <AlertTriangle className="w-2.5 h-2.5 text-[#f59e6c] shrink-0" />
-                        <span>Stale Data Warning</span>
+                        <span>{!isOnline ? 'Offline Warning' : 'Stale Data Warning'}</span>
                       </span>
                     )}
 

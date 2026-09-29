@@ -45,6 +45,34 @@ export const DEFAULT_TIMELINE = [
   { stepIndex: 6, offsetHours: 0, label: 'Live (Now)', hourLabel: 'Live', timeStr: 'Live', precip: 0.0, temp: 27, isLive: true },
 ];
 
+export const WEATHER_STORAGE_KEY = 'ligtas_last_weather';
+
+export function getCachedWeather() {
+  if (typeof window === 'undefined' || !window.localStorage) return null;
+  try {
+    const raw = localStorage.getItem(WEATHER_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed && typeof parsed === 'object' && parsed.temperature !== undefined) {
+      return parsed;
+    }
+  } catch (err) {
+    console.warn('Failed to load cached weather telemetry:', err);
+  }
+  return null;
+}
+
+export function saveCachedWeather(payload) {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    if (payload && payload.updatedAt && payload.temperature !== null) {
+      localStorage.setItem(WEATHER_STORAGE_KEY, JSON.stringify(payload));
+    }
+  } catch (err) {
+    console.warn('Failed to write cached weather telemetry:', err);
+  }
+}
+
 export async function fetchLiveWeather(latitude, longitude) {
   try {
     const proxyWeatherUrl = `/api/weather?lat=${latitude}&lon=${longitude}`;
@@ -212,7 +240,7 @@ export async function fetchLiveWeather(latitude, longitude) {
       });
     }
 
-    return {
+    const result = {
       temperature: Math.round(current.temperature_2m),
       feelsLike: Math.round(current.apparent_temperature),
       humidity: current.relative_humidity_2m,
@@ -224,6 +252,7 @@ export async function fetchLiveWeather(latitude, longitude) {
       lastUpdated: timeStr,
       updatedAt: now.getTime(),
       isOffline: false,
+      isCached: false,
       hourly: hourly.length ? hourly : DEFAULT_HOURLY,
       daily: daily.length ? daily : DEFAULT_DAILY,
       timeline: timeline.length > 0 ? timeline : DEFAULT_TIMELINE,
@@ -232,8 +261,19 @@ export async function fetchLiveWeather(latitude, longitude) {
       riverDischargeSeries: dischargeList,
       riverDischargeMax: Math.round(floodData?.daily?.river_discharge_max?.[1] ?? Math.max(...dischargeList)),
     };
+
+    saveCachedWeather(result);
+    return result;
   } catch (err) {
     console.error('Weather fetch error:', err);
+    const cached = getCachedWeather();
+    if (cached) {
+      return {
+        ...cached,
+        isOffline: true,
+        isCached: true,
+      };
+    }
     return {
       temperature: null,
       feelsLike: null,
@@ -246,6 +286,7 @@ export async function fetchLiveWeather(latitude, longitude) {
       lastUpdated: 'Signal Dropped',
       updatedAt: null,
       isOffline: true,
+      isCached: false,
       hourly: DEFAULT_HOURLY,
       daily: DEFAULT_DAILY,
       timeline: DEFAULT_TIMELINE,
