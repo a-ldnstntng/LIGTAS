@@ -46,27 +46,52 @@ export const DEFAULT_TIMELINE = [
 
 export async function fetchLiveWeather(latitude, longitude) {
   try {
-    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,surface_pressure&hourly=temperature_2m,precipitation_probability,precipitation,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia%2FManila&past_days=1&forecast_days=7`;
-    const floodUrl = `https://flood-api.open-meteo.com/v1/flood?latitude=${latitude}&longitude=${longitude}&daily=river_discharge,river_discharge_mean,river_discharge_max,river_discharge_min&forecast_days=7`;
+    const proxyWeatherUrl = `/api/weather?lat=${latitude}&lon=${longitude}`;
+    const proxyFloodUrl = `/api/flood?lat=${latitude}&lon=${longitude}`;
 
-    const [weatherRes, floodRes] = await Promise.allSettled([
-      fetch(weatherUrl),
-      fetch(floodUrl),
-    ]);
+    const directWeatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,surface_pressure&hourly=temperature_2m,precipitation_probability,precipitation,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia%2FManila&past_days=1&forecast_days=7`;
+    const directFloodUrl = `https://flood-api.open-meteo.com/v1/flood?latitude=${latitude}&longitude=${longitude}&daily=river_discharge,river_discharge_mean,river_discharge_max,river_discharge_min&forecast_days=7`;
 
-    let data;
-    if (weatherRes.status === 'fulfilled' && weatherRes.value.ok) {
-      data = await weatherRes.value.json();
-    } else {
-      throw new Error('Open-Meteo weather request failed');
+    let data = null;
+    let floodData = null;
+    let isViaProxy = false;
+
+    // 1. Try local/backend proxy first (CORS-free, server-cached)
+    try {
+      const [pWeatherRes, pFloodRes] = await Promise.allSettled([
+        fetch(proxyWeatherUrl),
+        fetch(proxyFloodUrl),
+      ]);
+      if (pWeatherRes.status === 'fulfilled' && pWeatherRes.value.ok) {
+        data = await pWeatherRes.value.json();
+        isViaProxy = true;
+      }
+      if (pFloodRes.status === 'fulfilled' && pFloodRes.value.ok) {
+        floodData = await pFloodRes.value.json();
+      }
+    } catch {
+      // Proxy unavailable, will proceed to direct client fetch
     }
 
-    let floodData = null;
-    if (floodRes.status === 'fulfilled' && floodRes.value.ok) {
-      try {
-        floodData = await floodRes.value.json();
-      } catch (e) {
-        console.warn('Flood API parse warning:', e);
+    // 2. Direct fallback to Open-Meteo public API
+    if (!data) {
+      const [weatherRes, floodRes] = await Promise.allSettled([
+        fetch(directWeatherUrl),
+        fetch(directFloodUrl),
+      ]);
+
+      if (weatherRes.status === 'fulfilled' && weatherRes.value.ok) {
+        data = await weatherRes.value.json();
+      } else {
+        throw new Error('Open-Meteo weather request failed');
+      }
+
+      if (floodRes.status === 'fulfilled' && floodRes.value.ok) {
+        try {
+          floodData = await floodRes.value.json();
+        } catch (e) {
+          console.warn('Flood API parse warning:', e);
+        }
       }
     }
 
@@ -194,6 +219,7 @@ export async function fetchLiveWeather(latitude, longitude) {
       hourly: hourly.length ? hourly : DEFAULT_HOURLY,
       daily: daily.length ? daily : DEFAULT_DAILY,
       timeline: timeline.length > 0 ? timeline : DEFAULT_TIMELINE,
+      isViaProxy,
       riverDischarge: currentDischarge,
       riverDischargeSeries: dischargeList,
       riverDischargeMax: Math.round(floodData?.daily?.river_discharge_max?.[1] ?? Math.max(...dischargeList)),

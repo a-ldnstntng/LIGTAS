@@ -70,12 +70,17 @@ In accordance with transparent data reporting principles, every telemetry layer 
    VITE_MAPILLARY_CLIENT_TOKEN=your_token_here
    ```
 
-4. Start the development server:
+4. Start the backend proxy server (optional for local caching and zero-CORS):
+   ```bash
+   npm run proxy
+   ```
+
+5. Start the development server:
    ```bash
    npm run dev
    ```
 
-5. Build for production:
+6. Build for production:
    ```bash
    npm run build
    ```

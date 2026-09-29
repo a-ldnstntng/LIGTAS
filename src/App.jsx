@@ -342,35 +342,53 @@ export default function App() {
     abortControllerRef.current = new AbortController();
 
     try {
-      // Bounded to Philippines (countrycodes=ph) with official identification per OSM Terms of Use
-      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=ph&limit=5&addressdetails=1&email=ligtas.emergency.ph@gmail.com`;
-      const res = await fetch(url, {
-        signal: abortControllerRef.current?.signal,
-        headers: {
-          'Accept': 'application/json',
+      // 1. Try backend proxy geocoder first (0 CORS, server-side cached, strict 1 req/s compliance)
+      let parsed = null;
+      try {
+        const proxyRes = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`, {
+          signal: abortControllerRef.current?.signal,
+        });
+        if (proxyRes.ok) {
+          const proxyData = await proxyRes.json();
+          if (Array.isArray(proxyData) && proxyData.length > 0) {
+            parsed = proxyData;
+          }
         }
-      });
-
-      if (!res.ok) {
-        throw new Error(`Geocoding response: ${res.status}`);
+      } catch {
+        // Fallback to direct client query
       }
 
-      const data = await res.json();
-      const parsed = (data || []).map((item) => {
-        const parts = (item.display_name || '').split(',').map((s) => s.trim());
-        const primary = parts[0] || item.name || query;
-        const secondary = parts.slice(1, 4).join(', ') || 'Philippines (PAR)';
-        return {
-          id: item.place_id || item.osm_id || `${item.lat}-${item.lon}`,
-          name: `${primary}, ${parts[1] || ''}`.replace(/,\s*$/, ''),
-          primaryName: primary,
-          secondaryName: secondary,
-          lat: parseFloat(item.lat),
-          lon: parseFloat(item.lon),
-          coordinates: [parseFloat(item.lon), parseFloat(item.lat)],
-          source: 'osm'
-        };
-      });
+      // 2. Direct fallback to OpenStreetMap Nominatim
+      if (!parsed) {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=ph&limit=5&addressdetails=1&email=ligtas.emergency.ph@gmail.com`;
+        const res = await fetch(url, {
+          signal: abortControllerRef.current?.signal,
+          headers: {
+            'Accept': 'application/json',
+          }
+        });
+
+        if (!res.ok) {
+          throw new Error(`Geocoding response: ${res.status}`);
+        }
+
+        const data = await res.json();
+        parsed = (data || []).map((item) => {
+          const parts = (item.display_name || '').split(',').map((s) => s.trim());
+          const primary = parts[0] || item.name || query;
+          const secondary = parts.slice(1, 4).join(', ') || 'Philippines (PAR)';
+          return {
+            id: item.place_id || item.osm_id || `${item.lat}-${item.lon}`,
+            name: `${primary}, ${parts[1] || ''}`.replace(/,\s*$/, ''),
+            primaryName: primary,
+            secondaryName: secondary,
+            lat: parseFloat(item.lat),
+            lon: parseFloat(item.lon),
+            coordinates: [parseFloat(item.lon), parseFloat(item.lat)],
+            source: 'osm'
+          };
+        });
+      }
 
       nominatimCacheRef.current.set(lowerQuery, parsed);
       setNominatimResults(parsed);
