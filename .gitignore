@@ -34,3 +34,20 @@ dist-ssr
 *.apk
 apk_server/*.apk
 
+# Keystores, signing keys & certificates
+*.jks
+*.keystore
+*.key
+*.pem
+*.p12
+*.pfx
+*.cer
+*.crt
+*.der
+
+# Android & local credential properties
+local.properties
+android/local.properties
+google-services.json
+
+
