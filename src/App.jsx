@@ -5,6 +5,7 @@ import floodData from './data/floodPolygons.json';
 import { fetchNearbyImageId } from './services/mapillaryService';
 import { fetchLiveWeather, computeLiveInundation, formatDataFreshness, getCachedWeather, DEFAULT_TIMELINE } from './services/weatherService';
 import { useSmoothNumber } from './utils/interpolation';
+import ArcGauge from './components/Gauge';
 import { 
   Search, SlidersHorizontal, Droplets, CloudRain,
   Wind, AlertTriangle, ShieldCheck, Waves,
@@ -1949,6 +1950,45 @@ export default function App() {
                 </span>
               </div>
 
+              {/* Active Corridor Live Telemetry & Gauge Card */}
+              <div className="p-5 sm:p-6 rounded-[28px] bg-[#242424] border border-[#303030] shadow-xl flex flex-col md:flex-row items-center justify-between gap-5">
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="text-[11px] font-semibold uppercase tracking-wider text-[#EEF21A] bg-[#EEF21A]/10 px-3 py-0.5 rounded-full border border-[#EEF21A]/20">
+                      Active Telemetry Sector
+                    </span>
+                    <span className="text-xs text-[#9A9A9A] font-mono">{activeMetrics.name}</span>
+                  </div>
+                  <h3 className="text-lg sm:text-xl font-display font-semibold text-white truncate">{activeLocation.name}</h3>
+                  <p className="text-xs text-[#9A9A9A] mt-1 leading-relaxed">{activeMetrics.severityLabel}</p>
+
+                  <div className="grid grid-cols-2 gap-2 mt-4 max-w-sm">
+                    <div className="p-2.5 rounded-xl bg-[#1A1A1A] border border-white/5">
+                      <div className="text-[11px] text-[#9A9A9A]">Passability</div>
+                      <div className="text-xs sm:text-sm font-semibold text-white mt-0.5 truncate">{activeMetrics.passability}</div>
+                    </div>
+                    <div className="p-2.5 rounded-xl bg-[#1A1A1A] border border-white/5">
+                      <div className="text-[11px] text-[#9A9A9A]">Rain Rate</div>
+                      <div className="text-xs sm:text-sm font-semibold text-white mt-0.5">{activeMetrics.rainRate || '0 mm/h'}</div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex flex-col items-center shrink-0">
+                  <ArcGauge 
+                    value={activeMetrics.depthMeters !== null ? activeMetrics.depthMeters : 0.0} 
+                    min={0} 
+                    max={2.0} 
+                    unit="m" 
+                    label="Flood Depth" 
+                    fillColor={activeMetrics.depthMeters >= 0.75 ? '#ff6b6b' : '#EEF21A'}
+                  />
+                  <span className="text-[11px] font-mono text-[#9A9A9A] -mt-1">
+                    Gutter: 0.2m | Hood: 0.75m
+                  </span>
+                </div>
+              </div>
+
               {/* High Ridge Bypass Viaduct Card */}
               <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-r from-[#1c1e27] via-[#1a1b22] to-[#16171d] border border-[#2e313c] shadow-lg flex flex-col gap-2">
                 <div className="flex items-center justify-between">
@@ -2181,24 +2221,258 @@ export default function App() {
                 </div>
               </div>
 
-              {/* River Gauges Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {[
-                  { name: 'San Juan Riverway Sluice Gate', level: '1.2m', status: 'Optimal Discharge' },
-                  { name: 'Marikina River Alert System', level: '15.2m', status: 'Alert Level 1 (Normal Headway)' },
-                  { name: 'Pasig River Tidal Gate', level: '0.8m', status: 'Free Flowing Gate' },
-                  { name: 'Tullahan River Catchment', level: '2.1m', status: 'Monitored Headway' },
-                ].map(gauge => (
-                  <div key={gauge.name} className="p-3.5 rounded-2xl bg-[#181920] border border-[#272932] flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-medium text-white">{gauge.name}</div>
-                      <div className="text-xs text-[#8c909d] mt-0.5">{gauge.status}</div>
+              {/* Ultrasonic River Gauges with Stitch Arc Gauges */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-white tracking-wide">Monitored Ultrasonic River Gauges</h3>
+                  <span className="text-xs text-[#9A9A9A]">PAGASA &amp; EFCOS Calibrated</span>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Card 1: Marikina Sto. Niño */}
+                  <article className="bg-[#242424] rounded-[28px] p-5 sm:p-6 relative overflow-hidden flex flex-col justify-between border border-[#303030] shadow-xl">
+                    <div className="relative z-10 flex items-center justify-between mb-2">
+                      <div className="bg-[#2E2E2E]/90 px-3.5 py-1.5 rounded-full border border-white/5">
+                        <span className="text-xs font-medium text-white tracking-wide">Marikina Sto. Niño</span>
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-md">
+                        <ArrowUpRight className="w-4 h-4 text-[#1A1A1A]" />
+                      </div>
                     </div>
-                    <span className="text-xs font-mono font-semibold text-[#54b2d3] bg-[#54b2d3]/10 px-2.5 py-1 rounded-full border border-[#54b2d3]/20">
-                      {gauge.level}
-                    </span>
-                  </div>
-                ))}
+
+                    <div className="relative z-10 flex flex-col items-center my-2">
+                      <ArcGauge 
+                        value={activeLocation.name.toLowerCase().includes('marikina') ? 15.2 : 14.2} 
+                        min={0} 
+                        max={20} 
+                        unit="m" 
+                        label="Water Level" 
+                      />
+                    </div>
+
+                    <div className="relative z-10 bg-[#2E2E2E]/60 rounded-[18px] p-3 mb-2 border border-white/5">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-medium text-[#9A9A9A]">Rainfall Trend</span>
+                        <span className="text-[11px] font-medium text-white bg-[#1A1A1A] px-2.5 py-0.5 rounded-full border border-white/5">
+                          Peak: 18 mm/h
+                        </span>
+                      </div>
+                      <div className="flex items-end justify-between px-2 h-9 pt-1">
+                        {[
+                          { h: 'h-4', active: true },
+                          { h: 'h-6', active: true },
+                          { h: 'h-8', active: true, isPeak: true },
+                          { h: 'h-5', active: false },
+                          { h: 'h-4', active: false },
+                          { h: 'h-3', active: false },
+                          { h: 'h-4', active: false },
+                        ].map((bar, i) => (
+                          <div key={i} className="flex flex-col items-center justify-end h-full">
+                            <div className={`w-1 rounded-full ${bar.isPeak ? 'bg-[#EEF21A] w-1.5' : bar.active ? 'bg-[#EEF21A]/70' : 'bg-[#404040]'} ${bar.h}`} />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] font-medium text-[#9A9A9A] pt-1.5 px-0.5">
+                        <span>8 AM</span>
+                        <span>10 AM</span>
+                        <span>12 PM</span>
+                        <span>2 PM</span>
+                        <span>4 PM</span>
+                      </div>
+                    </div>
+
+                    <div className="relative z-10 flex items-center justify-between pt-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#22c55e]"></span>
+                        <span className="text-xs font-medium text-white">Normal Headway (Spillway 18.0m)</span>
+                      </div>
+                      <span className="text-[11px] text-[#9A9A9A] font-mono">15m Alert / 16m Alarm</span>
+                    </div>
+                  </article>
+
+                  {/* Card 2: Pasig River Tidal Gate */}
+                  <article className="bg-[#242424] rounded-[28px] p-5 sm:p-6 relative overflow-hidden flex flex-col justify-between border border-[#303030] shadow-xl">
+                    <div className="relative z-10 flex items-center justify-between mb-2">
+                      <div className="bg-[#2E2E2E]/90 px-3.5 py-1.5 rounded-full border border-white/5">
+                        <span className="text-xs font-medium text-white tracking-wide">Pasig River Tidal Gate</span>
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-md">
+                        <ArrowUpRight className="w-4 h-4 text-[#1A1A1A]" />
+                      </div>
+                    </div>
+
+                    <div className="relative z-10 flex flex-col items-center my-2">
+                      <ArcGauge 
+                        value={10.8} 
+                        min={0} 
+                        max={18} 
+                        unit="m" 
+                        label="Water Level" 
+                      />
+                    </div>
+
+                    <div className="relative z-10 bg-[#2E2E2E]/60 rounded-[18px] p-3 mb-2 border border-white/5">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-medium text-[#9A9A9A]">Rainfall Trend</span>
+                        <span className="text-[11px] font-medium text-white bg-[#1A1A1A] px-2.5 py-0.5 rounded-full border border-white/5">
+                          Peak: 12 mm/h
+                        </span>
+                      </div>
+                      <div className="flex items-end justify-between px-2 h-9 pt-1">
+                        {[
+                          { h: 'h-3', active: true },
+                          { h: 'h-5', active: true },
+                          { h: 'h-6', active: true },
+                          { h: 'h-8', active: true, isPeak: true },
+                          { h: 'h-5', active: false },
+                          { h: 'h-4', active: false },
+                          { h: 'h-3', active: false },
+                        ].map((bar, i) => (
+                          <div key={i} className="flex flex-col items-center justify-end h-full">
+                            <div className={`w-1 rounded-full ${bar.isPeak ? 'bg-[#EEF21A] w-1.5' : bar.active ? 'bg-[#EEF21A]/70' : 'bg-[#404040]'} ${bar.h}`} />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] font-medium text-[#9A9A9A] pt-1.5 px-0.5">
+                        <span>8 AM</span>
+                        <span>10 AM</span>
+                        <span>12 PM</span>
+                        <span>2 PM</span>
+                        <span>4 PM</span>
+                      </div>
+                    </div>
+
+                    <div className="relative z-10 flex items-center justify-between pt-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#22c55e]"></span>
+                        <span className="text-xs font-medium text-white">Free Flowing Tidal Gate</span>
+                      </div>
+                      <span className="text-[11px] text-[#9A9A9A] font-mono">13m Alert</span>
+                    </div>
+                  </article>
+
+                  {/* Card 3: Manggahan Floodway Channel */}
+                  <article className="bg-[#242424] rounded-[28px] p-5 sm:p-6 relative overflow-hidden flex flex-col justify-between border border-[#303030] shadow-xl">
+                    <div className="relative z-10 flex items-center justify-between mb-2">
+                      <div className="bg-[#2E2E2E]/90 px-3.5 py-1.5 rounded-full border border-white/5">
+                        <span className="text-xs font-medium text-white tracking-wide">Manggahan Floodway Channel</span>
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-md">
+                        <ArrowUpRight className="w-4 h-4 text-[#1A1A1A]" />
+                      </div>
+                    </div>
+
+                    <div className="relative z-10 flex flex-col items-center my-2">
+                      <ArcGauge 
+                        value={12.5} 
+                        min={0} 
+                        max={18} 
+                        unit="m" 
+                        label="Water Level" 
+                      />
+                    </div>
+
+                    <div className="relative z-10 bg-[#2E2E2E]/60 rounded-[18px] p-3 mb-2 border border-white/5">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-medium text-[#9A9A9A]">Rainfall Trend</span>
+                        <span className="text-[11px] font-medium text-white bg-[#1A1A1A] px-2.5 py-0.5 rounded-full border border-white/5">
+                          Peak: 14 mm/h
+                        </span>
+                      </div>
+                      <div className="flex items-end justify-between px-2 h-9 pt-1">
+                        {[
+                          { h: 'h-4', active: true },
+                          { h: 'h-5', active: true },
+                          { h: 'h-7', active: true },
+                          { h: 'h-6', active: true },
+                          { h: 'h-8', active: true, isPeak: true },
+                          { h: 'h-4', active: false },
+                          { h: 'h-3', active: false },
+                        ].map((bar, i) => (
+                          <div key={i} className="flex flex-col items-center justify-end h-full">
+                            <div className={`w-1 rounded-full ${bar.isPeak ? 'bg-[#EEF21A] w-1.5' : bar.active ? 'bg-[#EEF21A]/70' : 'bg-[#404040]'} ${bar.h}`} />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] font-medium text-[#9A9A9A] pt-1.5 px-0.5">
+                        <span>8 AM</span>
+                        <span>10 AM</span>
+                        <span>12 PM</span>
+                        <span>2 PM</span>
+                        <span>4 PM</span>
+                      </div>
+                    </div>
+
+                    <div className="relative z-10 flex items-center justify-between pt-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#22c55e]"></span>
+                        <span className="text-xs font-medium text-white">Controlled Laguna Diversion</span>
+                      </div>
+                      <span className="text-[11px] text-[#9A9A9A] font-mono">15m Gate Lift</span>
+                    </div>
+                  </article>
+
+                  {/* Card 4: San Juan Riverway */}
+                  <article className="bg-[#242424] rounded-[28px] p-5 sm:p-6 relative overflow-hidden flex flex-col justify-between border border-[#303030] shadow-xl">
+                    <div className="relative z-10 flex items-center justify-between mb-2">
+                      <div className="bg-[#2E2E2E]/90 px-3.5 py-1.5 rounded-full border border-white/5">
+                        <span className="text-xs font-medium text-white tracking-wide">San Juan Riverway Sluice</span>
+                      </div>
+                      <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shadow-md">
+                        <ArrowUpRight className="w-4 h-4 text-[#1A1A1A]" />
+                      </div>
+                    </div>
+
+                    <div className="relative z-10 flex flex-col items-center my-2">
+                      <ArcGauge 
+                        value={1.2} 
+                        min={0} 
+                        max={5} 
+                        unit="m" 
+                        label="Water Level" 
+                      />
+                    </div>
+
+                    <div className="relative z-10 bg-[#2E2E2E]/60 rounded-[18px] p-3 mb-2 border border-white/5">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <span className="text-xs font-medium text-[#9A9A9A]">Rainfall Trend</span>
+                        <span className="text-[11px] font-medium text-white bg-[#1A1A1A] px-2.5 py-0.5 rounded-full border border-white/5">
+                          Peak: 8 mm/h
+                        </span>
+                      </div>
+                      <div className="flex items-end justify-between px-2 h-9 pt-1">
+                        {[
+                          { h: 'h-3', active: true },
+                          { h: 'h-4', active: true },
+                          { h: 'h-6', active: true, isPeak: true },
+                          { h: 'h-4', active: false },
+                          { h: 'h-3', active: false },
+                          { h: 'h-2', active: false },
+                          { h: 'h-3', active: false },
+                        ].map((bar, i) => (
+                          <div key={i} className="flex flex-col items-center justify-end h-full">
+                            <div className={`w-1 rounded-full ${bar.isPeak ? 'bg-[#EEF21A] w-1.5' : bar.active ? 'bg-[#EEF21A]/70' : 'bg-[#404040]'} ${bar.h}`} />
+                          </div>
+                        ))}
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] font-medium text-[#9A9A9A] pt-1.5 px-0.5">
+                        <span>8 AM</span>
+                        <span>10 AM</span>
+                        <span>12 PM</span>
+                        <span>2 PM</span>
+                        <span>4 PM</span>
+                      </div>
+                    </div>
+
+                    <div className="relative z-10 flex items-center justify-between pt-1">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-[#22c55e]"></span>
+                        <span className="text-xs font-medium text-white">Optimal Gravity Outflow</span>
+                      </div>
+                      <span className="text-[11px] text-[#9A9A9A] font-mono">3.5m Alert</span>
+                    </div>
+                  </article>
+                </div>
               </div>
             </div>
           )}

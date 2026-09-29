@@ -1,0 +1,131 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
+<title>LIGTAS - Flood Radar</title>
+<!-- Urbanist Font -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              yellow: "#EEF21A",
+              bg: "#1A1A1A",
+              card: "#242424",
+              inner: "#2E2E2E",
+              textSec: "#9A9A9A"
+            }
+          },
+          fontFamily: {
+            sans: ["Urbanist", "sans-serif"]
+          }
+        }
+      }
+    };
+  </script>
+<!-- Global CSS -->
+<style>
+    body {
+      font-family: 'Urbanist', sans-serif;
+      background-color: #1A1A1A;
+      color: #FFFFFF;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+      min-height: max(884px, 100dvh);
+    }
+    * {
+      font-family: 'Urbanist', sans-serif !important;
+      user-select: none;
+      box-sizing: border-box;
+    }
+  </style>
+</head>
+<body class="flex justify-center items-start min-h-screen py-0 sm:py-6 bg-[#1A1A1A]">
+<!-- BEGIN: MobileDeviceFrame -->
+<main class="w-[390px] min-h-[844px] bg-[#1A1A1A] text-white flex flex-col relative pb-28 overflow-hidden rounded-none sm:rounded-[44px]">
+<!-- BEGIN: TopHeader -->
+<header class="flex items-center justify-between px-6 pt-7 pb-2" data-purpose="top-navigation-bar">
+<!-- Outlined Circular 1.5px border back button -->
+<button aria-label="Go Back" class="w-11 h-11 rounded-full border-[1.5px] border-[#404040] bg-transparent flex items-center justify-center active:scale-95 transition-transform" type="button"><svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"></path></svg></button>
+<!-- Outlined Circular Bell Button with Yellow Notification Dot -->
+<div class="relative"><button aria-label="Notifications" class="w-11 h-11 rounded-full border-[1.5px] border-[#404040] bg-transparent flex items-center justify-center active:scale-95 transition-transform" type="button"><svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg></button><span class="absolute top-0 right-0 w-2.5 h-2.5 bg-[#EEF21A] rounded-full ring-2 ring-[#1A1A1A]"></span></div>
+</header>
+<!-- END: TopHeader -->
+<!-- BEGIN: Screen Title -->
+<section class="px-6 pt-2 pb-3" data-purpose="screen-title-section">
+<h1 class="text-[32px] leading-tight font-semibold tracking-tight text-white">Flood Radar</h1>
+</section>
+<!-- END: Screen Title -->
+<!-- BEGIN: Search Bar -->
+<section class="px-6 mb-4" data-purpose="location-search-bar">
+<div class="bg-[#2E2E2E] rounded-full px-4 py-3 flex items-center gap-3">
+<svg class="w-5 h-5 text-[#9A9A9A] flex-shrink-0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<circle cx="11" cy="11" r="8"></circle>
+<line x1="21" x2="16.65" y1="21" y2="16.65"></line>
+</svg>
+<input class="bg-transparent text-white placeholder-[#9A9A9A] text-sm font-normal focus:outline-none w-full p-0 border-none" placeholder="Search corridor or city..." type="text">
+</div>
+</section>
+<!-- END: Search Bar -->
+<!-- Content Area -->
+<div class="flex flex-col gap-4 px-6 flex-1">
+<!-- BEGIN: Main Dark Map Area Card -->
+<section class="flex-1" data-purpose="flood-radar-map-card">
+<article class="bg-[#242424] rounded-[28px] p-5 flex flex-col relative overflow-hidden h-[440px]">
+<!-- Cloud / Terrain Texture Masked at Lower Right -->
+<div class="absolute inset-0 pointer-events-none overflow-hidden rounded-[28px]">
+<img alt="Grayscale cloud terrain texture" class="absolute -bottom-6 -right-6 w-[80%] h-[75%] object-cover object-center opacity-30 mix-blend-luminosity filter contrast-125" src="https://lh3.googleusercontent.com/aida/AEtjO1UWHBaJD-83tWfeWSWj9panKLniTsKbfD75adQW59nvnl91Ih8yLRbH-IlXylLwUg-mTYav5-BdG2UQf3B6FWSjOy1NIWHxWcnYY4eAsZrlECUGxtlbQvKEYZeKVgrPOfq48y6IHgbWS3DJYTpBAiu7_-ygfkEkDzNjDJ1RgNFmS5s1MZOAeUtWHEOv75bZ8w1y5guuKrZyJ32CPvoeUr65T0j3ge6OwZ3ADRJpLWemTjKPs-TN8Gpa1AY">
+
+</div>
+<!-- Card Header / Scope Label & Layer Icon -->
+
+<!-- Stylized Dark Vector Map Area -->
+<div class="relative w-full flex-1 rounded-[20px] bg-[#1E1E1E] overflow-hidden z-10 flex items-center justify-center">
+<!-- Dark Vector Map Roads & Waterway Grid -->
+<svg class="absolute inset-0 w-full h-full" preserveAspectRatio="none" viewBox="0 0 342 360"><defs><pattern height="30" id="grid" patternUnits="userSpaceOnUse" width="30"><path d="M 30 0 L 0 0 0 30" fill="none" stroke="#252525" stroke-width="0.75"></path></pattern></defs><rect fill="url(#grid)" height="100%" width="100%"></rect><path d="M 20 0 Q 35 100 25 180 T 15 360" fill="none" opacity="0.6" stroke="#2B2B2B" stroke-width="5"></path><path d="M 30 220 Q 80 210 130 230 T 210 200 T 290 220 T 342 210" fill="none" stroke="#2A2A2A" stroke-width="4"></path><path d="M 120 20 Q 230 70 250 200 T 210 350" fill="none" stroke="#333333" stroke-dasharray="4 2" stroke-width="2.5"></path><path d="M 60 160 L 95 340" fill="none" stroke="#333333" stroke-width="2"></path><path d="M 50 170 L 220 50" fill="none" stroke="#383838" stroke-width="2.5"></path><path d="M 120 70 L 160 210" fill="none" stroke="#333333" stroke-width="2"></path><path d="M 280 40 L 295 240" fill="none" stroke="#333333" stroke-width="2"></path><polygon fill="rgba(255,255,255,0.05)" points="75,125 115,115 130,140 100,165 70,150" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"></polygon><polygon fill="rgba(255,255,255,0.05)" points="120,185 160,180 175,210 140,225 110,205" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"></polygon><polygon fill="rgba(255,255,255,0.05)" points="135,100 175,90 190,125 160,140 130,120" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"></polygon><polygon fill="rgba(255,255,255,0.05)" points="60,240 95,235 105,270 80,285 55,265" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"></polygon><polygon fill="rgba(255,255,255,0.05)" points="260,100 305,95 315,135 285,150 250,130" stroke="rgba(255,255,255,0.3)" stroke-width="1.5"></polygon></svg>
+<!-- STATUS PINS & LABELS OVER CORRIDORS -->
+<!-- 1. España (0.0m) Pin with active neon yellow dot -->
+<div class="absolute top-[37%] left-[24%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-auto"><div class="flex items-center gap-1.5 bg-[#242424] px-2 py-1 rounded-full shadow-lg"><span class="w-2 h-2 rounded-full bg-[#22C55E] ring-2 ring-[#22C55E]/30"></span><span class="text-xs font-semibold text-white">España (0.0m)</span></div><div class="w-0.5 h-2 bg-[#22C55E]"></div></div>
+<!-- 2. Araneta Pin -->
+<div class="absolute top-[28%] left-[48%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-auto"><div class="flex items-center gap-1.5 bg-[#242424] px-2 py-0.5 rounded-full shadow"><span class="w-2 h-2 rounded-full bg-[#22C55E]"></span><span class="text-xs font-medium text-white">Araneta</span></div><div class="w-0.5 h-1.5 bg-[#9A9A9A]"></div></div>
+<!-- 3. Sta. Mesa Pin -->
+<div class="absolute top-[55%] left-[42%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-auto"><div class="flex items-center gap-1.5 bg-[#242424] px-2 py-0.5 rounded-full shadow"><span class="w-2 h-2 rounded-full bg-[#22C55E]"></span><span class="text-xs font-medium text-white">Sta. Mesa</span></div><div class="w-0.5 h-1.5 bg-[#9A9A9A]"></div></div>
+<!-- 4. Taft Pin -->
+<div class="absolute top-[71%] left-[23%] -translate-x-1/2 -translate-y-1/2 flex flex-col items-center pointer-events-auto"><div class="flex items-center gap-1.5 bg-[#242424] px-2 py-0.5 rounded-full shadow"><span class="w-2 h-2 rounded-full bg-[#22C55E]"></span><span class="text-xs font-medium text-white">Taft</span></div><div class="w-0.5 h-1.5 bg-[#9A9A9A]"></div></div>
+<!-- 5. Katipunan Pin -->
+<div class="absolute top-[32%] right-[4%] -translate-y-1/2 flex flex-col items-center pointer-events-auto"><div class="flex items-center gap-1.5 bg-[#242424] px-2 py-0.5 rounded-full shadow"><span class="w-2 h-2 rounded-full bg-[#22C55E]"></span><span class="text-xs font-medium text-white">Katipunan</span></div><div class="w-0.5 h-1.5 bg-[#9A9A9A]"></div></div>
+</div>
+<!-- Bottom Corridor Legend / Status Strip inside Card -->
+
+</article>
+</section>
+<!-- END: Main Dark Map Area Card -->
+<!-- BEGIN: ReportFloodHazardAction -->
+<section class="mt-1" data-purpose="report-action-pill">
+<button class="w-full bg-[#EEF21A] hover:bg-[#E3E716] text-[#1A1A1A] font-semibold text-xs py-4 px-6 rounded-full flex items-center justify-center gap-2.5 transition-colors active:scale-[0.98] shadow-md" type="button">
+<!-- Report hazard triangle with 1.5px stroke -->
+<svg class="w-5 h-5 text-[#1A1A1A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+<line x1="12" x2="12" y1="9" y2="13"></line>
+<line x1="12" x2="12.01" y1="17" y2="17"></line>
+</svg>
+<span class="text-sm font-semibold tracking-wide">Report Flood / Hazard</span>
+</button>
+</section>
+<!-- END: ReportFloodHazardAction -->
+</div>
+<!-- BEGIN: Floating Pill Bottom Navigation Dock -->
+<nav aria-label="Bottom Navigation" class="absolute bottom-5 inset-x-0 flex justify-center z-30 pointer-events-none"><div class="bg-[#242424] rounded-full p-2 flex items-center gap-2 shadow-2xl pointer-events-auto"><button aria-label="Home" class="w-11 h-11 rounded-full bg-transparent flex items-center justify-center hover:bg-[#2E2E2E] transition-colors" type="button"><svg class="w-5 h-5 text-[#9A9A9A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg></button><button aria-label="Flood Radar" class="w-11 h-11 rounded-full bg-white text-[#1A1A1A] flex items-center justify-center shadow" type="button"><svg class="w-5 h-5 text-[#1A1A1A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon><line x1="8" x2="8" y1="2" y2="18"></line><line x1="16" x2="16" y1="6" y2="22"></line></svg></button><button aria-label="Corridors" class="w-11 h-11 rounded-full bg-transparent flex items-center justify-center hover:bg-[#2E2E2E] transition-colors" type="button"><svg class="w-5 h-5 text-[#9A9A9A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24"><line x1="8" x2="21" y1="6" y2="6"></line><line x1="8" x2="21" y1="12" y2="12"></line><line x1="8" x2="21" y1="18" y2="18"></line><line x1="3" x2="3.01" y1="6" y2="6"></line><line x1="3" x2="3.01" y1="12" y2="12"></line><line x1="3" x2="3.01" y1="18" y2="18"></line></svg></button><button aria-label="Hydro" class="w-11 h-11 rounded-full bg-transparent flex items-center justify-center hover:bg-[#2E2E2E] transition-colors" type="button"><svg class="w-5 h-5 text-[#9A9A9A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg></button><button aria-label="Hotlines" class="w-11 h-11 rounded-full bg-transparent flex items-center justify-center hover:bg-[#2E2E2E] transition-colors" type="button"><svg class="w-5 h-5 text-[#9A9A9A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg></button></div></nav>
+<!-- END: Floating Pill Bottom Navigation Dock -->
+</main>
+<!-- END: MobileDeviceFrame -->
+
+
+</body></html>

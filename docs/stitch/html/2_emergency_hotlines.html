@@ -1,0 +1,303 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>LIGTAS - Emergency Hotlines</title>
+<!-- Urbanist Font -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          brand: {
+            yellow: "#EEF21A",
+            bg: "#1A1A1A",
+            card: "#242424",
+            inner: "#2E2E2E",
+            secondary: "#9A9A9A"
+          }
+        },
+        fontFamily: {
+          sans: ["Urbanist", "sans-serif"]
+        }
+      }
+    }
+  };
+</script>
+<!-- Typography & Global CSS -->
+<style>
+  body {
+    font-family: 'Urbanist', sans-serif;
+    background-color: #121212;
+    color: #FFFFFF;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+    min-height: max(884px, 100dvh);
+  }
+  * {
+    font-family: 'Urbanist', sans-serif !important;
+    user-select: none;
+    box-sizing: border-box;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+</style>
+</head>
+<body class="flex justify-center items-start min-h-screen py-0 sm:py-6 bg-[#0f0f0f]">
+<!-- BEGIN: MobileDeviceFrame -->
+<main class="w-[390px] min-h-[844px] bg-[#1A1A1A] text-white flex flex-col relative pb-24 overflow-hidden rounded-none sm:rounded-[44px]">
+<!-- BEGIN: TopHeader -->
+<header class="flex items-center justify-between px-6 pt-7 pb-4" data-purpose="top-navigation-bar"><!-- Back Button: Outlined circular 1.5px border -->
+<button aria-label="Go Back" class="w-11 h-11 rounded-full border-[1.5px] border-[#404040] flex items-center justify-center bg-transparent active:scale-95 transition-transform" type="button">
+<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M15 19l-7-7 7-7"></path>
+</svg>
+</button>
+<!-- Bell Button with small yellow dot -->
+<div class="relative">
+<button aria-label="Notifications" class="w-11 h-11 rounded-full border-[1.5px] border-[#404040] flex items-center justify-center bg-transparent active:scale-95 transition-transform" type="button">
+<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0"></path>
+</svg>
+</button>
+<!-- Small Neon Yellow Dot -->
+<span class="absolute top-0 right-0 w-2.5 h-2.5 bg-[#EEF21A] rounded-full ring-2 ring-[#1A1A1A]"></span>
+</div></header>
+<!-- END: TopHeader -->
+<!-- BEGIN: TitleRow -->
+<section class="flex items-center justify-between px-6 pt-1 pb-5" data-purpose="screen-title-section">
+<h1 class="text-[32px] leading-tight font-semibold tracking-tight text-white">Emergency Hotlines</h1>
+<span aria-label="5 active hotlines" class="bg-[#2E2E2E] text-[#EEF21A] text-sm font-semibold px-3 py-1 rounded-full">5</span>
+</section>
+<!-- END: TitleRow -->
+<!-- Scrollable Content Section -->
+<div class="flex-1 overflow-y-auto no-scrollbar space-y-3.5 px-6 pb-6"><!-- BEGIN: Priority 911 Hero Card -->
+<article class="bg-[#242424] rounded-[28px] p-6 flex flex-col relative overflow-hidden" data-purpose="hero-hotline-card">
+  <!-- Grayscale Texture with 35% opacity simple mask and no gradient overlays -->
+  <div class="absolute -right-4 -bottom-4 w-60 h-60 pointer-events-none z-0 overflow-hidden rounded-[28px]">
+    <img alt="Emergency rescue standby" class="w-full h-full object-cover opacity-35 mix-blend-screen filter grayscale" src="https://lh3.googleusercontent.com/aida/AEtjO1WpcFOStgcxTQgYEWOtWTPntX-Nrw9LYp01ijyB9n3hSw4ASmwtmGk5qi4bxrRDUZpQobFZyo7WctOAAy3hWELClzbUH9X8g6S3cv-6_bbB7AqrOUaMABF4s7uauvhQkYmzn-2Q9N6PLqkmAWiMDOisn3jcLsDGT96iePw0aPhHF88NEyR5idu2uMnWsUapgtt3vU3oELCSDe_nVXq3VA9qcL41XAb5J0KmShg8NP3BlmZRp-OQeHq-ZPE">
+  </div>
+  <div class="relative z-10 flex flex-col">
+    <!-- Top Row -->
+    <div class="flex items-center justify-between mb-4">
+      <div class="bg-[#2E2E2E] px-3.5 py-1.5 rounded-full inline-flex items-center">
+        <span class="text-xs font-medium text-white tracking-wide">Rapid Dispatch</span>
+      </div>
+      <a aria-label="Quick Dial 911" class="w-10 h-10 rounded-full bg-white flex items-center justify-center active:scale-95 transition-transform" href="tel:911">
+        <svg class="w-5 h-5 text-[#1A1A1A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+          <path d="M7 17L17 7M17 7H9M17 7V15"></path>
+        </svg>
+      </a>
+    </div>
+    <!-- Description without Priority Emergency heading -->
+    <div>
+      <span class="text-xs text-[#9A9A9A] font-normal block">Flood Rescue &amp; Civil Defense</span>
+    </div>
+    <!-- Big Number and Action Row -->
+    <div class="flex items-end justify-between mt-3">
+      <span class="text-[64px] font-light text-white leading-none tracking-tight whitespace-nowrap">911</span>
+      <div class="flex items-center gap-2">
+        <button aria-label="Copy 911" class="w-10 h-10 rounded-full border-[1.5px] border-[#383838] bg-[#2E2E2E] flex items-center justify-center text-[#9A9A9A] active:scale-95 transition-transform" onclick="copyNumber('911', this)" type="button">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+            <rect height="13" rx="2" ry="2" width="13" x="9" y="9"></rect>
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+          </svg>
+        </button>
+        <a class="bg-[#EEF21A] text-[#1A1A1A] text-xs font-semibold px-4 py-2.5 rounded-full inline-flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform" href="tel:911">
+          <svg class="w-3.5 h-3.5 text-[#1A1A1A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+            <path d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"></path>
+          </svg>
+          <span class="">Call</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</article>
+<!-- END: Priority 911 Hero Card -->
+
+<!-- Card 1: MMDA -->
+<article class="bg-[#242424] rounded-[28px] p-6 flex flex-col justify-between relative overflow-hidden" data-purpose="hotline-card">
+  <div class="absolute -right-4 -bottom-4 w-52 h-52 pointer-events-none z-0 overflow-hidden rounded-[28px]">
+    <img alt="MMDA Metrobase road drainage" class="w-full h-full object-cover opacity-35 mix-blend-screen filter grayscale" src="https://lh3.googleusercontent.com/aida/AEtjO1UWZjAiT0htwll5rjJKYcUhNCx-kArNJUzOvbnaDXO7J_Wi8mlXykbJTMXsMLHQooogYr2OT5nwXUjnxchxhO8bE8CGnCSiRxebONHTbU-WIN9KvusgoDHsJ6peTB6EEpBn1FZB5akDDxZRGVbcWwJamIGhYEGkHHCMbibSdICbu-LSSJDz1MQeYPp7fRyY0Fdn8q7z81qSuu2DTLxWXrvOivcn9zUBf4bBsmFy59a7a31zzfkc_sHS1ek">
+  </div>
+  <div class="relative z-10 flex flex-col">
+    <div>
+      <h2 class="text-base font-medium text-white leading-snug">MMDA Metrobase Flood Control</h2>
+      <span class="text-xs text-[#9A9A9A] font-normal mt-0.5 block">Drainage clearing, road obstacles &amp; urban rescue</span>
+    </div>
+    <div class="flex items-end justify-between mt-3">
+      <span class="text-[56px] font-light text-white leading-none whitespace-nowrap">136</span>
+      <div class="flex items-center gap-2">
+        <button aria-label="Copy MMDA hotline" class="w-10 h-10 rounded-full border-[1.5px] border-[#383838] bg-[#2E2E2E] flex items-center justify-center text-[#9A9A9A] active:scale-95 transition-transform" onclick="copyNumber('136', this)" type="button">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+            <rect height="13" rx="2" ry="2" width="13" x="9" y="9"></rect>
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+          </svg>
+        </button>
+        <a class="bg-[#EEF21A] text-[#1A1A1A] text-xs font-semibold px-4 py-2.5 rounded-full inline-flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform" href="tel:136">
+          <svg class="w-3.5 h-3.5 text-[#1A1A1A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+            <path d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"></path>
+          </svg>
+          <span class="">Call</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- Card 2: Philippine Red Cross -->
+<article class="bg-[#242424] rounded-[28px] p-6 flex flex-col justify-between relative overflow-hidden" data-purpose="hotline-card">
+  <div class="absolute -right-4 -bottom-4 w-52 h-52 pointer-events-none z-0 overflow-hidden rounded-[28px]">
+    <img alt="Red Cross flood rescue medics" class="w-full h-full object-cover opacity-35 mix-blend-screen filter grayscale" src="https://lh3.googleusercontent.com/aida/AEtjO1WwuwpBG3WbnAlSa0ivBlrNbBCCmk_B5AExANlP5glll-WwpLXmGbTHAjfOXD6L30cqkybqKcuNclyOl0nFrYfUCWkwhs9DK-TWoK2Hg70vLS2PuImbN9FyXVwCdZV0Zi9YGbrg0s3OjaSn-9DFYDhIzIKIN_jywSjnTE2ZcSyLAGUuuJw0Ac6l3zj1SvLrd7sVgr7cmD-VbvPrQKAs1g1g9q2U9OAVocEVHcifVElAxRpQrSCrk0Vlsew">
+  </div>
+  <div class="relative z-10 flex flex-col">
+    <div>
+      <h2 class="text-base font-medium text-white leading-snug">Philippine Red Cross Op Center</h2>
+      <span class="text-xs text-[#9A9A9A] font-normal mt-0.5 block">Ambulance, rubber boat rescue &amp; medics</span>
+    </div>
+    <div class="flex items-end justify-between mt-3">
+      <span class="text-[56px] font-light text-white leading-none whitespace-nowrap">143</span>
+      <div class="flex items-center gap-2">
+        <button aria-label="Copy Red Cross hotline" class="w-10 h-10 rounded-full border-[1.5px] border-[#383838] bg-[#2E2E2E] flex items-center justify-center text-[#9A9A9A] active:scale-95 transition-transform" onclick="copyNumber('143', this)" type="button">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+            <rect height="13" rx="2" ry="2" width="13" x="9" y="9"></rect>
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+          </svg>
+        </button>
+        <a class="bg-[#EEF21A] text-[#1A1A1A] text-xs font-semibold px-4 py-2.5 rounded-full inline-flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform" href="tel:143">
+          <svg class="w-3.5 h-3.5 text-[#1A1A1A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+            <path d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"></path>
+          </svg>
+          <span class="">Call</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- Card 3: NDRRMC -->
+<article class="bg-[#242424] rounded-[28px] p-6 flex flex-col justify-between relative overflow-hidden" data-purpose="hotline-card">
+  <div class="absolute -right-4 -bottom-4 w-52 h-52 pointer-events-none z-0 overflow-hidden rounded-[28px]">
+    <img alt="Floodgate sluice and river canal" class="w-full h-full object-cover opacity-35 mix-blend-screen filter grayscale" src="https://lh3.googleusercontent.com/aida/AEtjO1XbtbSv-O6BMpvk_G2buwTNxkjskEhewdB6vLzJWLirQ7yWQ9Rm75VDWNGVT7EPV9sUgZKto1dJnsNL0kmpUpCSGEevhXKXHsr7ncV4INZXxFYzTEsZik3w6BIH5lWFc3uMpR8g8elTIUnwQDm2bUn7lMKTanOMpV4ll4mLOo0O6Z9xIfh7Ky4fjQB_e-QUFo1JlRvd01ti05mXQgtckIHgKRW4aexvJuPyKPUYafvYfCAEKzZSqNk9FA">
+  </div>
+  <div class="relative z-10 flex flex-col">
+    <div>
+      <h2 class="text-base font-medium text-white leading-snug">NDRRMC Emergency Ops Center</h2>
+      <span class="text-xs text-[#9A9A9A] font-normal mt-0.5 block">National crisis &amp; civil defense dispatch</span>
+    </div>
+    <div class="flex items-end justify-between mt-3">
+      <span class="text-[28px] font-light text-white leading-none tracking-tight whitespace-nowrap">(02) 8911-1406</span>
+      <div class="flex items-center gap-2">
+        <button aria-label="Copy NDRRMC hotline" class="w-10 h-10 rounded-full border-[1.5px] border-[#383838] bg-[#2E2E2E] flex items-center justify-center text-[#9A9A9A] active:scale-95 transition-transform" onclick="copyNumber('(02) 8911-1406', this)" type="button">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+            <rect height="13" rx="2" ry="2" width="13" x="9" y="9"></rect>
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+          </svg>
+        </button>
+        <a class="bg-[#EEF21A] text-[#1A1A1A] text-xs font-semibold px-4 py-2.5 rounded-full inline-flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform" href="tel:0289111406">
+          <svg class="w-3.5 h-3.5 text-[#1A1A1A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+            <path d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"></path>
+          </svg>
+          <span class="">Call</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</article>
+
+<!-- Card 4: Philippine Coast Guard -->
+<article class="bg-[#242424] rounded-[28px] p-6 flex flex-col justify-between relative overflow-hidden" data-purpose="hotline-card">
+  <div class="absolute -right-4 -bottom-4 w-52 h-52 pointer-events-none z-0 overflow-hidden rounded-[28px]">
+    <img alt="Storm clouds over river basin" class="w-full h-full object-cover opacity-35 mix-blend-screen filter grayscale" src="https://lh3.googleusercontent.com/aida/AEtjO1UWHBaJD-83tWfeWSWj9panKLniTsKbfD75adQW59nvnl91Ih8yLRbH-IlXylLwUg-mTYav5-BdG2UQf3B6FWSjOy1NIWHxWcnYY4eAsZrlECUGxtlbQvKEYZeKVgrPOfq48y6IHgbWS3DJYTpBAiu7_-ygfkEkDzNjDJ1RgNFmS5s1MZOAeUtWHEOv75bZ8w1y5guuKrZyJ32CPvoeUr65T0j3ge6OwZ3ADRJpLWemTjKPs-TN8Gpa1AY">
+  </div>
+  <div class="relative z-10 flex flex-col">
+    <div>
+      <h2 class="text-base font-medium text-white leading-snug">Philippine Coast Guard Urban Rescue</h2>
+      <span class="text-xs text-[#9A9A9A] font-normal mt-0.5 block">Swift water transit, rubber boat &amp; evac</span>
+    </div>
+    <div class="flex items-end justify-between mt-3">
+      <span class="text-[28px] font-light text-white leading-none tracking-tight whitespace-nowrap">(02) 8527-3877</span>
+      <div class="flex items-center gap-2">
+        <button aria-label="Copy Coast Guard hotline" class="w-10 h-10 rounded-full border-[1.5px] border-[#383838] bg-[#2E2E2E] flex items-center justify-center text-[#9A9A9A] active:scale-95 transition-transform" onclick="copyNumber('(02) 8527-3877', this)" type="button">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+            <rect height="13" rx="2" ry="2" width="13" x="9" y="9"></rect>
+            <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"></path>
+          </svg>
+        </button>
+        <a class="bg-[#EEF21A] text-[#1A1A1A] text-xs font-semibold px-4 py-2.5 rounded-full inline-flex items-center gap-1.5 whitespace-nowrap active:scale-95 transition-transform" href="tel:0285273877">
+          <svg class="w-3.5 h-3.5 text-[#1A1A1A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+            <path d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"></path>
+          </svg>
+          <span class="">Call</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</article></div>
+<!-- BEGIN: BottomNavigationDock (Floating pill with circular 24px thin line icon buttons, phone tab active as white circle) -->
+<nav aria-label="Bottom Navigation" class="absolute bottom-5 inset-x-0 flex justify-center z-30 pointer-events-none"><div class="bg-[#242424] rounded-full p-2 flex items-center gap-2 shadow-2xl pointer-events-auto">
+  <!-- 1. Home -->
+  <button aria-label="Home" class="w-11 h-11 rounded-full bg-transparent flex items-center justify-center hover:bg-[#2E2E2E] transition-colors" type="button">
+    <svg class="w-6 h-6 text-[#9A9A9A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+      <path d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25"></path>
+    </svg>
+  </button>
+  <!-- 2. Flood Radar (map) -->
+  <button aria-label="Flood Radar" class="w-11 h-11 rounded-full bg-transparent flex items-center justify-center hover:bg-[#2E2E2E] transition-colors" type="button">
+    <svg class="w-6 h-6 text-[#9A9A9A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+      <path d="M9 6.75V19.5M15 4.5v12.75M3 6.75l6-2.25 6 2.25 6-2.25v12.75l-6 2.25-6-2.25-6 2.25V6.75z"></path>
+    </svg>
+  </button>
+  <!-- 3. Corridors (list) -->
+  <button aria-label="Corridors" class="w-11 h-11 rounded-full bg-transparent flex items-center justify-center hover:bg-[#2E2E2E] transition-colors" type="button">
+    <svg class="w-6 h-6 text-[#9A9A9A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+      <path d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm0 5.25h.007v.008H3.75V12zm0 5.25h.007v.008H3.75v-.008z"></path>
+    </svg>
+  </button>
+  <!-- 4. Hydro (droplet) -->
+  <button aria-label="Hydro" class="w-11 h-11 rounded-full bg-transparent flex items-center justify-center hover:bg-[#2E2E2E] transition-colors" type="button">
+    <svg class="w-6 h-6 text-[#9A9A9A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+      <path d="M12 2.25c-5.25 6-7.5 9.75-7.5 13.5a7.5 7.5 0 0015 0c0-3.75-2.25-7.5-7.5-13.5z"></path>
+    </svg>
+  </button>
+  <!-- 5. Hotlines (phone) -> ACTIVE solid white circle -->
+  <button aria-current="page" aria-label="Emergency Hotlines" class="w-11 h-11 rounded-full bg-white flex items-center justify-center shadow text-[#1A1A1A]" type="button">
+    <svg class="w-5 h-5 text-[#1A1A1A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+      <path d="M2.25 6.75c0 8.284 6.716 15 15 15h2.25a2.25 2.25 0 002.25-2.25v-1.372c0-.516-.351-.966-.852-1.091l-4.423-1.106c-.44-.11-.902.055-1.173.417l-.97 1.293c-.282.376-.769.542-1.21.38a12.035 12.035 0 01-7.143-7.143c-.162-.441.004-.928.38-1.21l1.293-.97c.363-.271.527-.734.417-1.173L6.963 3.102a1.125 1.125 0 00-1.091-.852H4.5A2.25 2.25 0 002.25 4.5v2.25z"></path>
+    </svg>
+  </button>
+</div></nav>
+<!-- END: BottomNavigationDock -->
+</main>
+<!-- END: MobileDeviceFrame -->
+<!-- Clipboard Logic -->
+<script>
+  function copyNumber(numberText, buttonElement) {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(numberText);
+    }
+    const originalContent = buttonElement.innerHTML;
+    buttonElement.innerHTML = `
+      <svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+        <path d="M4.5 12.75l6 6 9-13.5"></path>
+      </svg>
+    `;
+    setTimeout(() => {
+      buttonElement.innerHTML = originalContent;
+    }, 1500);
+  }
+</script>
+
+
+</body></html>

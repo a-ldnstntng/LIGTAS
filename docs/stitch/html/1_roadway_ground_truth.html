@@ -1,0 +1,323 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>LIGTAS - Roadway Ground Truth</title>
+<!-- Urbanist Font -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          darkbg: "#1A1A1A",
+          cardbg: "#242424",
+          innerbg: "#2E2E2E",
+          brandyellow: "#EEF21A",
+          textsec: "#9A9A9A",
+          passgreen: "#22C55E"
+        },
+        fontFamily: {
+          sans: ["Urbanist", "sans-serif"]
+        }
+      }
+    }
+  };
+</script>
+<style>
+  body {
+    font-family: 'Urbanist', sans-serif !important;
+    background-color: #121212;
+    color: #FFFFFF;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  * {
+    font-family: 'Urbanist', sans-serif !important;
+    user-select: none;
+    box-sizing: border-box;
+  }
+  .gauge-track {
+    stroke: #2E2E2E;
+    stroke-linecap: round;
+    fill: none;
+  }
+  .gauge-fill {
+    stroke: #EEF21A;
+    stroke-linecap: round;
+    fill: none;
+  }
+</style>
+</head>
+<body class="flex justify-center items-start min-h-screen py-0 sm:py-6 bg-[#121212]">
+<!-- BEGIN: MobileDeviceFrame -->
+<main class="w-[390px] min-h-[844px] bg-[#1A1A1A] text-white flex flex-col relative pb-28 overflow-hidden rounded-none sm:rounded-[44px]">
+<!-- BEGIN: TopHeader -->
+<header class="flex items-center justify-between px-6 pt-7 pb-3" data-purpose="top-navigation-bar"><!-- Back Button: 1.5px outlined circle -->
+<button aria-label="Go Back" class="w-11 h-11 rounded-full border-[1.5px] border-[#404040] bg-transparent flex items-center justify-center active:scale-95 transition-transform" type="button">
+<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M15 18l-6-6 6-6"></path>
+</svg>
+</button>
+<!-- Notification Bell: 1.5px outlined circle with yellow dot -->
+<div class="relative">
+<button aria-label="Notifications" class="w-11 h-11 rounded-full border-[1.5px] border-[#404040] bg-transparent flex items-center justify-center active:scale-95 transition-transform" type="button">
+<svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+<path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+</svg>
+</button>
+<span class="absolute top-1.5 right-1.5 w-2 h-2 bg-[#EEF21A] rounded-full"></span>
+</div></header>
+<!-- END: TopHeader -->
+<!-- BEGIN: TitleRow -->
+<section class="flex items-center justify-between px-6 pt-2 pb-4" data-purpose="screen-title-section">
+<h1 class="text-[32px] leading-tight font-semibold tracking-tight text-white">Roadway Ground Truth</h1>
+<span class="bg-[#2E2E2E] text-white text-[12px] font-medium px-3.5 py-1.5 rounded-full">España</span>
+</section>
+<!-- END: TitleRow -->
+<!-- BEGIN: FilterToggle -->
+<section class="px-6 mb-4" data-purpose="filter-toggle-section">
+<div class="flex items-center gap-2.5">
+<button class="bg-[#EEF21A] text-[#1A1A1A] font-semibold text-[13px] py-2 px-5 rounded-full transition-transform active:scale-95" type="button">
+        Corridor Sensors
+      </button>
+<button class="bg-[#2E2E2E] text-[#9A9A9A] hover:text-white font-medium text-[13px] py-2 px-5 rounded-full transition-transform active:scale-95" type="button">
+        360° View
+      </button>
+</div>
+</section>
+<!-- END: FilterToggle -->
+<!-- BEGIN: España Station Card -->
+<section class="px-6 mb-4" data-purpose="station-card">
+<article class="bg-[#242424] rounded-[28px] p-6 flex flex-col relative overflow-hidden">
+<!-- High contrast grayscale street texture mask (~35% opacity) -->
+<div class="absolute right-0 bottom-0 w-[240px] h-[240px] pointer-events-none mix-blend-screen opacity-35 overflow-hidden" style="mask-image: radial-gradient(circle at bottom right, rgba(0,0,0,1) 15%, rgba(0,0,0,0) 80%); -webkit-mask-image: radial-gradient(circle at bottom right, rgba(0,0,0,1) 15%, rgba(0,0,0,0) 80%);">
+<img alt="Rain-soaked roadway texture" class="w-full h-full object-cover grayscale brightness-90 contrast-125" src="https://lh3.googleusercontent.com/aida/AEtjO1WwuwpBG3WbnAlSa0ivBlrNbBCCmk_B5AExANlP5glll-WwpLXmGbTHAjfOXD6L30cqkybqKcuNclyOl0nFrYfUCWkwhs9DK-TWoK2Hg70vLS2PuImbN9FyXVwCdZV0Zi9YGbrg0s3OjaSn-9DFYDhIzIKIN_jywSjnTE2ZcSyLAGUuuJw0Ac6l3zj1SvLrd7sVgr7cmD-VbvPrQKAs1g1g9q2U9OAVocEVHcifVElAxRpQrSCrk0Vlsew">
+</div>
+<!-- Top Row: España Station & Action button -->
+<div class="flex items-center justify-between mb-2 relative z-10">
+<div class="bg-[#2E2E2E]/80 backdrop-blur-sm px-4 py-1.5 rounded-full">
+<span class="text-[13px] font-medium text-white tracking-wide">España Station</span>
+</div>
+<button aria-label="Open Station details" class="w-10 h-10 rounded-full bg-white flex items-center justify-center active:scale-95 transition-transform" type="button">
+<svg class="w-5 h-5 text-[#1A1A1A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<line x1="7" x2="17" y1="17" y2="7"></line>
+<polyline points="7 7 17 7 17 17"></polyline>
+</svg>
+</button>
+</div>
+<!-- 270-degree Arc Gauge Display -->
+<div class="relative flex flex-col items-center justify-center my-3 z-10" data-purpose="flood-depth-gauge"><svg class="w-[210px] h-[175px]" viewBox="0 0 200 175">
+<!-- Background Track #3A3A3A -->
+<path class="gauge-track" d="M 40 145 A 72 72 0 1 1 160 145" stroke="#3A3A3A" stroke-width="14"></path>
+<!-- Gauge Arc fill at 0.0m (no fill displayed) -->
+<path class="gauge-fill" d="M 40 145 A 72 72 0 1 1 160 145" stroke-dasharray="340" stroke-dashoffset="340" stroke-width="14"></path>
+<!-- Indicator Knob at Start (0.0m) -->
+<circle cx="40" cy="145" fill="#EEF21A" r="8"></circle>
+</svg>
+<!-- Large Numeral 0.0 with small m -->
+<div class="absolute inset-0 flex flex-col items-center justify-center pt-2 pointer-events-none">
+<div class="flex items-start">
+<span class="text-[64px] font-light leading-none tracking-tight text-white">0.0</span>
+<span class="text-[20px] font-light text-[#9A9A9A] mt-1 ml-1 leading-none">m</span>
+</div>
+</div>
+<!-- Arc Min/Max Labels -->
+<div class="w-full flex justify-between px-8 text-[12px] font-medium text-[#9A9A9A] -mt-1">
+<span class="">0.0m</span>
+<span class="">1.5m</span>
+</div></div>
+<!-- Sedan / SUV / Pedestrian Passability Row: All Passable, dot + plain text only -->
+<div class="grid grid-cols-3 gap-2 pt-2 relative z-10" data-purpose="passability-row">
+<!-- Sedan -->
+<div class="bg-[#2E2E2E] rounded-[20px] p-3 flex flex-col items-center justify-center text-center">
+<div class="w-8 h-8 rounded-full flex items-center justify-center mb-1 text-[#9A9A9A]">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<rect height="7" rx="2" width="20" x="2" y="10"></rect>
+<path d="M5 10l2-5h10l2 5"></path>
+<circle cx="7" cy="17" r="2"></circle>
+<circle cx="17" cy="17" r="2"></circle>
+</svg>
+</div>
+<span class="text-[12px] font-medium text-white mb-1.5">Sedan</span>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#22C55E]"></span>
+<span class="text-[12px] text-white font-medium">Passable</span>
+</div>
+</div>
+<!-- SUV / 4x4 -->
+<div class="bg-[#2E2E2E] rounded-[20px] p-3 flex flex-col items-center justify-center text-center">
+<div class="w-8 h-8 rounded-full flex items-center justify-center mb-1 text-[#9A9A9A]">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<rect height="8" rx="2" width="20" x="2" y="9"></rect>
+<path d="M4 9l2.5-5h11L20 9"></path>
+<circle cx="7" cy="17" r="2"></circle>
+<circle cx="17" cy="17" r="2"></circle>
+</svg>
+</div>
+<span class="text-[12px] font-medium text-white mb-1.5">SUV / 4x4</span>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#22C55E]"></span>
+<span class="text-[12px] text-white font-medium">Passable</span>
+</div>
+</div>
+<!-- Pedestrian -->
+<div class="bg-[#2E2E2E] rounded-[20px] p-3 flex flex-col items-center justify-center text-center">
+<div class="w-8 h-8 rounded-full flex items-center justify-center mb-1 text-[#9A9A9A]">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<circle cx="12" cy="5" r="2"></circle>
+<path d="M10 22v-6l-2-2 3-4 3 2 1 4"></path>
+<path d="M14 13l3 2"></path>
+</svg>
+</div>
+<span class="text-[12px] font-medium text-white mb-1.5">Pedestrian</span>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#22C55E]"></span>
+<span class="text-[12px] text-white font-medium">Passable</span>
+</div>
+</div>
+</div>
+</article>
+</section>
+<!-- END: España Station Card -->
+<!-- BEGIN: Rainfall Trend Card -->
+<section class="px-6 mb-5" data-purpose="rainfall-trend-card">
+<article class="bg-[#242424] rounded-[28px] p-6 relative overflow-hidden">
+<!-- Header row -->
+<div class="flex items-center justify-between mb-4 relative z-10">
+<h2 class="text-[15px] font-semibold text-white tracking-wide">Rainfall Trend</h2>
+<span class="text-[12px] font-medium text-[#9A9A9A] bg-[#2E2E2E] px-3 py-1 rounded-full">Peak: 46 mm/h</span>
+</div>
+<!-- Dotted Timeline Stem Graph -->
+<div class="py-2 relative z-10"><div class="flex items-center justify-between px-2">
+<!-- Col 1 (6 AM) -->
+<div class="flex flex-col items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#EEF21A]"></span>
+<span class="w-2 h-2 rounded-full bg-[#3A3A3A]"></span>
+<span class="w-2 h-2 rounded-full bg-[#3A3A3A]"></span>
+</div>
+<!-- Col 2 -->
+<div class="flex flex-col items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#EEF21A]"></span>
+<span class="w-2 h-2 rounded-full bg-[#EEF21A]"></span>
+<span class="w-2 h-2 rounded-full bg-[#3A3A3A]"></span>
+</div>
+<!-- Col 3 (8 AM) -->
+<div class="flex flex-col items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#EEF21A]"></span>
+<span class="w-2 h-2 rounded-full bg-[#EEF21A]"></span>
+<span class="w-2 h-2 rounded-full bg-[#3A3A3A]"></span>
+</div>
+<!-- Col 4 -->
+<div class="flex flex-col items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#EEF21A]"></span>
+<span class="w-2 h-2 rounded-full bg-[#EEF21A]"></span>
+<span class="w-2 h-2 rounded-full bg-[#EEF21A]"></span>
+</div>
+<!-- Col 5: Peak (10 AM / Peak: 46 mm/h) with yellow raindrop icon at the top -->
+<div class="flex flex-col items-center gap-1.5">
+<svg class="w-3.5 h-3.5 text-[#EEF21A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+</svg>
+<span class="w-2 h-2 rounded-full bg-[#EEF21A]"></span>
+<span class="w-2 h-2 rounded-full bg-[#EEF21A]"></span>
+</div>
+<!-- Col 6 -->
+<div class="flex flex-col items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#EEF21A]"></span>
+<span class="w-2 h-2 rounded-full bg-[#EEF21A]"></span>
+<span class="w-2 h-2 rounded-full bg-[#3A3A3A]"></span>
+</div>
+<!-- Col 7 (12 PM) -->
+<div class="flex flex-col items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#EEF21A]"></span>
+<span class="w-2 h-2 rounded-full bg-[#3A3A3A]"></span>
+<span class="w-2 h-2 rounded-full bg-[#3A3A3A]"></span>
+</div>
+<!-- Col 8 -->
+<div class="flex flex-col items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#3A3A3A]"></span>
+<span class="w-2 h-2 rounded-full bg-[#3A3A3A]"></span>
+<span class="w-2 h-2 rounded-full bg-[#3A3A3A]"></span>
+</div>
+<!-- Col 9 (2 PM) -->
+<div class="flex flex-col items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#EEF21A]"></span>
+<span class="w-2 h-2 rounded-full bg-[#3A3A3A]"></span>
+<span class="w-2 h-2 rounded-full bg-[#3A3A3A]"></span>
+</div>
+</div>
+<!-- Hourly Markers -->
+<div class="flex justify-between items-center text-[12px] font-medium text-[#9A9A9A] pt-4 px-1">
+<span class="">6 AM</span>
+<span class="">8 AM</span>
+<span class="">10 AM</span>
+<span class="">12 PM</span>
+<span class="">2 PM</span>
+</div></div>
+</article>
+</section>
+<!-- END: Rainfall Trend Card -->
+<!-- BEGIN: Report Button -->
+<section class="px-6 mb-4" data-purpose="report-action-section">
+<button class="w-full bg-[#EEF21A] hover:bg-[#E5EA15] rounded-full py-4 px-6 flex items-center justify-center gap-2 text-[15px] font-semibold text-[#1A1A1A] transition-transform active:scale-[0.98]" type="button">
+<svg class="w-4 h-4 text-[#1A1A1A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24">
+<path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+</svg>
+<span class="">Report Flood / Hazard</span>
+</button>
+</section>
+<!-- END: Report Button -->
+<!-- BEGIN: FloatingBottomNavigation -->
+<nav aria-label="Bottom Navigation" class="absolute bottom-5 inset-x-0 flex justify-center z-30 pointer-events-none"><div class="bg-[#242424] rounded-full p-2 flex items-center gap-2.5 shadow-2xl pointer-events-auto">
+<!-- 1. Home (Active: solid white circle with dark house icon) -->
+<button aria-label="Home" class="w-11 h-11 rounded-full bg-white text-[#1A1A1A] flex items-center justify-center shadow transition-transform active:scale-95" type="button">
+<svg class="w-6 h-6 text-[#1A1A1A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+<polyline points="9 22 9 12 15 12 15 22"></polyline>
+</svg>
+</button>
+<!-- 2. Flood Radar (map icon) -->
+<button aria-label="Flood Radar" class="w-11 h-11 rounded-full bg-transparent flex items-center justify-center hover:bg-[#2E2E2E] transition-colors active:scale-95" type="button">
+<svg class="w-6 h-6 text-[#9A9A9A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+<line x1="8" x2="8" y1="2" y2="18"></line>
+<line x1="16" x2="16" y1="6" y2="22"></line>
+</svg>
+</button>
+<!-- 3. Corridors (list icon) -->
+<button aria-label="Corridors" class="w-11 h-11 rounded-full bg-transparent flex items-center justify-center hover:bg-[#2E2E2E] transition-colors active:scale-95" type="button">
+<svg class="w-6 h-6 text-[#9A9A9A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<line x1="8" x2="21" y1="6" y2="6"></line>
+<line x1="8" x2="21" y1="12" y2="12"></line>
+<line x1="8" x2="21" y1="18" y2="18"></line>
+<line x1="3" x2="3.01" y1="6" y2="6"></line>
+<line x1="3" x2="3.01" y1="12" y2="12"></line>
+<line x1="3" x2="3.01" y1="18" y2="18"></line>
+</svg>
+</button>
+<!-- 4. Hydro (droplet icon) -->
+<button aria-label="Hydro" class="w-11 h-11 rounded-full bg-transparent flex items-center justify-center hover:bg-[#2E2E2E] transition-colors active:scale-95" type="button">
+<svg class="w-6 h-6 text-[#9A9A9A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+</svg>
+</button>
+<!-- 5. Hotlines (phone icon) -->
+<button aria-label="Hotlines" class="w-11 h-11 rounded-full bg-transparent flex items-center justify-center hover:bg-[#2E2E2E] transition-colors active:scale-95" type="button">
+<svg class="w-6 h-6 text-[#9A9A9A]" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+</svg>
+</button>
+</div></nav>
+<!-- END: FloatingBottomNavigation -->
+</main>
+<!-- END: MobileDeviceFrame -->
+
+
+</body></html>
