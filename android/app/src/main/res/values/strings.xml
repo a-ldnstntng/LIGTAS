@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">LIGTAS METRO</string>
+    <string name="title_activity_main">LIGTAS METRO</string>
+    <string name="package_name">com.ligtas.metro</string>
+    <string name="custom_url_scheme">com.ligtas.metro</string>
+</resources>
