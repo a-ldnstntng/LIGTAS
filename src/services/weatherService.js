@@ -34,9 +34,19 @@ const DEFAULT_DAILY = [
   { day: 'Sat', high: 24, low: 9, code: 0, icon: 'sunny', isHighlight: false, pop: 10 },
 ];
 
+export const DEFAULT_TIMELINE = [
+  { stepIndex: 0, offsetHours: -6, label: 'T-6h', hourLabel: '7 PM', timeStr: '7:00 PM', precip: 0.0, temp: 28, isLive: false },
+  { stepIndex: 1, offsetHours: -5, label: 'T-5h', hourLabel: '8 PM', timeStr: '8:00 PM', precip: 0.0, temp: 27, isLive: false },
+  { stepIndex: 2, offsetHours: -4, label: 'T-4h', hourLabel: '9 PM', timeStr: '9:00 PM', precip: 1.2, temp: 26, isLive: false },
+  { stepIndex: 3, offsetHours: -3, label: 'T-3h', hourLabel: '10 PM', timeStr: '10:00 PM', precip: 4.5, temp: 25, isLive: false },
+  { stepIndex: 4, offsetHours: -2, label: 'T-2h', hourLabel: '11 PM', timeStr: '11:00 PM', precip: 8.0, temp: 25, isLive: false },
+  { stepIndex: 5, offsetHours: -1, label: 'T-1h', hourLabel: '12 AM', timeStr: '12:00 AM', precip: 3.2, temp: 25, isLive: false },
+  { stepIndex: 6, offsetHours: 0, label: 'Live (Now)', hourLabel: 'Live', timeStr: 'Live', precip: 0.0, temp: 27, isLive: true },
+];
+
 export async function fetchLiveWeather(latitude, longitude) {
   try {
-    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,surface_pressure&hourly=temperature_2m,precipitation_probability,precipitation,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia%2FManila&forecast_days=7`;
+    const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,surface_pressure&hourly=temperature_2m,precipitation_probability,precipitation,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia%2FManila&past_days=1&forecast_days=7`;
     const floodUrl = `https://flood-api.open-meteo.com/v1/flood?latitude=${latitude}&longitude=${longitude}&daily=river_discharge,river_discharge_mean,river_discharge_max,river_discharge_min&forecast_days=7`;
 
     const [weatherRes, floodRes] = await Promise.allSettled([
@@ -106,6 +116,40 @@ export async function fetchLiveWeather(latitude, longitude) {
       });
     }
 
+    // Format 7-Step Timeline Replay Sequence: past 6 hours up to Live (Now)
+    const timeline = [];
+    const windowHours = 6;
+    for (let offset = -windowHours; offset <= 0; offset++) {
+      const idx = startIndex + offset;
+      if (idx >= 0 && idx < hourlyTimes.length) {
+        const t = new Date(hourlyTimes[idx]);
+        const timeLabel = offset === 0 
+          ? 'Live' 
+          : t.toLocaleTimeString('en-US', { hour: 'numeric', hour12: true });
+        const stepLabel = offset === 0 ? 'Live (Now)' : `T${offset}h`;
+        const code = hourlyCodes[idx] ?? 0;
+        const precip = hourlyPrecips[idx] ?? 0;
+        const temp = Math.round(hourlyTemps[idx] ?? 27);
+        const pop = hourlyPops[idx] ?? 0;
+        const isNight = t.getHours() < 6 || t.getHours() >= 18;
+
+        timeline.push({
+          stepIndex: offset + windowHours, // 0 to 6
+          offsetHours: offset,
+          label: stepLabel,
+          hourLabel: timeLabel,
+          timeStr: t.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }),
+          isoTime: hourlyTimes[idx],
+          precip,
+          temp,
+          pop,
+          code,
+          icon: getWeatherIcon(code, isNight),
+          isLive: offset === 0,
+        });
+      }
+    }
+
     // Format 7-Day sequence
     const dailyTimes = data.daily?.time || [];
     const dailyMax = data.daily?.temperature_2m_max || [];
@@ -145,9 +189,11 @@ export async function fetchLiveWeather(latitude, longitude) {
       weatherCode: current.weather_code,
       condition: getConditionLabel(current.weather_code),
       lastUpdated: timeStr,
+      updatedAt: now.getTime(),
       isOffline: false,
       hourly: hourly.length ? hourly : DEFAULT_HOURLY,
       daily: daily.length ? daily : DEFAULT_DAILY,
+      timeline: timeline.length > 0 ? timeline : DEFAULT_TIMELINE,
       riverDischarge: currentDischarge,
       riverDischargeSeries: dischargeList,
       riverDischargeMax: Math.round(floodData?.daily?.river_discharge_max?.[1] ?? Math.max(...dischargeList)),
@@ -164,9 +210,11 @@ export async function fetchLiveWeather(latitude, longitude) {
       weatherCode: 0,
       condition: 'Signal Dropped',
       lastUpdated: 'Signal Dropped',
+      updatedAt: null,
       isOffline: true,
       hourly: DEFAULT_HOURLY,
       daily: DEFAULT_DAILY,
+      timeline: DEFAULT_TIMELINE,
       riverDischarge: 316,
       riverDischargeSeries: [302, 317, 332, 323, 289, 250, 216],
       riverDischargeMax: 417,
@@ -210,5 +258,61 @@ export function computeLiveInundation(name = '', precip = 0) {
     riskPercent: tier.risk,
     advisory: tier.adv,
     detourDelta: tier.detour,
+  };
+}
+
+// Dynamic Data Freshness & Staleness Classifier (Master Plan Section 4)
+export function formatDataFreshness(updatedAt, fallbackStr = 'Connecting...') {
+  if (!updatedAt || typeof updatedAt !== 'number') {
+    return {
+      label: fallbackStr,
+      isStale: false,
+      isLive: false,
+      ageMinutes: 0,
+      badgeText: fallbackStr,
+    };
+  }
+
+  const diffSec = Math.floor((Date.now() - updatedAt) / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+
+  if (diffSec < 60) {
+    return {
+      label: 'Updated just now',
+      isStale: false,
+      isLive: true,
+      ageMinutes: 0,
+      badgeText: 'Live (<1m)',
+    };
+  }
+
+  if (diffMin < 15) {
+    return {
+      label: `Updated ${diffMin}m ago`,
+      isStale: false,
+      isLive: true,
+      ageMinutes: diffMin,
+      badgeText: `Live (${diffMin}m ago)`,
+    };
+  }
+
+  // Stale data threshold: >= 15 minutes
+  if (diffMin < 60) {
+    return {
+      label: `Updated ${diffMin}m ago (Stale)`,
+      isStale: true,
+      isLive: false,
+      ageMinutes: diffMin,
+      badgeText: `Stale (${diffMin}m ago)`,
+    };
+  }
+
+  const diffHours = Math.floor(diffMin / 60);
+  return {
+    label: `Updated ${diffHours}h ago (Stale)`,
+    isStale: true,
+    isLive: false,
+    ageMinutes: diffMin,
+    badgeText: `Stale (${diffHours}h ago)`,
   };
 }

@@ -114,3 +114,38 @@
   filter: grayscale(1) contrast(1.4) brightness(0.9);
 }
 
+/* MapLibre Dark Popups & Tactical Markers */
+.maplibregl-popup-content {
+  background: #16171d !important;
+  color: #f5f6f9 !important;
+  border-radius: 14px !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.65) !important;
+  padding: 0 !important;
+  overflow: hidden;
+}
+.maplibregl-popup-anchor-top .maplibregl-popup-tip {
+  border-bottom-color: #16171d !important;
+}
+.maplibregl-popup-anchor-bottom .maplibregl-popup-tip {
+  border-top-color: #16171d !important;
+}
+.maplibregl-popup-anchor-left .maplibregl-popup-tip {
+  border-right-color: #16171d !important;
+}
+.maplibregl-popup-anchor-right .maplibregl-popup-tip {
+  border-left-color: #16171d !important;
+}
+.maplibregl-popup-close-button {
+  color: #8c909d !important;
+  font-size: 15px !important;
+  padding: 6px 10px !important;
+  right: 2px !important;
+  top: 2px !important;
+}
+.maplibregl-popup-close-button:hover {
+  color: #ffffff !important;
+  background: transparent !important;
+}
+
+

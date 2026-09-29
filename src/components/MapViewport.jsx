@@ -1,8 +1,57 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
-import { Eye } from 'lucide-react';
+import { Eye, Layers, X, Check, Play, Pause, RotateCcw, Clock } from 'lucide-react';
 import floodZones from '../data/floodPolygons.json';
+import { DEFAULT_TIMELINE, computeLiveInundation } from '../services/weatherService';
+
+// Canonical Metro Manila Hydro Telemetry Stations
+export const RIVER_STATIONS = [
+  {
+    id: 'marikina-stn',
+    name: 'Marikina River Gauge (Sto. Niño)',
+    basin: 'Marikina River Basin',
+    stage: '14.2m',
+    alertLevel: '15.0m Alert Level 1',
+    status: 'Normal Headway',
+    statusColor: '#51cf66',
+    coordinates: [121.096, 14.633],
+    agency: 'PAGASA / MMDA EFCOS'
+  },
+  {
+    id: 'sanjuan-gate',
+    name: 'San Juan Riverway Sluice Gate',
+    basin: 'San Juan River Basin',
+    stage: '1.2m',
+    alertLevel: '2.5m Overflow',
+    status: 'Optimal Discharge',
+    statusColor: '#51cf66',
+    coordinates: [121.015, 14.598],
+    agency: 'DPWH Flood Control'
+  },
+  {
+    id: 'napindan-gate',
+    name: 'Napindan Hydraulic Control Structure',
+    basin: 'Pasig-Laguna Lake Confluence',
+    stage: '11.8m',
+    alertLevel: '12.5m Reverse Flow',
+    status: 'Gates Active',
+    statusColor: '#54b2d3',
+    coordinates: [121.082, 14.551],
+    agency: 'MMDA / LLDA'
+  },
+  {
+    id: 'tullahan-gauge',
+    name: 'Tullahan River Station (Tinajeros)',
+    basin: 'Tullahan-Tinajeros River',
+    stage: '2.1m',
+    alertLevel: '3.0m Spill Risk',
+    status: 'Monitored Headway',
+    statusColor: '#51cf66',
+    coordinates: [120.978, 14.672],
+    agency: 'PAGASA Hydro-Met'
+  }
+];
 
 // Compute dynamic flood polygons and contrasting routes for any location in the Philippines
 function computeLocationGeometries(lon, lat, depthMeters = 0, locationName = '') {
@@ -268,26 +317,135 @@ function computeLocationGeometries(lon, lat, depthMeters = 0, locationName = '')
 
 export default function MapViewport({ 
   activeCorridor,
+  activeLocation,
+  depthMeters,
   streetViewPosition,
+  cameraPosition,
   onToggleStreetView,
   isStreetViewOpen,
-  onMapClick
+  streetViewActive,
+  onMapClick,
+  timeline,
+  timelineStep = 6,
+  onTimelineChange,
+  isPlayingTimeline = false,
+  onTogglePlayTimeline,
 }) {
+  const activeTimeline = timeline && timeline.length ? timeline : DEFAULT_TIMELINE;
+  const currentStep = typeof timelineStep === 'number' ? Math.min(activeTimeline.length - 1, Math.max(0, timelineStep)) : activeTimeline.length - 1;
+  const currentFrame = activeTimeline[currentStep] || activeTimeline[activeTimeline.length - 1];
+  const isReplay = currentStep < (activeTimeline.length - 1);
+
+  // Compute effective depth for current replay frame if in replay mode
+  const locName = (activeLocation?.name || activeCorridor?.name || '');
+  const effectiveLocationDepth = isReplay && locName
+    ? computeLiveInundation(locName, currentFrame.precip).depthMeters
+    : (depthMeters ?? activeLocation?.depthMeters ?? 0);
+
+  const rawLocation = activeCorridor || activeLocation;
+  const targetLocation = rawLocation ? {
+    ...rawLocation,
+    depthMeters: effectiveLocationDepth,
+    isReplay,
+    replayHourLabel: isReplay ? currentFrame.hourLabel : null,
+  } : null;
+
+  const effectiveStreetViewPos = streetViewPosition || cameraPosition;
+  const effectiveStreetViewActive = isStreetViewOpen ?? streetViewActive;
+
+  const [layers, setLayers] = useState({
+    floodZones: true,
+    floodedRoute: true,
+    bypassRoute: true,
+    riverGauges: true,
+  });
+  const [isLayerPanelOpen, setIsLayerPanelOpen] = useState(false);
+
   const mapContainer = useRef(null);
   const map = useRef(null);
   const activeMarkerRef = useRef(null);
   const streetViewMarkerRef = useRef(null);
   const waypointMarkersRef = useRef([]);
+  const riverMarkersRef = useRef([]);
   const isMapReady = useRef(false);
-  const latestCorridorRef = useRef(activeCorridor);
+  const latestCorridorRef = useRef(targetLocation);
+  const layersRef = useRef(layers);
 
-  // Keep latest corridor ref updated
-  latestCorridorRef.current = activeCorridor;
+  // Keep latest corridor and layers refs updated
+  latestCorridorRef.current = targetLocation;
+  layersRef.current = layers;
 
   // Clear all auxiliary waypoint markers
   const clearWaypointMarkers = () => {
     waypointMarkersRef.current.forEach(m => m.remove());
     waypointMarkersRef.current = [];
+  };
+
+  // Setup River Gauge Telemetry Markers across Metro Manila
+  const setupRiverStations = () => {
+    if (!map.current) return;
+    riverMarkersRef.current.forEach(m => m.remove());
+    riverMarkersRef.current = [];
+
+    RIVER_STATIONS.forEach(station => {
+      const el = document.createElement('div');
+      el.className = 'river-gauge-marker';
+      el.style.position = 'relative';
+      el.style.cursor = 'pointer';
+      el.style.display = layersRef.current.riverGauges ? 'block' : 'none';
+
+      el.innerHTML = `
+        <div style="position: relative; display: flex; flex-direction: column; align-items: center;">
+          <!-- Pulsing cyan radar halo -->
+          <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 28px; height: 28px; border-radius: 9999px; background-color: rgba(84, 178, 211, 0.25); animation: ping 2.5s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+          <!-- Gauge Pin -->
+          <div style="position: relative; width: 24px; height: 24px; border-radius: 9999px; background-color: #121214; border: 2px solid #54b2d3; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(18, 18, 20, 0.8); z-index: 10;">
+            <div style="width: 7px; height: 7px; border-radius: 9999px; background-color: #54b2d3;"></div>
+          </div>
+          <!-- Badge -->
+          <div style="margin-top: 4px; background-color: rgba(18, 18, 20, 0.95); border: 1px solid rgba(84, 178, 211, 0.5); padding: 2px 7px; border-radius: 9999px; font-size: 10px; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: #54b2d3; white-space: nowrap; box-shadow: 0 2px 8px rgba(18, 18, 20, 0.7); backdrop-filter: blur(6px); display: flex; align-items: center; gap: 4px;">
+            <span>${station.name.split('(')[0].trim()}</span>
+            <span style="color: #ffffff;">${station.stage}</span>
+          </div>
+        </div>
+      `;
+
+      const popupHtml = `
+        <div style="padding: 12px 14px; font-family: system-ui, -apple-system, sans-serif; min-width: 210px; color: #f5f6f9; background: #16171d; border-radius: 14px;">
+          <div style="font-size: 10px; font-weight: 700; color: #54b2d3; text-transform: uppercase; letter-spacing: 0.6px; margin-bottom: 2px;">
+            ${station.basin}
+          </div>
+          <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 8px;">
+            ${station.name}
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-bottom: 5px; border-bottom: 1px solid rgba(255,255,255,0.08); padding-bottom: 5px;">
+            <span style="color: #8c909d;">Current Stage:</span>
+            <span style="font-weight: 700; color: #54b2d3; font-family: 'JetBrains Mono', monospace;">${station.stage}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-bottom: 5px;">
+            <span style="color: #8c909d;">Alert Level:</span>
+            <span style="color: #f59e6c; font-family: 'JetBrains Mono', monospace;">${station.alertLevel}</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; margin-bottom: 7px;">
+            <span style="color: #8c909d;">Status:</span>
+            <span style="color: ${station.statusColor}; font-weight: 600;">${station.status}</span>
+          </div>
+          <div style="font-size: 9px; color: #6e727e; font-family: 'JetBrains Mono', monospace; border-top: 1px solid rgba(255,255,255,0.06); padding-top: 5px;">
+            Source: ${station.agency}
+          </div>
+        </div>
+      `;
+
+      const popup = new maplibregl.Popup({ offset: 16, closeButton: true, className: 'ligtas-map-popup' })
+        .setHTML(popupHtml);
+
+      const marker = new maplibregl.Marker({ element: el, anchor: 'center' })
+        .setLngLat(station.coordinates)
+        .setPopup(popup)
+        .addTo(map.current);
+
+      riverMarkersRef.current.push(marker);
+    });
   };
 
   // Synchronize sources, routes, polygons, and markers to the target location
@@ -392,7 +550,7 @@ export default function MapViewport({
         <!-- Floating Badge Above Marker -->
         <div style="margin-top: 6px; background-color: rgba(18, 18, 20, 0.95); border: 1px solid ${depth > 0.1 ? 'rgba(255, 107, 107, 0.6)' : 'rgba(81, 207, 102, 0.6)'}; padding: 3px 10px; border-radius: 9999px; font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; color: ${depth > 0.1 ? '#ff6b6b' : '#51cf66'}; white-space: nowrap; box-shadow: 0 4px 12px rgba(18, 18, 20, 0.6); backdrop-filter: blur(8px); z-index: 20; display: flex; align-items: center; gap: 5px;">
           <span style="display: inline-block; width: 6px; height: 6px; border-radius: 9999px; background-color: ${depth > 0.1 ? '#ff6b6b' : '#51cf66'};"></span>
-          <span>${cleanName} • ${depth > 0.1 ? `${depth.toFixed(1)}m` : 'Clear (0.0m)'}</span>
+          <span>${cleanName} • ${depth > 0.1 ? `${depth.toFixed(1)}m` : 'Clear (0.0m)'}${loc?.replayHourLabel ? ` (${loc.replayHourLabel})` : ''}</span>
         </div>
       </div>
     `;
@@ -403,10 +561,12 @@ export default function MapViewport({
 
     // 5. Add Clear Waypoint Markers (A: Diversion, B: Safe Merge, and Bypass Label)
     clearWaypointMarkers();
+    const bypassVisible = layersRef.current.bypassRoute ? 'block' : 'none';
 
     // Start Waypoint (Diversion point)
     if (startPoint) {
       const startEl = document.createElement('div');
+      startEl.style.display = bypassVisible;
       startEl.innerHTML = `
         <div style="background-color: #121214; border: 1.5px solid #51cf66; color: #51cf66; padding: 3px 8px; border-radius: 9999px; font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; letter-spacing: 0.5px; box-shadow: 0 4px 10px rgba(18, 18, 20, 0.7); display: flex; align-items: center; gap: 4px;">
           <span style="background-color: #51cf66; color: #121214; width: 16px; height: 16px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; line-height: 1;">A</span>
@@ -422,6 +582,7 @@ export default function MapViewport({
     // End Waypoint (Safe merge point)
     if (endPoint) {
       const endEl = document.createElement('div');
+      endEl.style.display = bypassVisible;
       endEl.innerHTML = `
         <div style="background-color: #121214; border: 1.5px solid #51cf66; color: #51cf66; padding: 3px 8px; border-radius: 9999px; font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; letter-spacing: 0.5px; box-shadow: 0 4px 10px rgba(18, 18, 20, 0.7); display: flex; align-items: center; gap: 4px;">
           <span style="background-color: #51cf66; color: #121214; width: 16px; height: 16px; border-radius: 9999px; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; line-height: 1;">B</span>
@@ -437,6 +598,7 @@ export default function MapViewport({
     // Safe Ridge Route Badge
     if (midSafePoint) {
       const ridgeEl = document.createElement('div');
+      ridgeEl.style.display = bypassVisible;
       ridgeEl.innerHTML = `
         <div style="background-color: rgba(18, 18, 20, 0.9); border: 1px solid rgba(81, 207, 102, 0.5); color: #51cf66; padding: 2px 8px; border-radius: 9999px; font-size: 12px; font-weight: 700; font-family: 'JetBrains Mono', monospace; font-variant-numeric: tabular-nums; letter-spacing: 0.3px; box-shadow: 0 2px 8px rgba(18, 18, 20, 0.6); backdrop-filter: blur(6px);">
           ELEVATED BYPASS
@@ -568,6 +730,9 @@ export default function MapViewport({
 
       isMapReady.current = true;
 
+      // Setup River Stations Markers
+      setupRiverStations();
+
       // Listen to click events on the map canvas
       map.current.on('click', (e) => {
         onMapClick?.({ lng: e.lngLat.lng, lat: e.lngLat.lat });
@@ -581,6 +746,8 @@ export default function MapViewport({
 
     return () => {
       clearWaypointMarkers();
+      riverMarkersRef.current.forEach(m => m.remove());
+      riverMarkersRef.current = [];
       if (activeMarkerRef.current) {
         activeMarkerRef.current.remove();
         activeMarkerRef.current = null;
@@ -596,20 +763,59 @@ export default function MapViewport({
     };
   }, []);
 
-  // Update camera, geometries, and markers whenever activeCorridor changes
+  // Synchronize GIS Layer Visibility
   useEffect(() => {
-    if (!activeCorridor) return;
+    if (!isMapReady.current || !map.current) return;
+
+    // 1. Flood Inundation Zones
+    if (map.current.getLayer('flood-fill')) {
+      map.current.setLayoutProperty('flood-fill', 'visibility', layers.floodZones ? 'visible' : 'none');
+    }
+    if (map.current.getLayer('flood-outline')) {
+      map.current.setLayoutProperty('flood-outline', 'visibility', layers.floodZones ? 'visible' : 'none');
+    }
+
+    // 2. Flooded Hazard Corridor
+    if (map.current.getLayer('route-flooded-glow')) {
+      map.current.setLayoutProperty('route-flooded-glow', 'visibility', layers.floodedRoute ? 'visible' : 'none');
+    }
+    if (map.current.getLayer('route-flooded-line')) {
+      map.current.setLayoutProperty('route-flooded-line', 'visibility', layers.floodedRoute ? 'visible' : 'none');
+    }
+
+    // 3. Elevated Safe Bypass Route & Waypoints
+    if (map.current.getLayer('route-safe-glow')) {
+      map.current.setLayoutProperty('route-safe-glow', 'visibility', layers.bypassRoute ? 'visible' : 'none');
+    }
+    if (map.current.getLayer('route-safe-line')) {
+      map.current.setLayoutProperty('route-safe-line', 'visibility', layers.bypassRoute ? 'visible' : 'none');
+    }
+    waypointMarkersRef.current.forEach(m => {
+      const el = m.getElement();
+      if (el) el.style.display = layers.bypassRoute ? 'block' : 'none';
+    });
+
+    // 4. River Hydro Gauges & Sluice Gates
+    riverMarkersRef.current.forEach(m => {
+      const el = m.getElement();
+      if (el) el.style.display = layers.riverGauges ? 'block' : 'none';
+    });
+  }, [layers]);
+
+  // Update camera, geometries, and markers whenever targetLocation changes
+  useEffect(() => {
+    if (!targetLocation) return;
 
     if (isMapReady.current && map.current && map.current.getSource('flooded-route')) {
-      applyLocationUpdate(activeCorridor);
+      applyLocationUpdate(targetLocation);
     }
-  }, [activeCorridor]);
+  }, [targetLocation?.lat, targetLocation?.lon, targetLocation?.name, targetLocation?.depthMeters]);
 
   // Handle Street View Camera Cone & Heading Synchronization
   useEffect(() => {
     if (!map.current || !isMapReady.current) return;
 
-    if (!isStreetViewOpen || !streetViewPosition) {
+    if (!effectiveStreetViewActive || !effectiveStreetViewPos) {
       if (streetViewMarkerRef.current) {
         streetViewMarkerRef.current.remove();
         streetViewMarkerRef.current = null;
@@ -617,7 +823,7 @@ export default function MapViewport({
       return;
     }
 
-    const { lng, lat, bearing = 0 } = streetViewPosition;
+    const { lng, lat, bearing = 0 } = effectiveStreetViewPos;
 
     if (!streetViewMarkerRef.current) {
       const coneEl = document.createElement('div');
@@ -651,11 +857,121 @@ export default function MapViewport({
         cone.style.transform = `rotate(${bearing}deg)`;
       }
     }
-  }, [isStreetViewOpen, streetViewPosition]);
+  }, [effectiveStreetViewActive, effectiveStreetViewPos]);
 
   return (
     <div className="relative w-full h-full rounded-4xl overflow-hidden">
       <div ref={mapContainer} className="w-full h-full" />
+
+      {/* Floating Layer Selector: Top-Left */}
+      <div className="absolute top-4 left-4 z-20 flex flex-col items-start gap-2">
+        <button
+          type="button"
+          onClick={() => setIsLayerPanelOpen(prev => !prev)}
+          title="Map GIS Layers"
+          aria-label="Map GIS Layers"
+          className={`px-3 py-2 rounded-full text-xs font-semibold transition-all shadow-xl backdrop-blur-md flex items-center gap-2 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#54b2d3] cursor-pointer ${
+            isLayerPanelOpen
+              ? 'bg-[#54b2d3] text-[#121214] shadow-[#54b2d3]/30 font-bold'
+              : 'bg-[#141519]/85 hover:bg-[#141519] text-[#f5f6f9] border border-white/15 hover:border-[#54b2d3]/50'
+          }`}
+        >
+          <Layers className={`w-3.5 h-3.5 ${isLayerPanelOpen ? 'text-[#121214]' : 'text-[#54b2d3]'}`} />
+          <span>Layers</span>
+          <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-mono font-medium ${
+            isLayerPanelOpen ? 'bg-black/20 text-black' : 'bg-white/10 text-[#8c909d]'
+          }`}>
+            {Object.values(layers).filter(Boolean).length}/4
+          </span>
+        </button>
+
+        {/* Collapsible Layer Selector Flyout */}
+        {isLayerPanelOpen && (
+          <div className="w-56 p-3 rounded-2xl bg-[#141519]/95 backdrop-blur-xl border border-white/12 shadow-[0_16px_36px_rgba(0,0,0,0.7)] flex flex-col gap-2.5 animate-in fade-in duration-150">
+            <div className="flex items-center justify-between pb-1.5 border-b border-white/10">
+              <span className="text-[11px] font-display font-semibold uppercase tracking-wider text-white">GIS Layers</span>
+              <button
+                type="button"
+                onClick={() => setIsLayerPanelOpen(false)}
+                className="w-5 h-5 rounded-full hover:bg-white/10 flex items-center justify-center text-[#8c909d] hover:text-white transition cursor-pointer"
+                title="Close Layers Panel"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              {/* Toggle 1: Flood Inundation Zones */}
+              <button
+                type="button"
+                onClick={() => setLayers(prev => ({ ...prev, floodZones: !prev.floodZones }))}
+                className="flex items-center justify-between p-2 rounded-xl hover:bg-white/[0.04] transition text-left cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#ff6b6b] shrink-0" />
+                  <span className="text-xs text-[#e1e4ea] font-medium">Inundation Zones</span>
+                </div>
+                <div className={`w-4 h-4 rounded border flex items-center justify-center transition ${
+                  layers.floodZones ? 'bg-[#ff6b6b] border-[#ff6b6b]' : 'border-white/20 bg-transparent'
+                }`}>
+                  {layers.floodZones && <Check className="w-3 h-3 text-[#121214] stroke-[3]" />}
+                </div>
+              </button>
+
+              {/* Toggle 2: Flooded Hazard Route */}
+              <button
+                type="button"
+                onClick={() => setLayers(prev => ({ ...prev, floodedRoute: !prev.floodedRoute }))}
+                className="flex items-center justify-between p-2 rounded-xl hover:bg-white/[0.04] transition text-left cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-0.5 border-t-2 border-dashed border-[#ff6b6b] shrink-0" />
+                  <span className="text-xs text-[#e1e4ea] font-medium">Flooded Corridor</span>
+                </div>
+                <div className={`w-4 h-4 rounded border flex items-center justify-center transition ${
+                  layers.floodedRoute ? 'bg-[#ff6b6b] border-[#ff6b6b]' : 'border-white/20 bg-transparent'
+                }`}>
+                  {layers.floodedRoute && <Check className="w-3 h-3 text-[#121214] stroke-[3]" />}
+                </div>
+              </button>
+
+              {/* Toggle 3: Elevated Bypass Route */}
+              <button
+                type="button"
+                onClick={() => setLayers(prev => ({ ...prev, bypassRoute: !prev.bypassRoute }))}
+                className="flex items-center justify-between p-2 rounded-xl hover:bg-white/[0.04] transition text-left cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-0.5 bg-[#51cf66] shrink-0" />
+                  <span className="text-xs text-[#e1e4ea] font-medium">Elevated Bypass</span>
+                </div>
+                <div className={`w-4 h-4 rounded border flex items-center justify-center transition ${
+                  layers.bypassRoute ? 'bg-[#51cf66] border-[#51cf66]' : 'border-white/20 bg-transparent'
+                }`}>
+                  {layers.bypassRoute && <Check className="w-3 h-3 text-[#121214] stroke-[3]" />}
+                </div>
+              </button>
+
+              {/* Toggle 4: River Hydro Gauges */}
+              <button
+                type="button"
+                onClick={() => setLayers(prev => ({ ...prev, riverGauges: !prev.riverGauges }))}
+                className="flex items-center justify-between p-2 rounded-xl hover:bg-white/[0.04] transition text-left cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#54b2d3] shrink-0" />
+                  <span className="text-xs text-[#e1e4ea] font-medium">River Hydro Gauges</span>
+                </div>
+                <div className={`w-4 h-4 rounded border flex items-center justify-center transition ${
+                  layers.riverGauges ? 'bg-[#54b2d3] border-[#54b2d3]' : 'border-white/20 bg-transparent'
+                }`}>
+                  {layers.riverGauges && <Check className="w-3 h-3 text-[#121214] stroke-[3]" />}
+                </div>
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Floating Street View Trigger Button */}
       {onToggleStreetView && (
@@ -663,16 +979,103 @@ export default function MapViewport({
           onClick={onToggleStreetView}
           title="Toggle Ground-Level 360° Perspective"
           aria-label="Toggle Ground-Level 360° Perspective"
-          className={`absolute top-4 right-4 z-20 px-3.5 py-2 rounded-full text-xs font-bold transition-all shadow-xl backdrop-blur-md flex items-center gap-2 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold ${
-            isStreetViewOpen
+          className={`absolute top-4 right-4 z-20 px-3.5 py-2 rounded-full text-xs font-bold transition-all shadow-xl backdrop-blur-md flex items-center gap-2 active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-clay-gold cursor-pointer ${
+            effectiveStreetViewActive
               ? 'bg-clay-gold text-obsidian shadow-clay-gold/30 ring-2 ring-clay-gold/50'
               : 'bg-obsidian/85 hover:bg-obsidian text-white border border-white/15 hover:border-clay-gold/50'
           }`}
         >
-          <Eye className={`w-3.5 h-3.5 ${isStreetViewOpen ? 'text-obsidian' : 'text-clay-gold'}`} />
-          <span>{isStreetViewOpen ? 'Active Ground Truth' : 'Ground Truth (360°)'}</span>
+          <Eye className={`w-3.5 h-3.5 ${effectiveStreetViewActive ? 'text-obsidian' : 'text-clay-gold'}`} />
+          <span>{effectiveStreetViewActive ? 'Active Ground Truth' : 'Ground Truth (360°)'}</span>
         </button>
       )}
+
+      {/* Floating Timeline Scrubber Bar: Bottom Center */}
+      <div className="absolute bottom-3 left-3 right-3 sm:left-auto sm:right-auto sm:left-1/2 sm:-translate-x-1/2 z-20 flex flex-col items-center gap-1.5 pointer-events-auto">
+        
+        {/* Replay State Banner */}
+        {isReplay && (
+          <div className="px-3 py-0.5 rounded-full bg-[#1c1408]/90 border border-[#fed049]/40 text-[#fed049] text-[10px] sm:text-[11px] font-mono font-semibold flex items-center gap-2 shadow-lg backdrop-blur-md animate-in fade-in duration-150">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#fed049] animate-pulse" />
+            <span>REPLAY: {currentFrame.hourLabel} ({currentFrame.precip.toFixed(1)} mm/h)</span>
+            <button
+              type="button"
+              onClick={() => onTimelineChange?.(activeTimeline.length - 1)}
+              className="text-[#54b2d3] hover:underline cursor-pointer ml-1 font-sans font-bold"
+            >
+              Resume Live
+            </button>
+          </div>
+        )}
+
+        {/* Main Floating Glass Scrub Control Deck */}
+        <div className="w-full sm:w-auto px-3 py-1.5 rounded-2xl bg-[#141519]/90 backdrop-blur-xl border border-white/12 shadow-[0_16px_36px_rgba(0,0,0,0.7)] flex items-center justify-between sm:justify-center gap-2 sm:gap-3">
+          
+          {/* Play / Pause Toggle Button */}
+          <button
+            type="button"
+            onClick={onTogglePlayTimeline}
+            title={isPlayingTimeline ? "Pause Timeline Replay" : "Play Past 6-Hour Timeline"}
+            aria-label={isPlayingTimeline ? "Pause Timeline Replay" : "Play Past 6-Hour Timeline"}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition active:scale-95 cursor-pointer shrink-0 ${
+              isPlayingTimeline
+                ? 'bg-[#fed049] text-[#121214] shadow-md shadow-[#fed049]/20 font-bold'
+                : 'bg-white/10 hover:bg-white/15 text-white border border-white/10'
+            }`}
+          >
+            {isPlayingTimeline ? (
+              <Pause className="w-3.5 h-3.5 fill-current" />
+            ) : (
+              <Play className="w-3.5 h-3.5 fill-current ml-0.5" />
+            )}
+          </button>
+
+          {/* Clock Milestone Pills */}
+          <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto py-0.5 scrollbar-none">
+            {activeTimeline.map((step, idx) => {
+              const isActive = idx === currentStep;
+              return (
+                <button
+                  key={step.stepIndex}
+                  type="button"
+                  onClick={() => onTimelineChange?.(idx)}
+                  className={`px-2 py-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-medium transition active:scale-95 cursor-pointer whitespace-nowrap flex items-center gap-1 ${
+                    isActive
+                      ? step.isLive
+                        ? 'bg-[#54b2d3] text-[#121214] font-bold shadow-md'
+                        : 'bg-[#fed049] text-[#121214] font-bold shadow-md'
+                      : 'bg-white/[0.04] hover:bg-white/[0.08] text-[#8c909d] hover:text-white'
+                  }`}
+                  title={`${step.label} (${step.timeStr}) · ${step.precip} mm/h`}
+                >
+                  {step.isLive ? (
+                    <>
+                      <span className={`w-1.5 h-1.5 rounded-full ${isActive ? 'bg-[#121214]' : 'bg-[#54b2d3] animate-pulse'}`} />
+                      <span>Live</span>
+                    </>
+                  ) : (
+                    <span>{step.hourLabel}</span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Quick Jump to Live Button */}
+          {isReplay && (
+            <button
+              type="button"
+              onClick={() => onTimelineChange?.(activeTimeline.length - 1)}
+              title="Snap to Live Telemetry"
+              className="px-2.5 py-1 rounded-xl bg-[#54b2d3]/15 hover:bg-[#54b2d3]/25 text-[#54b2d3] text-[10px] font-bold font-mono border border-[#54b2d3]/30 flex items-center gap-1 transition active:scale-95 cursor-pointer shrink-0"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span className="hidden xs:inline">Live</span>
+            </button>
+          )}
+
+        </div>
+      </div>
     </div>
   );
 }
