@@ -1,5 +1,6 @@
 // Open-Meteo Real-Time Weather Service for the Philippines (PAR)
 // No API key or signup required.
+import { validateRawWeatherPayload, evaluateFailSafePassability, METEOROLOGICAL_BOUNDS } from '../utils/telemetryValidation';
 
 export function getWeatherIcon(code, isNight = false) {
   if (code === 0) return isNight ? 'nights_stay' : 'sunny';
@@ -95,9 +96,16 @@ export async function fetchLiveWeather(latitude, longitude) {
       }
     }
 
-    const current = data.current;
+    // Upstream Telemetry Validation & Outlier Rejection (Fail-Safe Principle)
+    const validation = validateRawWeatherPayload(data);
+    if (!validation.isValid) {
+      console.warn('Weather telemetry outlier rejection triggered:', validation.errors);
+      throw new Error(`Upstream telemetry validation rejected: ${validation.errors?.join(', ')}`);
+    }
+
+    const current = validation.sanitized;
     const dischargeList = (floodData?.daily?.river_discharge && floodData.daily.river_discharge.length > 0)
-      ? floodData.daily.river_discharge.map(v => typeof v === 'number' ? Math.round(v) : 280)
+      ? floodData.daily.river_discharge.map(v => typeof v === 'number' && v >= 0 && v <= 8000 ? Math.round(v) : 280)
       : [302, 317, 332, 323, 289, 250, 216];
     const currentDischarge = dischargeList[1] ?? dischargeList[0] ?? 316;
     const currentPressure = Math.round(current.surface_pressure ?? 1010);
@@ -270,20 +278,51 @@ const TIERS = [
 ];
 
 // Compute honest road inundation from live precipitation rate & terrain vulnerability
+// Implements Fail-Safe Principle: Outliers, negative precipitation, or missing readings fail-safe to UNKNOWN
 export function computeLiveInundation(name = '', precip = 0) {
+  // 1. Validation & Range Check
+  if (precip === null || precip === undefined || typeof precip !== 'number' || isNaN(precip) || precip < 0 || precip > 250) {
+    const failSafe = evaluateFailSafePassability(null, true);
+    return {
+      depthMeters: null,
+      hazardLevel: failSafe.hazardLevel,
+      passability: failSafe.passability,
+      severityLabel: failSafe.severityLabel,
+      riskPercent: failSafe.riskPercent,
+      advisory: 'SENSOR OUTLIER / UNVERIFIED',
+      detourDelta: '—',
+      canSedanPass: false,
+      canSuvPass: false,
+      canMotorcyclePass: false,
+      isFailSafe: true,
+      sedanStatus: failSafe.sedanStatus,
+      suvStatus: failSafe.suvStatus,
+      motorcycleStatus: failSafe.motorcycleStatus,
+    };
+  }
+
   const n = name.toLowerCase();
   const vulnKey = Object.keys(VULN_MAP).find(k => n.includes(k));
   const vuln = vulnKey ? VULN_MAP[vulnKey] : 1.0;
   const tier = TIERS.find(t => precip <= t.max);
+  const depth = parseFloat((tier.depth * vuln).toFixed(2));
+  const passabilityInfo = evaluateFailSafePassability(depth, false);
 
   return {
-    depthMeters: parseFloat((tier.depth * vuln).toFixed(2)),
-    hazardLevel: tier.level,
-    passability: tier.pass,
-    severityLabel: tier.sev,
-    riskPercent: tier.risk,
+    depthMeters: depth,
+    hazardLevel: passabilityInfo.hazardLevel,
+    passability: passabilityInfo.passability,
+    severityLabel: passabilityInfo.severityLabel,
+    riskPercent: passabilityInfo.riskPercent,
     advisory: tier.adv,
     detourDelta: tier.detour,
+    canSedanPass: passabilityInfo.canSedanPass,
+    canSuvPass: passabilityInfo.canSuvPass,
+    canMotorcyclePass: passabilityInfo.canMotorcyclePass,
+    isFailSafe: false,
+    sedanStatus: passabilityInfo.sedanStatus,
+    suvStatus: passabilityInfo.suvStatus,
+    motorcycleStatus: passabilityInfo.motorcycleStatus,
   };
 }
 

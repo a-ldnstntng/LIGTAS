@@ -14,7 +14,7 @@ import {
   Clock, Calendar
 } from 'lucide-react';
 
-// Fallback for corridors outside sensor coverage
+// Fallback for corridors outside sensor coverage (Fail-Safe: Never default to passable)
 function getUncoveredTelemetry(name) {
   return {
     name,
@@ -31,6 +31,13 @@ function getUncoveredTelemetry(name) {
     detourDelta: '—',
     isModeled: false,
     isUncovered: true,
+    isFailSafe: true,
+    canSedanPass: false,
+    canSuvPass: false,
+    canMotorcyclePass: false,
+    sedanStatus: 'Cannot Verify',
+    suvStatus: 'Cannot Verify',
+    motorcycleStatus: 'Hazard',
   };
 }
 
@@ -531,6 +538,13 @@ export default function App() {
           isModeled: false,
           isOffline: true,
           isReplay: false,
+          isFailSafe: true,
+          canSedanPass: false,
+          canSuvPass: false,
+          canMotorcyclePass: false,
+          sedanStatus: 'Cannot Verify',
+          suvStatus: 'Cannot Verify',
+          motorcycleStatus: 'Hazard',
         };
       }
 
@@ -567,6 +581,13 @@ export default function App() {
         isReplay,
         replayHour: isReplay ? currentFrame.hourLabel : null,
         replayTimeStr: isReplay ? currentFrame.timeStr : null,
+        isFailSafe: inundation.isFailSafe ?? false,
+        canSedanPass: inundation.canSedanPass,
+        canSuvPass: inundation.canSuvPass,
+        canMotorcyclePass: inundation.canMotorcyclePass,
+        sedanStatus: inundation.sedanStatus,
+        suvStatus: inundation.suvStatus,
+        motorcycleStatus: inundation.motorcycleStatus,
       };
     }
 
@@ -1211,14 +1232,19 @@ export default function App() {
                   <div className="flex flex-col">
                     <div className="flex items-baseline gap-1 sm:gap-2">
                       <span className="font-display font-light text-[34px] sm:text-[54px] md:text-[88px] leading-none tracking-tight text-white drop-shadow-md">
-                        {activeMetrics.depthMeters !== null ? animatedHeroDepth.toFixed(1) : '0.0'}
-                        <span className="text-[15px] sm:text-[22px] md:text-[30px] font-normal text-[#c4c7d2] -ml-0.5 sm:-ml-1">m</span>
+                        {activeMetrics.depthMeters !== null ? animatedHeroDepth.toFixed(1) : '—'}
+                        {activeMetrics.depthMeters !== null && (
+                          <span className="text-[15px] sm:text-[22px] md:text-[30px] font-normal text-[#c4c7d2] -ml-0.5 sm:-ml-1">m</span>
+                        )}
                       </span>
                     </div>
 
                     <h2 className="font-display text-[15px] sm:text-[20px] md:text-[28px] font-semibold text-white tracking-tight mt-0.5 flex items-center gap-1.5">
-                      <span>{activeMetrics.passability?.includes('Closed') ? 'Impassable' : activeMetrics.passability?.includes('Caution') ? 'Caution Advised' : 'Passable'}</span>
-                      {activeMetrics.passability?.includes('Closed') && (
+                      <span>{activeMetrics.depthMeters === null ? 'Cannot Verify Passability' : (activeMetrics.passability?.includes('Closed') ? 'Impassable' : activeMetrics.passability?.includes('Caution') ? 'Caution Advised' : 'Passable')}</span>
+                      {activeMetrics.depthMeters === null && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#f59e6c]/20 text-[#f59e6c] font-medium">Unverified</span>
+                      )}
+                      {activeMetrics.depthMeters !== null && activeMetrics.passability?.includes('Closed') && (
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#ff6b6b]/20 text-[#ff6b6b] font-medium">Submerged</span>
                       )}
                     </h2>
@@ -1264,21 +1290,21 @@ export default function App() {
                     </span>
                   </div>
                   <span className="text-[10px] font-mono text-[#8c909d]">
-                    Waterline: {activeMetrics.depthMeters !== null ? `${activeMetrics.depthMeters.toFixed(1)}m` : '0.0m'}
+                    Waterline: {activeMetrics.depthMeters !== null ? `${activeMetrics.depthMeters.toFixed(1)}m` : 'Unverified'}
                   </span>
                 </div>
 
                 <div className="grid grid-cols-3 gap-2 mt-2.5">
                   {/* Sedan & Low Clearance */}
                   {(() => {
+                    const isUnknown = activeMetrics.depthMeters === null || activeMetrics.isFailSafe;
                     const depth = activeMetrics.depthMeters || 0;
-                    const isPassable = depth < 0.20;
-                    const isCaution = depth >= 0.20 && depth <= 0.35;
-                    const isImpassable = depth > 0.35;
-                    const statusText = isImpassable ? 'Impassable' : isCaution ? 'Caution' : 'Passable';
-                    const statusColor = isImpassable 
+                    const statusText = isUnknown ? (activeMetrics.sedanStatus || 'Cannot Verify') : (depth > 0.35 ? 'Impassable' : depth >= 0.20 ? 'Caution' : 'Passable');
+                    const statusColor = isUnknown
+                      ? 'text-[#f59e6c] bg-[#2d2216] border-[#4d3620]'
+                      : statusText === 'Impassable' 
                       ? 'text-[#ff6b6b] bg-[#2a1717] border-[#4a2222]' 
-                      : isCaution 
+                      : statusText === 'Caution' 
                       ? 'text-[#f59e6c] bg-[#2d2216] border-[#4d3620]' 
                       : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
 
@@ -1292,7 +1318,7 @@ export default function App() {
                         </div>
                         <div className="mt-2">
                           <div className="text-[11px] font-display font-semibold text-white">
-                            {depth > 0 ? `${depth.toFixed(1)}m Depth` : 'Clear Asphalt'}
+                            {isUnknown ? 'Sensor Unverified' : (depth > 0 ? `${depth.toFixed(1)}m Depth` : 'Clear Asphalt')}
                           </div>
                           <p className="text-[9px] text-[#6e7280] font-mono mt-0.5">
                             Limit: 0.20m (8 in)
@@ -1304,14 +1330,14 @@ export default function App() {
 
                   {/* SUV & 4x4 */}
                   {(() => {
+                    const isUnknown = activeMetrics.depthMeters === null || activeMetrics.isFailSafe;
                     const depth = activeMetrics.depthMeters || 0;
-                    const isPassable = depth < 0.45;
-                    const isCaution = depth >= 0.45 && depth <= 0.65;
-                    const isImpassable = depth > 0.65;
-                    const statusText = isImpassable ? 'Impassable' : isCaution ? 'Caution' : 'Passable';
-                    const statusColor = isImpassable 
+                    const statusText = isUnknown ? (activeMetrics.suvStatus || 'Cannot Verify') : (depth > 0.65 ? 'Impassable' : depth >= 0.45 ? 'Caution' : 'Passable');
+                    const statusColor = isUnknown
+                      ? 'text-[#f59e6c] bg-[#2d2216] border-[#4d3620]'
+                      : statusText === 'Impassable' 
                       ? 'text-[#ff6b6b] bg-[#2a1717] border-[#4a2222]' 
-                      : isCaution 
+                      : statusText === 'Caution' 
                       ? 'text-[#f59e6c] bg-[#2d2216] border-[#4d3620]' 
                       : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
 
@@ -1325,7 +1351,7 @@ export default function App() {
                         </div>
                         <div className="mt-2">
                           <div className="text-[11px] font-display font-semibold text-white">
-                            {depth > 0 ? `${depth.toFixed(1)}m Depth` : 'Safe Clearance'}
+                            {isUnknown ? 'Sensor Unverified' : (depth > 0 ? `${depth.toFixed(1)}m Depth` : 'Safe Clearance')}
                           </div>
                           <p className="text-[9px] text-[#6e7280] font-mono mt-0.5">
                             Limit: 0.50m (20 in)
@@ -1337,14 +1363,12 @@ export default function App() {
 
                   {/* Motorcycle / Pedestrian */}
                   {(() => {
+                    const isUnknown = activeMetrics.depthMeters === null || activeMetrics.isFailSafe;
                     const depth = activeMetrics.depthMeters || 0;
-                    const isPassable = depth < 0.10;
-                    const isCaution = depth >= 0.10 && depth <= 0.20;
-                    const isHazard = depth > 0.20;
-                    const statusText = isHazard ? 'Hazard' : isCaution ? 'Gutter Flow' : 'Passable';
-                    const statusColor = isHazard 
+                    const statusText = isUnknown ? (activeMetrics.motorcycleStatus || 'Hazard') : (depth > 0.20 ? 'Hazard' : depth >= 0.10 ? 'Gutter Flow' : 'Passable');
+                    const statusColor = isUnknown || statusText === 'Hazard'
                       ? 'text-[#ff6b6b] bg-[#2a1717] border-[#4a2222]' 
-                      : isCaution 
+                      : statusText === 'Gutter Flow' 
                       ? 'text-[#f59e6c] bg-[#2d2216] border-[#4d3620]' 
                       : 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
 
@@ -1358,7 +1382,7 @@ export default function App() {
                         </div>
                         <div className="mt-2">
                           <div className="text-[11px] font-display font-semibold text-white">
-                            {depth > 0 ? `${depth.toFixed(1)}m Flow` : 'Dry Sidewalk'}
+                            {isUnknown ? 'Risk Unverified' : (depth > 0 ? `${depth.toFixed(1)}m Flow` : 'Dry Sidewalk')}
                           </div>
                           <p className="text-[9px] text-[#6e7280] font-mono mt-0.5">
                             Limit: 0.10m (4 in)

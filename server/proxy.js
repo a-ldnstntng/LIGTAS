@@ -180,6 +180,12 @@ const server = http.createServer(async (req, res) => {
       const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,weather_code,wind_speed_10m,surface_pressure&hourly=temperature_2m,precipitation_probability,precipitation,weather_code&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Asia%2FManila&past_days=1&forecast_days=7`;
       const data = await fetchJson(weatherUrl, { 'User-Agent': 'LIGTAS-METRO/1.0' });
 
+      // Outlier Rejection & Payload Validation (Fail-Safe)
+      const current = data?.current;
+      if (!current || typeof current !== 'object' || typeof current.temperature_2m !== 'number' || current.temperature_2m < 5 || current.temperature_2m > 50 || current.precipitation < 0 || current.precipitation > 250) {
+        return sendJson(502, { error: 'Upstream weather data rejected: outlier or corrupt payload' });
+      }
+
       // Cache for 300 seconds (5 minutes)
       setCached(cacheKey, data, 300);
       return sendJson(200, data, { 'X-Cache': 'MISS' });
