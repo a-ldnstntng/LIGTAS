@@ -7,6 +7,12 @@ export default {
   theme: {
     extend: {
       colors: {
+        darkbg: '#1A1A1A',
+        cardbg: '#242424',
+        innerbg: '#2E2E2E',
+        brandyellow: '#EEF21A',
+        textsec: '#9A9A9A',
+        passgreen: '#22C55E',
         'surface-dim': '#111215',
         'surface': '#16171b',
         'surface-card': '#1c1e24',
@@ -38,7 +44,7 @@ export default {
         pill: '9999px',
       },
       fontFamily: {
-        sans: ["'DM Sans'", '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+        sans: ["'Urbanist'", "'DM Sans'", '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
         display: ["'Manrope'", 'sans-serif'],
         serif: ["'Ledger'", 'Georgia', 'serif'],
         mono: ["'JetBrains Mono'", 'monospace'],
