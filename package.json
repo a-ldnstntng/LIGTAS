@@ -12,7 +12,6 @@
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",
-    "@capacitor/cli": "^8.5.2",
     "@capacitor/core": "^8.5.2",
     "lucide-react": "^1.41.0",
     "mapillary-js": "^4.1.2",
@@ -21,6 +20,7 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
+    "@capacitor/cli": "^8.5.2",
     "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
