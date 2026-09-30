@@ -635,7 +635,14 @@ export default function MapViewport({
       style: 'https://tiles.openfreemap.org/styles/dark',
       center: [120.989, 14.609], // Default over España / Manila
       zoom: 14,
+      attributionControl: false,
     });
+
+    // Add compact attribution control at top-right to preserve bottom corridor pills
+    map.current.addControl(
+      new maplibregl.AttributionControl({ compact: true }),
+      'top-right'
+    );
 
     map.current.on('load', () => {
       isMapReady.current = true;

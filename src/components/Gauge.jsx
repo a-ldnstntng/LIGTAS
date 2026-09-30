@@ -15,7 +15,7 @@ export default function Gauge({
   label = '',
   fillColor = '#EEF21A',
   trackColor = '#3A3A3A',
-  size = 'normal', // 'normal' | 'large'
+  size = 'normal', // 'normal' | 'large' | 'compact'
   className = '',
 }) {
   const isNumeric = typeof value === 'number' && !isNaN(value);
@@ -34,10 +34,15 @@ export default function Gauge({
     : '0.0';
 
   const isHeroMode = !label;
+  const isCompact = size === 'compact';
+
+  const containerSizeClass = isCompact
+    ? 'w-[150px] h-[125px]'
+    : (isHeroMode ? 'w-[210px] h-[175px]' : 'w-[190px] h-[170px]');
 
   return (
     <div className={`relative flex flex-col items-center justify-center select-none ${className}`}>
-      <div className={`relative ${isHeroMode ? 'w-[210px] h-[175px]' : 'w-[190px] h-[170px]'} flex items-center justify-center`}>
+      <div className={`relative ${containerSizeClass} flex items-center justify-center`}>
         <svg viewBox="0 0 190 170" className="w-full h-full overflow-visible">
           {/* Background Track Arc 270 deg */}
           <circle
@@ -110,10 +115,10 @@ export default function Gauge({
             </>
           ) : (
             <div className="flex items-start">
-              <span className="text-[64px] font-light leading-none tracking-tight text-white">
+              <span className={`${isCompact ? 'text-[44px]' : 'text-[64px]'} font-light leading-none tracking-tight text-white`}>
                 {displayValue}
               </span>
-              <span className="text-[20px] font-light text-[#9A9A9A] mt-1 ml-1 leading-none">
+              <span className={`${isCompact ? 'text-[15px]' : 'text-[20px]'} font-light text-[#9A9A9A] mt-0.5 ml-1 leading-none`}>
                 {unit}
               </span>
             </div>
@@ -123,7 +128,7 @@ export default function Gauge({
 
       {/* Scale labels for hero mode */}
       {isHeroMode && (
-        <div className="w-full flex justify-between px-6 text-[12px] font-medium text-[#9A9A9A] -mt-1">
+        <div className={`w-full flex justify-between ${isCompact ? 'px-8 text-[10px]' : 'px-6 text-[12px]'} font-medium text-[#9A9A9A] -mt-1`}>
           <span>{min.toFixed(1)}{unit}</span>
           <span>{max.toFixed(1)}{unit}</span>
         </div>

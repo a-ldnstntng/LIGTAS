@@ -356,10 +356,10 @@ export default function App() {
   return (
     <div className="flex justify-center items-start min-h-screen py-0 sm:py-6 bg-[#121212]">
       {/* Mobile Device Frame */}
-      <main className="w-full max-w-[390px] min-h-screen sm:min-h-[844px] bg-[#1A1A1A] text-white flex flex-col relative pb-28 overflow-x-hidden sm:rounded-[44px] sm:border sm:border-[#2E2E2E]/60 sm:shadow-2xl">
+      <main className="w-full max-w-[390px] min-h-screen sm:min-h-[844px] bg-[#1A1A1A] text-white flex flex-col relative pb-20 overflow-x-hidden sm:rounded-[44px] sm:border sm:border-[#2E2E2E]/60 sm:shadow-2xl">
         
         {/* BEGIN: TopHeader */}
-        <header className="flex items-center justify-between px-6 pt-7 pb-3" data-purpose="top-navigation-bar">
+        <header className="flex items-center justify-between px-6 pt-5 pb-2" data-purpose="top-navigation-bar">
           {/* Back Button: 1.5px outlined circle */}
           <button 
             aria-label={activeTab === 'Overview' ? "Refresh Data" : "Go Back to Home"}
@@ -367,15 +367,15 @@ export default function App() {
               if (activeTab !== 'Overview') setActiveTab('Overview');
               else updateWeather();
             }}
-            className="w-11 h-11 rounded-full border-[1.5px] border-[#404040] bg-transparent flex items-center justify-center active:scale-95 transition-transform" 
+            className="w-9 h-9 rounded-full border-[1.5px] border-[#404040] bg-transparent flex items-center justify-center active:scale-95 transition-transform" 
             type="button"
           >
             {activeTab !== 'Overview' ? (
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24">
                 <path d="M15 18l-6-6 6-6" />
               </svg>
             ) : (
-              <RefreshCw className={`w-4 h-4 text-white ${isRefreshingWeather ? 'animate-spin' : ''}`} strokeWidth={1.5} />
+              <RefreshCw className={`w-3.5 h-3.5 text-white ${isRefreshingWeather ? 'animate-spin' : ''}`} strokeWidth={1.5} />
             )}
           </button>
 
@@ -384,15 +384,15 @@ export default function App() {
             <button 
               aria-label="Notifications" 
               onClick={() => setShowAlertsToast(prev => !prev)}
-              className="w-11 h-11 rounded-full border-[1.5px] border-[#404040] bg-transparent flex items-center justify-center active:scale-95 transition-transform" 
+              className="w-9 h-9 rounded-full border-[1.5px] border-[#404040] bg-transparent flex items-center justify-center active:scale-95 transition-transform" 
               type="button"
             >
-              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24">
                 <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
                 <path d="M13.73 21a2 2 0 0 1-3.46 0" />
               </svg>
             </button>
-            <span className="absolute top-1 right-1 w-2 h-2 bg-[#EEF21A] rounded-full ring-2 ring-[#1A1A1A]"></span>
+            <span className="absolute top-0.5 right-0.5 w-2 h-2 bg-[#EEF21A] rounded-full ring-2 ring-[#1A1A1A]"></span>
           </div>
         </header>
         {/* END: TopHeader */}
@@ -457,15 +457,15 @@ export default function App() {
         {activeTab === 'Overview' && (
           <div className="flex flex-col flex-1">
             {/* BEGIN: TitleRow */}
-            <section className="flex items-center justify-between px-6 pt-2 pb-4" data-purpose="screen-title-section">
-              <h1 className="text-[32px] leading-tight font-semibold tracking-tight text-white">Roadway Ground Truth</h1>
+            <section className="flex items-center justify-between px-6 pt-1 pb-2" data-purpose="screen-title-section">
+              <h1 className="text-[24px] leading-tight font-semibold tracking-tight text-white">Roadway Ground Truth</h1>
               <button 
                 onClick={() => setShowLocationPicker(true)}
-                className="bg-[#2E2E2E] hover:bg-[#383838] active:scale-95 transition-all text-white text-[12px] font-medium px-3.5 py-1.5 rounded-full flex items-center gap-1.5 border border-white/5 shadow-sm"
+                className="bg-[#2E2E2E] hover:bg-[#383838] active:scale-95 transition-all text-white text-[11px] font-medium px-3 py-1 rounded-full flex items-center gap-1.5 border border-white/5 shadow-sm"
                 type="button"
                 aria-label="Change location or corridor"
               >
-                <MapPin className="w-3.5 h-3.5 text-[#EEF21A]" />
+                <MapPin className="w-3 h-3 text-[#EEF21A]" />
                 <span>{activeLocation.name?.split(',')[0] || 'España'}</span>
               </button>
             </section>
@@ -473,7 +473,7 @@ export default function App() {
 
             {/* Location Toast Notification */}
             {locationToast && (
-              <div className="mx-6 mb-3 bg-[#EEF21A] text-[#1A1A1A] font-semibold text-xs py-2 px-4 rounded-xl flex items-center justify-between shadow-lg animate-fadeIn">
+              <div className="mx-6 mb-2 bg-[#EEF21A] text-[#1A1A1A] font-semibold text-xs py-1.5 px-3 rounded-xl flex items-center justify-between shadow-lg animate-fadeIn">
                 <span>{locationToast}</span>
                 <button onClick={() => setLocationToast(null)} className="text-black/60 hover:text-black">
                   <X className="w-3.5 h-3.5" />
@@ -482,14 +482,14 @@ export default function App() {
             )}
 
             {/* BEGIN: FilterToggle */}
-            <section className="px-6 mb-4" data-purpose="filter-toggle-section">
-              <div className="flex items-center gap-2.5">
-                <button className="bg-[#EEF21A] text-[#1A1A1A] font-semibold text-[13px] py-2 px-5 rounded-full transition-transform active:scale-95" type="button">
+            <section className="px-6 mb-2.5" data-purpose="filter-toggle-section">
+              <div className="flex items-center gap-2">
+                <button className="bg-[#EEF21A] text-[#1A1A1A] font-semibold text-[12px] py-1.5 px-4 rounded-full transition-transform active:scale-95" type="button">
                   Corridor Sensors
                 </button>
                 <button 
                   onClick={() => handleOpenStreetCam(activeLocation)}
-                  className="bg-[#2E2E2E] text-[#9A9A9A] hover:text-white font-medium text-[13px] py-2 px-5 rounded-full transition-transform active:scale-95" 
+                  className="bg-[#2E2E2E] text-[#9A9A9A] hover:text-white font-medium text-[12px] py-1.5 px-4 rounded-full transition-transform active:scale-95" 
                   type="button"
                 >
                   360° View
@@ -499,11 +499,11 @@ export default function App() {
             {/* END: FilterToggle */}
 
             {/* BEGIN: Station Card */}
-            <section className="px-6 mb-4" data-purpose="station-card">
-              <article className="bg-[#242424] rounded-[28px] p-6 flex flex-col relative overflow-hidden">
+            <section className="px-6 mb-2.5" data-purpose="station-card">
+              <article className="bg-[#242424] rounded-[24px] p-3.5 flex flex-col relative overflow-hidden">
                 {/* High contrast grayscale street texture mask (~35% opacity) */}
                 <div 
-                  className="absolute right-0 bottom-0 w-[240px] h-[240px] pointer-events-none mix-blend-screen opacity-35 overflow-hidden" 
+                  className="absolute right-0 bottom-0 w-[200px] h-[200px] pointer-events-none mix-blend-screen opacity-35 overflow-hidden" 
                   style={{ 
                     maskImage: 'radial-gradient(circle at bottom right, rgba(0,0,0,1) 15%, rgba(0,0,0,0) 80%)', 
                     WebkitMaskImage: 'radial-gradient(circle at bottom right, rgba(0,0,0,1) 15%, rgba(0,0,0,0) 80%)' 
@@ -517,19 +517,19 @@ export default function App() {
                 </div>
 
                 {/* Top Row: Station Badge & Action button */}
-                <div className="flex items-center justify-between mb-2 relative z-10">
-                  <div className="bg-[#2E2E2E]/80 backdrop-blur-sm px-4 py-1.5 rounded-full">
-                    <span className="text-[13px] font-medium text-white tracking-wide">
+                <div className="flex items-center justify-between mb-1 relative z-10">
+                  <div className="bg-[#2E2E2E]/80 backdrop-blur-sm px-3 py-1 rounded-full">
+                    <span className="text-[12px] font-medium text-white tracking-wide">
                       {activeLocation.name?.split(',')[0]} Station
                     </span>
                   </div>
                   <button 
                     aria-label="Open Station details" 
                     onClick={() => handleOpenStreetCam(activeLocation)}
-                    className="w-10 h-10 rounded-full bg-white flex items-center justify-center active:scale-95 transition-transform" 
+                    className="w-8 h-8 rounded-full bg-white flex items-center justify-center active:scale-95 transition-transform" 
                     type="button"
                   >
-                    <svg className="w-5 h-5 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24">
                       <line x1="7" y1="17" x2="17" y2="7" />
                       <polyline points="7 7 17 7 17 17" />
                     </svg>
@@ -537,65 +537,66 @@ export default function App() {
                 </div>
 
                 {/* 270-degree Arc Gauge Display */}
-                <div className="relative flex flex-col items-center justify-center my-3 z-10" data-purpose="flood-depth-gauge">
+                <div className="relative flex flex-col items-center justify-center my-1 z-10" data-purpose="flood-depth-gauge">
                   <ArcGauge 
                     value={activeMetrics.depthMeters}
                     min={0.0}
                     max={1.5}
                     unit="m"
                     label=""
+                    size="compact"
                   />
                 </div>
 
                 {/* Sedan / SUV / Pedestrian Passability Row */}
-                <div className="grid grid-cols-3 gap-2 pt-2 relative z-10" data-purpose="passability-row">
+                <div className="grid grid-cols-3 gap-2 pt-1 relative z-10" data-purpose="passability-row">
                   {/* Sedan */}
-                  <div className="bg-[#2E2E2E] rounded-[20px] p-3 flex flex-col items-center justify-center text-center">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center mb-1 text-[#9A9A9A]">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <div className="bg-[#2E2E2E] rounded-[16px] p-2 flex flex-col items-center justify-center text-center">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center mb-0.5 text-[#9A9A9A]">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24">
                         <rect height="7" rx="2" width="20" x="2" y="10" />
                         <path d="M5 10l2-5h10l2 5" />
                         <circle cx="7" cy="17" r="2" />
                         <circle cx="17" cy="17" r="2" />
                       </svg>
                     </div>
-                    <span className="text-[12px] font-medium text-white mb-1.5">Sedan</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className={`w-2 h-2 rounded-full ${activeMetrics.canSedanPass ? 'bg-[#22C55E]' : 'bg-[#EF4444]'}`} />
-                      <span className="text-[12px] text-white font-medium">{activeMetrics.sedanStatus || 'Passable'}</span>
+                    <span className="text-[11px] font-medium text-white mb-1">Sedan</span>
+                    <div className="flex items-center gap-1">
+                      <span className={`w-1.5 h-1.5 rounded-full ${activeMetrics.canSedanPass ? 'bg-[#22C55E]' : 'bg-[#EF4444]'}`} />
+                      <span className="text-[11px] text-white font-medium">{activeMetrics.sedanStatus || 'Passable'}</span>
                     </div>
                   </div>
 
                   {/* SUV / 4x4 */}
-                  <div className="bg-[#2E2E2E] rounded-[20px] p-3 flex flex-col items-center justify-center text-center">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center mb-1 text-[#9A9A9A]">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <div className="bg-[#2E2E2E] rounded-[16px] p-2 flex flex-col items-center justify-center text-center">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center mb-0.5 text-[#9A9A9A]">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24">
                         <rect height="8" rx="2" width="20" x="2" y="9" />
                         <path d="M4 9l2.5-5h11L20 9" />
                         <circle cx="7" cy="17" r="2" />
                         <circle cx="17" cy="17" r="2" />
                       </svg>
                     </div>
-                    <span className="text-[12px] font-medium text-white mb-1.5">SUV / 4x4</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className={`w-2 h-2 rounded-full ${activeMetrics.canSuvPass ? 'bg-[#22C55E]' : 'bg-[#EF4444]'}`} />
-                      <span className="text-[12px] text-white font-medium">{activeMetrics.suvStatus || 'Passable'}</span>
+                    <span className="text-[11px] font-medium text-white mb-1">SUV / 4x4</span>
+                    <div className="flex items-center gap-1">
+                      <span className={`w-1.5 h-1.5 rounded-full ${activeMetrics.canSuvPass ? 'bg-[#22C55E]' : 'bg-[#EF4444]'}`} />
+                      <span className="text-[11px] text-white font-medium">{activeMetrics.suvStatus || 'Passable'}</span>
                     </div>
                   </div>
 
                   {/* Pedestrian */}
-                  <div className="bg-[#2E2E2E] rounded-[20px] p-3 flex flex-col items-center justify-center text-center">
-                    <div className="w-8 h-8 rounded-full flex items-center justify-center mb-1 text-[#9A9A9A]">
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <div className="bg-[#2E2E2E] rounded-[16px] p-2 flex flex-col items-center justify-center text-center">
+                    <div className="w-6 h-6 rounded-full flex items-center justify-center mb-0.5 text-[#9A9A9A]">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24">
                         <circle cx="12" cy="5" r="2" />
                         <path d="M10 22v-6l-2-2 3-4 3 2 1 4" />
                         <path d="M14 13l3 2" />
                       </svg>
                     </div>
-                    <span className="text-[12px] font-medium text-white mb-1.5">Pedestrian</span>
-                    <div className="flex items-center gap-1.5">
-                      <span className={`w-2 h-2 rounded-full ${activeMetrics.depthMeters === 0 ? 'bg-[#22C55E]' : (activeMetrics.depthMeters > 0.15 ? 'bg-[#EF4444]' : 'bg-[#EEF21A]')}`} />
-                      <span className="text-[12px] text-white font-medium">
+                    <span className="text-[11px] font-medium text-white mb-1">Pedestrian</span>
+                    <div className="flex items-center gap-1">
+                      <span className={`w-1.5 h-1.5 rounded-full ${activeMetrics.depthMeters === 0 ? 'bg-[#22C55E]' : (activeMetrics.depthMeters > 0.15 ? 'bg-[#EF4444]' : 'bg-[#EEF21A]')}`} />
+                      <span className="text-[11px] text-white font-medium">
                         {activeMetrics.depthMeters === 0 ? 'Passable' : (activeMetrics.depthMeters > 0.15 ? 'Hazard' : 'Caution')}
                       </span>
                     </div>
@@ -606,8 +607,8 @@ export default function App() {
             {/* END: Station Card */}
 
             {/* BEGIN: Rainfall Trend Card */}
-            <section className="px-6 mb-5" data-purpose="rainfall-trend-card">
-              <article className="bg-[#242424] rounded-[28px] p-6 relative overflow-hidden">
+            <section className="px-6 mb-2.5" data-purpose="rainfall-trend-card">
+              <article className="bg-[#242424] rounded-[24px] p-3.5 relative overflow-hidden">
                 {(() => {
                   const hourly = liveWeather.hourly || [];
                   const hasData = hourly.length > 0;
@@ -635,38 +636,38 @@ export default function App() {
 
                   return (
                     <>
-                      <div className="flex items-center justify-between mb-4 relative z-10">
-                        <h2 className="text-[15px] font-semibold text-white tracking-wide">Rainfall Trend</h2>
-                        <span className="text-[12px] font-medium text-[#9A9A9A] bg-[#2E2E2E] px-3 py-1 rounded-full">
+                      <div className="flex items-center justify-between mb-2 relative z-10">
+                        <h2 className="text-[13px] font-semibold text-white tracking-wide">Rainfall Trend</h2>
+                        <span className="text-[11px] font-medium text-[#9A9A9A] bg-[#2E2E2E] px-2.5 py-0.5 rounded-full">
                           {peakDisplay}
                         </span>
                       </div>
 
                       {/* Dotted Timeline Stem Graph */}
-                      <div className="py-2 relative z-10">
+                      <div className="py-1 relative z-10">
                         <div className="flex items-center justify-between px-2">
                           {columns.map((col, i) => {
                             const filledDots = Math.min(3, Math.ceil((col.precip / maxForScale) * 3));
                             const isPeak = col.precip === peakPrecip && peakPrecip > 0;
 
                             return (
-                              <div key={i} className="flex flex-col items-center gap-1.5">
+                              <div key={i} className="flex flex-col items-center gap-1">
                                 {isPeak ? (
-                                  <svg className="w-3.5 h-3.5 text-[#EEF21A]" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24">
+                                  <svg className="w-3 h-3 text-[#EEF21A]" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24">
                                     <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" />
                                   </svg>
                                 ) : (
-                                  <span className="w-3.5 h-3.5" />
+                                  <span className="w-3 h-3" />
                                 )}
-                                <span className={`w-2 h-2 rounded-full ${filledDots >= 3 ? 'bg-[#EEF21A]' : 'bg-[#3A3A3A]'}`} />
-                                <span className={`w-2 h-2 rounded-full ${filledDots >= 2 ? 'bg-[#EEF21A]' : 'bg-[#3A3A3A]'}`} />
-                                <span className={`w-2 h-2 rounded-full ${filledDots >= 1 ? 'bg-[#EEF21A]' : 'bg-[#3A3A3A]'}`} />
+                                <span className={`w-1.5 h-1.5 rounded-full ${filledDots >= 3 ? 'bg-[#EEF21A]' : 'bg-[#3A3A3A]'}`} />
+                                <span className={`w-1.5 h-1.5 rounded-full ${filledDots >= 2 ? 'bg-[#EEF21A]' : 'bg-[#3A3A3A]'}`} />
+                                <span className={`w-1.5 h-1.5 rounded-full ${filledDots >= 1 ? 'bg-[#EEF21A]' : 'bg-[#3A3A3A]'}`} />
                               </div>
                             );
                           })}
                         </div>
                         {/* Hourly Markers */}
-                        <div className="flex justify-between items-center text-[12px] font-medium text-[#9A9A9A] pt-4 px-1">
+                        <div className="flex justify-between items-center text-[10px] font-medium text-[#9A9A9A] pt-2 px-1">
                           <span>6 AM</span>
                           <span>8 AM</span>
                           <span>10 AM</span>
@@ -682,10 +683,10 @@ export default function App() {
             {/* END: Rainfall Trend Card */}
 
             {/* BEGIN: Report Button */}
-            <section className="px-6 mb-4" data-purpose="report-action-section">
+            <section className="px-6 mb-2" data-purpose="report-action-section">
               <button 
                 onClick={() => setShowReportModal(true)}
-                className="w-full bg-[#EEF21A] hover:bg-[#E5EA15] rounded-full py-4 px-6 flex items-center justify-center gap-2 text-[15px] font-semibold text-[#1A1A1A] transition-transform active:scale-[0.98] shadow-lg" 
+                className="w-full bg-[#EEF21A] hover:bg-[#E5EA15] rounded-full py-3 px-5 flex items-center justify-center gap-2 text-[13px] font-semibold text-[#1A1A1A] transition-transform active:scale-[0.98] shadow-lg" 
                 type="button"
               >
                 <svg className="w-4 h-4 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24">
@@ -1300,17 +1301,17 @@ export default function App() {
         {/* SCREEN 5: FLOOD RADAR (RADAR TAB)                                         */}
         {/* ========================================================================= */}
         {activeTab === 'Radar' && (
-          <div className="flex flex-col flex-1">
+          <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
             {/* BEGIN: Screen Title */}
-            <section className="px-6 pt-2 pb-3" data-purpose="screen-title-section">
-              <h1 className="text-[32px] leading-tight font-semibold tracking-tight text-white">Flood Radar</h1>
+            <section className="px-6 pt-1 pb-2" data-purpose="screen-title-section">
+              <h1 className="text-[24px] leading-tight font-semibold tracking-tight text-white">Flood Radar</h1>
             </section>
             {/* END: Screen Title */}
 
             {/* BEGIN: Search Bar */}
-            <section className="px-6 mb-4" data-purpose="location-search-bar">
-              <div className="bg-[#2E2E2E] rounded-full px-4 py-3 flex items-center gap-3">
-                <svg className="w-5 h-5 text-[#9A9A9A] flex-shrink-0" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24">
+            <section className="px-6 mb-2.5" data-purpose="location-search-bar">
+              <div className="bg-[#2E2E2E] rounded-full px-3.5 py-2 flex items-center gap-2.5">
+                <svg className="w-4 h-4 text-[#9A9A9A] flex-shrink-0" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24">
                   <circle cx="11" cy="11" r="8" />
                   <line x1="21" x2="16.65" y1="21" y2="16.65" />
                 </svg>
@@ -1319,11 +1320,11 @@ export default function App() {
                   value={searchQuery}
                   onChange={(e) => handleSearch(e.target.value)}
                   placeholder="Search corridor or city..."
-                  className="bg-transparent text-white placeholder-[#9A9A9A] text-sm font-normal focus:outline-none w-full p-0 border-none"
+                  className="bg-transparent text-white placeholder-[#9A9A9A] text-xs font-normal focus:outline-none w-full p-0 border-none"
                 />
                 {searchQuery && (
                   <button onClick={() => { setSearchQuery(''); setNominatimResults([]); }} className="text-[#9A9A9A] hover:text-white">
-                    <X className="w-4 h-4" />
+                    <X className="w-3.5 h-3.5" />
                   </button>
                 )}
               </div>
@@ -1349,12 +1350,12 @@ export default function App() {
             {/* END: Search Bar */}
 
             {/* Content Area */}
-            <div className="flex flex-col gap-4 px-6 flex-1">
+            <div className="flex flex-col gap-2 px-6 flex-1 min-h-0">
               {/* BEGIN: Main Dark Map Area Card */}
-              <section className="flex-1" data-purpose="flood-radar-map-card">
-                <article className="bg-[#242424] rounded-[28px] p-5 flex flex-col relative overflow-hidden h-[460px]">
+              <section className="flex-1 min-h-[260px] flex flex-col" data-purpose="flood-radar-map-card">
+                <article className="bg-[#242424] rounded-[24px] p-3 flex flex-col relative overflow-hidden flex-1">
                   {/* Cloud / Terrain Texture Masked at Lower Right */}
-                  <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[28px]">
+                  <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-[24px]">
                     <img 
                       alt="Grayscale cloud terrain texture" 
                       className="absolute -bottom-6 -right-6 w-[80%] h-[75%] object-cover object-center opacity-30 mix-blend-luminosity filter contrast-125" 
@@ -1363,7 +1364,7 @@ export default function App() {
                   </div>
 
                   {/* Interactive Map Container */}
-                  <div className="relative w-full flex-1 rounded-[20px] bg-[#1E1E1E] overflow-hidden z-10">
+                  <div className="relative w-full flex-1 rounded-[18px] bg-[#1E1E1E] overflow-hidden z-10 min-h-0">
                     <MapViewport 
                       activeLocation={activeLocation}
                       floodData={floodData}
@@ -1378,8 +1379,8 @@ export default function App() {
                     />
 
                     {/* Quick Corridor Selection Overlay Pins (Matching Stitch Screen 5) */}
-                    <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between z-20 pointer-events-none">
-                      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pointer-events-auto bg-[#1A1A1A]/90 backdrop-blur-md px-3 py-1.5 rounded-full border border-[#333333]">
+                    <div className="absolute bottom-2.5 left-2.5 right-2.5 flex items-center justify-between z-20 pointer-events-none">
+                      <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pointer-events-auto bg-[#1A1A1A]/90 backdrop-blur-md px-2.5 py-1 rounded-full border border-[#333333]">
                         {corridorsList.map((c, i) => (
                           <button
                             key={i}
@@ -1406,18 +1407,18 @@ export default function App() {
               {/* END: Main Dark Map Area Card */}
 
               {/* BEGIN: ReportFloodHazardAction */}
-              <section className="mt-1" data-purpose="report-action-pill">
+              <section className="mt-0" data-purpose="report-action-pill">
                 <button 
                   onClick={() => setShowReportModal(true)}
-                  className="w-full bg-[#EEF21A] hover:bg-[#E3E716] text-[#1A1A1A] font-semibold text-xs py-4 px-6 rounded-full flex items-center justify-center gap-2.5 transition-colors active:scale-[0.98] shadow-md" 
+                  className="w-full bg-[#EEF21A] hover:bg-[#E3E716] text-[#1A1A1A] font-semibold text-xs py-3 px-5 rounded-full flex items-center justify-center gap-2 transition-colors active:scale-[0.98] shadow-md" 
                   type="button"
                 >
-                  <svg className="w-5 h-5 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-[#1A1A1A]" fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24">
                     <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
                     <line x1="12" y1="9" x2="12" y2="13" />
                     <line x1="12" y1="17" x2="12.01" y2="17" />
                   </svg>
-                  <span className="text-sm font-semibold tracking-wide">Report Flood / Hazard</span>
+                  <span className="text-[13px] font-semibold tracking-wide">Report Flood / Hazard</span>
                 </button>
               </section>
               {/* END: ReportFloodHazardAction */}
