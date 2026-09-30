@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect, useCallback } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useRef } from 'react';
 import MapViewport from './components/MapViewport';
 import StreetViewerModal from './components/StreetViewerModal';
 import floodData from './data/floodPolygons.json';
