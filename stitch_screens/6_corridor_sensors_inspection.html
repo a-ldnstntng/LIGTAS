@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>LIGTAS - Roadway Ground Truth & Baseline (Corridor Sensors)</title>
+<!-- Urbanist Font -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        colors: {
+          darkbg: "#111215",
+          cardbg: "#16171d",
+          bordercol: "#2b2d36",
+          accentorange: "#e07a3f",
+          accentcyan: "#54b2d3",
+          softred: "#ff6b6b",
+          brandyellow: "#EEF21A",
+          textsec: "#9da3af",
+        },
+        fontFamily: {
+          sans: ["Urbanist", "sans-serif"]
+        }
+      }
+    }
+  };
+</script>
+<style>
+  body {
+    font-family: 'Urbanist', sans-serif !important;
+    background-color: #0b0c0e;
+    color: #FFFFFF;
+    margin: 0;
+    padding: 0;
+    -webkit-font-smoothing: antialiased;
+  }
+  * {
+    font-family: 'Urbanist', sans-serif !important;
+    box-sizing: border-box;
+  }
+</style>
+</head>
+<body class="flex justify-center items-start min-h-screen p-0 bg-[#0b0c0e]">
+
+<!-- BEGIN: Full Long Mobile Inspection Modal View -->
+<main class="w-[390px] bg-[#16171d] text-white flex flex-col relative rounded-none p-5 overflow-hidden">
+  
+  <!-- Header: Identity & Coordinates -->
+  <header class="flex items-center justify-between pb-3.5 border-b border-white/10">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-2xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-[#e07a3f] shrink-0">
+        <svg class="w-5 h-5 text-[#e07a3f]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z" />
+        </svg>
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base font-semibold tracking-tight text-white leading-tight">Roadway Ground Truth & Baseline</h1>
+        </div>
+        <div class="flex items-center gap-1.5 mt-0.5">
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-semibold uppercase bg-white/10 text-white/80">Metro Manila</span>
+          <span class="text-[11px] text-[#9da3af]">Sta. Mesa, Manila · 14.6010°N, 121.0120°E</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Segmented Tab Toggle & Dismiss -->
+  <div class="flex items-center justify-between mt-3.5 mb-3.5">
+    <nav class="flex items-center p-1 rounded-full bg-black/40 border border-white/10">
+      <button class="text-xs font-medium px-3.5 py-1.5 rounded-full text-slate-400 hover:text-white flex items-center gap-1.5" type="button">
+        <span class="w-1.5 h-1.5 rounded-full bg-[#e07a3f]"></span>
+        <span>360° Baseline</span>
+      </button>
+      <button class="text-xs font-semibold px-3.5 py-1.5 rounded-full text-[#fbe9dc] flex items-center gap-1.5" style="background: rgba(224, 122, 63, 0.22); border: 1px solid rgba(224, 122, 63, 0.5);" type="button">
+        <svg class="w-3.5 h-3.5 text-[#e07a3f]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+        <span>Corridor Sensors</span>
+      </button>
+    </nav>
+    <button class="w-9 h-9 rounded-full bg-white/5 border border-white/10 flex items-center justify-center text-slate-400" type="button">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+
+  <!-- Inundation & River Basin Status Stack -->
+  <div class="space-y-3">
+    
+    <!-- Water Inundation Level -->
+    <section class="bg-[#1a1b22] border border-[#2b2d36] rounded-2xl p-4 flex flex-col justify-between">
+      <div class="flex items-center justify-between">
+        <span class="text-[11px] font-mono uppercase tracking-wider text-[#9da3af]">Water Inundation Level</span>
+        <svg class="w-4 h-4 text-[#54b2d3]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 9h16.5m-16.5 6.75h16.5" />
+        </svg>
+      </div>
+      <div class="my-2">
+        <div class="flex items-baseline">
+          <span class="text-4xl font-bold tracking-tight text-white">0.0<span class="text-2xl font-normal text-[#9da3af] ml-1">m</span></span>
+        </div>
+        <p class="text-xs font-semibold text-[#f5f6f9] mt-1 flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-[#22c55e]"></span>
+          <span>Clear Roadway · No Flooding Detected</span>
+        </p>
+      </div>
+      <div class="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-[#9da3af]">
+        <span>Sensor: EFCOS_STA_MESA_04</span>
+        <span class="font-mono">Confidence: 99.1%</span>
+      </div>
+    </section>
+
+    <!-- River Basin Spill Risk (EFCOS) -->
+    <section class="bg-[#1a1b22] border border-[#2b2d36] rounded-2xl p-4 flex flex-col justify-between">
+      <div class="flex items-center justify-between mb-1">
+        <span class="text-[11px] font-mono uppercase tracking-wider text-[#9da3af]">River Basin Spill Risk (EFCOS)</span>
+        <svg class="w-4 h-4 text-[#54b2d3]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" />
+          <path d="M12 7v5l3 3" />
+        </svg>
+      </div>
+      <h3 class="text-sm font-bold text-white">San Juan River Confluence</h3>
+      <p class="text-[11px] text-[#9da3af]">Pureza Sluice Gate & Drainage Basin</p>
+      
+      <div class="my-2.5">
+        <div class="flex items-baseline justify-between mb-1">
+          <span class="text-[11px] font-bold text-[#e07a3f] uppercase tracking-wide">ALERT LEVEL 1 (MONSOON OVERFLOW)</span>
+          <span class="text-xs font-mono font-bold text-white">11.8m / 13.0m</span>
+        </div>
+        <div class="w-full bg-[#222328] rounded-full h-2 overflow-hidden border border-white/5">
+          <div class="h-full rounded-full bg-[#e07a3f]" style="width: 84%;"></div>
+        </div>
+      </div>
+
+      <div class="pt-2 border-t border-white/10 flex items-center justify-between text-[11px] text-[#9da3af]">
+        <span>Spill Delta: <strong class="text-white font-mono">+0.15m in last hr</strong></span>
+        <span class="font-mono text-[#54b2d3]">Capacity: 84%</span>
+      </div>
+    </section>
+
+    <!-- Passability Cards (Matches Screenshot) -->
+    <section class="bg-[#1a1b22] border border-[#2b2d36] rounded-2xl p-4 flex flex-col justify-between">
+      <div class="flex items-center justify-between mb-1.5">
+        <span class="text-sm font-bold text-white">High Clearance 4x4</span>
+        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#e07a3f]/20 text-[#f59e6c] border border-[#e07a3f]/30">
+          CAUTION
+        </span>
+      </div>
+      <p class="text-xs text-[#9da3af] leading-relaxed">
+        High-axle trucks only. Maintain low-gear crawl to prevent wake inundation.
+      </p>
+    </section>
+
+    <section class="bg-[#1a1b22] border border-[#2b2d36] rounded-2xl p-4 flex flex-col justify-between">
+      <div class="flex items-center justify-between mb-1.5">
+        <span class="text-sm font-bold text-white">Pedestrian Transit</span>
+        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-[#ff6b6b]/20 text-[#ff6b6b] border border-[#ff6b6b]/30">
+          DANGER
+        </span>
+      </div>
+      <p class="text-xs text-[#9da3af] leading-relaxed">
+        Strong surface runoff. Open drainage grates and dislodged covers reported.
+      </p>
+    </section>
+
+    <!-- 6-Hour Rainfall Rate Sparkline (Matches Screenshot) -->
+    <section class="bg-[#1a1b22] border border-[#2b2d36] rounded-2xl p-4">
+      <div class="flex items-center justify-between mb-2">
+        <div class="flex items-center gap-2">
+          <svg class="w-4 h-4 text-[#54b2d3]" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 00-9.78 2.096A4.001 4.001 0 003 15z" />
+          </svg>
+          <span class="text-xs font-bold text-white">6-Hour Rainfall Rate Sparkline</span>
+        </div>
+        <div class="text-right">
+          <span class="text-xs font-mono font-bold text-[#54b2d3]">Peak: 47 mm/h</span>
+        </div>
+      </div>
+      <div class="w-full h-16 pt-2">
+        <svg class="w-full h-full overflow-visible" viewBox="0 0 320 60" preserveAspectRatio="none">
+          <polyline fill="none" stroke="#54b2d3" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"
+            points="10,50 65,45 125,36 185,26 245,32 305,16" />
+          <circle cx="10" cy="50" r="3" fill="#54b2d3" />
+          <text x="10" y="44" fill="#ffffff" font-size="9" text-anchor="middle" font-family="monospace">9</text>
+          <circle cx="65" cy="45" r="3" fill="#54b2d3" />
+          <text x="65" y="39" fill="#ffffff" font-size="9" text-anchor="middle" font-family="monospace">15</text>
+          <circle cx="125" cy="36" r="3" fill="#54b2d3" />
+          <text x="125" y="30" fill="#ffffff" font-size="9" text-anchor="middle" font-family="monospace">27</text>
+          <circle cx="185" cy="26" r="3" fill="#54b2d3" />
+          <text x="185" y="20" fill="#ffffff" font-size="9" text-anchor="middle" font-family="monospace">41</text>
+          <circle cx="245" cy="32" r="3" fill="#54b2d3" />
+          <text x="245" y="26" fill="#ffffff" font-size="9" text-anchor="middle" font-family="monospace">33</text>
+          <circle cx="305" cy="16" r="3" fill="#54b2d3" />
+          <text x="305" y="10" fill="#ffffff" font-size="9" text-anchor="middle" font-family="monospace">47</text>
+        </svg>
+      </div>
+    </section>
+
+    <!-- Telemetry Micro-Cards Strip (Matches Screenshot) -->
+    <div class="grid grid-cols-2 gap-2">
+      <div class="bg-[#1a1b22] border border-[#2b2d36] rounded-2xl p-3 flex items-center justify-between">
+        <div>
+          <p class="text-[9px] uppercase font-mono tracking-wider text-[#9da3af]">Curb Height</p>
+          <p class="text-sm font-mono font-bold text-white mt-0.5">0.25 m</p>
+        </div>
+        <div class="w-7 h-7 rounded-xl bg-white/5 flex items-center justify-center text-slate-400">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+          </svg>
+        </div>
+      </div>
+
+      <div class="bg-[#1a1b22] border border-[#2b2d36] rounded-2xl p-3 flex items-center justify-between">
+        <div>
+          <p class="text-[9px] uppercase font-mono tracking-wider text-[#9da3af]">Drainage Invert</p>
+          <p class="text-sm font-mono font-bold text-white mt-0.5">-0.40 m</p>
+        </div>
+        <div class="w-7 h-7 rounded-xl bg-white/5 flex items-center justify-center text-slate-400">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7l4-4m0 0l4 4m-4-4v18" />
+          </svg>
+        </div>
+      </div>
+
+      <div class="bg-[#1a1b22] border border-[#2b2d36] rounded-2xl p-3 flex items-center justify-between">
+        <div>
+          <p class="text-[9px] uppercase font-mono tracking-wider text-[#9da3af]">Telemetry Sy...</p>
+          <p class="text-sm font-bold text-white mt-0.5">Ultrasonic-04</p>
+        </div>
+        <span class="px-2 py-0.5 rounded-full text-[9px] font-mono tracking-wider uppercase bg-white/10 text-white/80">ONLINE</span>
+      </div>
+
+      <div class="bg-[#1a1b22] border border-[#2b2d36] rounded-2xl p-3 flex items-center justify-between">
+        <div>
+          <p class="text-[9px] uppercase font-mono tracking-wider text-[#9da3af]">Corridor Survey</p>
+          <p class="text-sm font-bold text-white mt-0.5">March 2026</p>
+        </div>
+        <div class="w-7 h-7 rounded-xl bg-white/5 flex items-center justify-center text-slate-400">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons (Matches Screenshot) -->
+    <div class="pt-2 space-y-2">
+      <button class="w-full py-3 px-4 rounded-2xl text-xs font-semibold text-slate-300 bg-white/[0.04] border border-white/10 hover:bg-white/[0.08]" type="button">
+        Close Baseline View
+      </button>
+      <button class="w-full py-3 px-4 rounded-2xl text-xs font-semibold text-white bg-white/[0.08] border border-white/10 hover:bg-white/[0.12] flex items-center justify-center gap-2" type="button">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+        </svg>
+        <span>Return to 360° Baseline</span>
+      </button>
+      <p class="text-[11px] text-center text-[#9da3af] flex items-center justify-center gap-1.5 pt-1">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="9" stroke-width="2" />
+          <path stroke-width="2" d="M12 16v-4m0-4h.01" />
+        </svg>
+        <span>Tap outside or dismiss below to return</span>
+      </p>
+    </div>
+
+  </div>
+
+</main>
+<!-- END: Full Long Mobile Inspection Modal View -->
+
+</body>
+</html>

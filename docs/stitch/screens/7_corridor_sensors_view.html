@@ -1,0 +1,434 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>LIGTAS - Corridor Sensors View</title>
+<!-- Urbanist Font -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script data-purpose="tailwind-config">
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Urbanist', 'sans-serif'],
+          },
+          colors: {
+            surface: {
+              page: '#1A1A1A',
+              card: '#242424',
+              subtle: '#2E2E2E',
+              track: '#3A3A3A',
+            },
+            accent: {
+              yellow: '#EEF21A',
+            },
+            status: {
+              danger: '#EF4444',
+              caution: '#F97316',
+              safe: '#22C55E',
+            },
+            content: {
+              primary: '#FFFFFF',
+              secondary: '#9A9A9A',
+              muted: '#737373',
+            }
+          },
+          borderRadius: {
+            'card': '28px',
+          }
+        }
+      }
+    };
+  </script>
+<style data-purpose="custom-resets">
+    body {
+      background-color: #1A1A1A;
+      font-family: 'Urbanist', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      color: #FFFFFF;
+    }
+  </style>
+</head>
+<body class="bg-surface-page flex justify-center min-h-screen">
+<!-- BEGIN: MainContainer -->
+<main class="w-[390px] max-w-[390px] min-h-screen px-4 pt-6 pb-10 flex flex-col gap-4">
+<!-- BEGIN: SharedHeader -->
+<header class="flex flex-col gap-4">
+<!-- Top Bar: App Icon & Close Button -->
+<div class="flex items-center justify-between">
+<!-- App Icon Outline -->
+<div class="w-11 h-11 rounded-full border-[1.5px] border-[#404040] flex items-center justify-center text-content-primary"><svg class="w-5 h-5 stroke-current stroke-[1.5]" fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg></div>
+<!-- Close 'X' Button -->
+<button aria-label="Close" class="w-11 h-11 rounded-full border-[1.5px] border-[#404040] flex items-center justify-center text-content-primary active:scale-95 transition-transform" type="button">
+<svg class="w-5 h-5 stroke-current stroke-[1.5]" fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+<line x1="18" x2="6" y1="6" y2="18"></line>
+<line x1="6" x2="18" y1="6" y2="18"></line>
+</svg>
+</button>
+</div>
+<!-- Title & Coordinates -->
+<div class="flex flex-col gap-2">
+<h1 class="text-[32px] font-normal leading-[38px] text-content-primary">
+          Roadway Ground Truth &amp; Baseline
+        </h1>
+<div class="flex items-center flex-wrap gap-2 pt-0.5">
+<span class="bg-surface-subtle text-content-primary px-3 py-1 rounded-full text-xs font-normal">
+            Metro Manila
+          </span>
+<span class="text-xs text-content-secondary font-normal">España, Manila · 14.6091°N, 120.9894°E</span>
+</div>
+</div>
+<!-- Tab Switcher -->
+<nav class="flex items-center gap-2 pt-1">
+<!-- 360° Baseline Tab (Inactive) -->
+<button class="bg-surface-subtle text-content-secondary px-4 py-2 rounded-full text-sm font-normal transition-colors" type="button">
+          360° Baseline
+        </button>
+<!-- Corridor Sensors Tab (Active) -->
+<button class="bg-accent-yellow text-surface-page font-medium px-4 py-2 rounded-full text-sm flex items-center gap-1.5 shadow-sm" type="button">
+<svg class="w-4 h-4 stroke-current stroke-[1.75]" fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+</svg>
+          Corridor Sensors
+        </button>
+</nav>
+</header>
+<!-- END: SharedHeader -->
+<!-- BEGIN: SignalCard -->
+<section class="bg-surface-card rounded-card p-6 flex flex-col gap-2">
+<div class="flex items-center gap-2.5">
+<span class="bg-surface-subtle text-content-primary text-xs px-2.5 py-1 rounded-full font-normal">
+          Signal No. 1
+        </span>
+<span class="text-sm font-normal text-content-primary">
+          Southwest Monsoon / Habagat
+        </span>
+</div>
+<p class="text-xs text-content-secondary font-normal">
+        PAGASA · Project NOAH telemetry
+      </p>
+</section>
+<!-- END: SignalCard -->
+<!-- BEGIN: WaterInundationCard -->
+<section class="bg-surface-card rounded-card p-6 flex flex-col gap-6">
+<!-- Card Header -->
+<div class="flex items-center justify-between">
+<span class="text-xs text-content-secondary font-normal">
+          Water inundation level
+        </span>
+<svg class="w-4 h-4 stroke-content-secondary stroke-[1.5]" fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+<path d="M2 12c2.5-3 5-3 7.5 0s5 3 7.5 0 5-3 7.5 0"></path>
+<path d="M2 17c2.5-3 5-3 7.5 0s5 3 7.5 0 5-3 7.5 0"></path>
+</svg>
+</div>
+<!-- Arc Gauge: 0.0m -->
+<div class="flex flex-col items-center justify-center relative my-1">
+<div class="w-48 h-48 relative flex items-center justify-center"><svg class="w-full h-full transform rotate-[135deg]" viewBox="0 0 160 160"><circle cx="80" cy="80" fill="none" r="62" stroke="#3A3A3A" stroke-dasharray="6 6" stroke-linecap="round" stroke-width="14"></circle></svg><div class="absolute inset-0 flex items-center justify-center pointer-events-none"><span class="text-[56px] font-light text-content-primary tracking-tight">--</span></div></div>
+</div>
+<!-- Warning & Telemetry Details -->
+<div class="flex flex-col gap-3">
+<div class="flex items-center gap-2">
+<svg class="w-4 h-4 stroke-content-secondary stroke-[1.5] flex-shrink-0" fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+<path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path>
+<line x1="12" x2="12" y1="9" y2="13"></line>
+<line x1="12" x2="12.01" y1="17" y2="17"></line>
+</svg>
+<span class="text-sm text-content-primary font-normal">
+            Depth unavailable — no sensor coverage
+          </span>
+</div>
+<div class="flex items-center justify-between text-xs text-content-secondary font-normal pt-1">
+<span class="">Sensor ID: NOAH_METRO_61</span>
+<span class="">Confidence: 98.4%</span>
+</div>
+</div>
+</section>
+<!-- END: WaterInundationCard -->
+<!-- BEGIN: RiverBasinCard -->
+<section class="bg-surface-card rounded-card p-6 flex flex-col gap-4">
+<!-- Header -->
+<div class="flex items-center justify-between">
+<span class="text-xs text-content-secondary font-normal">
+          River basin spill risk (EFCOS)
+        </span>
+<svg class="w-4 h-4 stroke-content-secondary stroke-[1.5]" fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+<path d="M12 2v4"></path>
+<path d="M4.93 4.93l2.83 2.83"></path>
+<path d="M2 12h4"></path>
+<path d="M19.07 4.93l-2.83 2.83"></path>
+<path d="M22 12h-4"></path>
+<path d="M12 12l3-3"></path>
+</svg>
+</div>
+<!-- Station Subheading -->
+<div class="flex flex-col">
+<span class="text-base text-content-primary font-normal">Pasig River Tidal Corridor</span>
+<span class="text-xs text-content-secondary font-normal">Pandacan Hydrological Station (MMDA-EFCOS)</span>
+</div>
+<!-- 270 deg Arc Gauge (Proportional ~91% of 270 deg) -->
+<div class="flex flex-col items-center justify-center relative my-1">
+<div class="w-48 h-48 relative flex items-center justify-center">
+<svg class="w-full h-full transform rotate-[135deg]" viewBox="0 0 160 160">
+<!-- Background Arc Track -->
+<circle cx="80" cy="80" fill="none" r="62" stroke="#3A3A3A" stroke-dasharray="292.1 389.5" stroke-linecap="round" stroke-width="14"></circle>
+<!-- Foreground Filled Arc (91% of 292.1 = ~265.8) -->
+<circle cx="80" cy="80" fill="none" r="62" stroke="#EEF21A" stroke-dasharray="265.8 389.5" stroke-linecap="round" stroke-width="14"></circle>
+</svg>
+<!-- Center Gauge Number -->
+<div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+<span class="text-[40px] font-light text-content-primary">13.2m</span>
+</div>
+<!-- Max Label at Arc End -->
+<div class="absolute bottom-2 right-4 text-xs text-content-secondary font-normal">
+            14.5m
+          </div>
+</div>
+</div>
+<!-- Status Row with 8px dot -->
+<div class="flex items-center justify-between pt-1">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-caution inline-block"></span>
+<span class="text-sm font-normal text-content-primary">High Tide Convergence</span>
+</div>
+</div>
+<!-- Telemetry Capacity & Delta -->
+<div class="flex items-center justify-between text-xs text-content-secondary font-normal border-t border-surface-subtle/50 pt-3">
+<span class="">Spill Delta: Tide Crest Peak</span>
+<span class="">Capacity: 76%</span>
+</div>
+</section>
+<!-- END: RiverBasinCard -->
+<!-- BEGIN: PassabilityCards -->
+<!-- Card 1: Sedans & City Cars -->
+<article class="bg-surface-card rounded-card p-6 flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<h2 class="text-base text-content-primary font-normal">Sedans &amp; City Cars</h2>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-danger inline-block"></span>
+<span class="text-sm font-normal text-content-primary">Impassable</span>
+</div>
+</div>
+<p class="text-sm text-content-secondary font-normal leading-relaxed">
+        Exhaust submersion hazard. Water level exceeds safe intake draft (0.25m).
+      </p>
+</article>
+<!-- Card 2: High Clearance 4x4 -->
+<article class="bg-surface-card rounded-card p-6 flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<h2 class="text-base text-content-primary font-normal">High Clearance 4x4</h2>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-caution inline-block"></span>
+<span class="text-sm font-normal text-content-primary">Caution</span>
+</div>
+</div>
+<p class="text-sm text-content-secondary font-normal leading-relaxed">
+        High-axle trucks only. Maintain low-gear crawl to prevent wake inundation.
+      </p>
+</article>
+<!-- Card 3: Pedestrian Transit -->
+<article class="bg-surface-card rounded-card p-6 flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<h2 class="text-base text-content-primary font-normal">Pedestrian Transit</h2>
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-status-danger inline-block"></span>
+<span class="text-sm font-normal text-content-primary">Danger</span>
+</div>
+</div>
+<p class="text-sm text-content-secondary font-normal leading-relaxed">
+        Strong surface runoff. Open drainage grates and dislodged covers reported.
+      </p>
+</article>
+<!-- END: PassabilityCards -->
+<!-- BEGIN: RainfallCard -->
+<section class="bg-surface-card rounded-card p-6 flex flex-col gap-6">
+<!-- Header -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<svg class="w-5 h-5 stroke-content-secondary stroke-[1.5]" fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+<path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+</svg>
+<span class="text-base text-content-primary font-normal">
+            6-Hour Rainfall Rate Sparkline
+          </span>
+</div>
+<span class="bg-surface-subtle text-content-primary px-2.5 py-1 rounded-full text-xs font-normal whitespace-nowrap">
+          Peak: 46 mm/h
+        </span>
+</div>
+<!-- Dotted Sparkline Matrix: Columns 8, 14, 26, 40, 32, 46 -->
+<div class="flex items-end justify-between px-2 pt-2 pb-1" data-purpose="dotted-matrix">
+<!-- Col 1: 8 mm/h (2 active / 10 total) -->
+<div class="flex flex-col items-center gap-1.5">
+<span class="text-xs text-content-secondary font-normal mb-1">8</span>
+<div class="flex flex-col-reverse gap-1.5">
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+</div>
+</div>
+<!-- Col 2: 14 mm/h (3 active / 10 total) -->
+<div class="flex flex-col items-center gap-1.5">
+<span class="text-xs text-content-secondary font-normal mb-1">14</span>
+<div class="flex flex-col-reverse gap-1.5">
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+</div>
+</div>
+<!-- Col 3: 26 mm/h (5 active / 10 total) -->
+<div class="flex flex-col items-center gap-1.5">
+<span class="text-xs text-content-secondary font-normal mb-1">26</span>
+<div class="flex flex-col-reverse gap-1.5">
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+</div>
+</div>
+<!-- Col 4: 40 mm/h (8 active / 10 total) -->
+<div class="flex flex-col items-center gap-1.5">
+<span class="text-xs text-content-secondary font-normal mb-1">40</span>
+<div class="flex flex-col-reverse gap-1.5">
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+</div>
+</div>
+<!-- Col 5: 32 mm/h (6 active / 10 total) -->
+<div class="flex flex-col items-center gap-1.5">
+<span class="text-xs text-content-secondary font-normal mb-1">32</span>
+<div class="flex flex-col-reverse gap-1.5">
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-accent-yellow"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+<span class="w-2 h-2 rounded-full bg-surface-track"></span>
+</div>
+</div>
+<!-- Col 6: 46 mm/h Peak (9 active + raindrop top / 10 total) -->
+<div class="flex flex-col items-center gap-1.5"><div class="w-3.5 h-3.5 flex items-center justify-center"><svg class="w-3.5 h-3.5 text-accent-yellow stroke-accent-yellow fill-none stroke-[1.8]" viewBox="0 0 24 24"><path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path></svg></div><span class="text-xs text-content-secondary font-normal mb-1">46</span><div class="flex flex-col-reverse gap-1.5"><span class="w-2 h-2 rounded-full bg-accent-yellow"></span><span class="w-2 h-2 rounded-full bg-accent-yellow"></span><span class="w-2 h-2 rounded-full bg-accent-yellow"></span><span class="w-2 h-2 rounded-full bg-accent-yellow"></span><span class="w-2 h-2 rounded-full bg-accent-yellow"></span><span class="w-2 h-2 rounded-full bg-accent-yellow"></span><span class="w-2 h-2 rounded-full bg-accent-yellow"></span><span class="w-2 h-2 rounded-full bg-accent-yellow"></span><span class="w-2 h-2 rounded-full bg-accent-yellow"></span><span class="w-2 h-2 rounded-full bg-surface-track"></span></div></div>
+</div>
+</section>
+<!-- END: RainfallCard -->
+<!-- BEGIN: TelemetryGrid -->
+<div class="grid grid-cols-2 gap-3">
+<!-- Curb Height Card -->
+<div class="bg-surface-card rounded-card p-5 flex flex-col justify-between h-28">
+<div class="flex items-center justify-between">
+<span class="text-xs text-content-secondary font-normal">Curb height</span>
+<div class="w-6 h-6 rounded-full bg-surface-subtle flex items-center justify-center">
+<svg class="w-3.5 h-3.5 stroke-content-secondary stroke-[1.5]" fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+<line x1="12" x2="12" y1="5" y2="19"></line>
+<polyline points="19 12 12 19 5 12"></polyline>
+</svg>
+</div>
+</div>
+<div class="text-xl font-medium text-content-primary">
+          0.25 m
+        </div>
+</div>
+<!-- Drainage Invert Card -->
+<div class="bg-surface-card rounded-card p-5 flex flex-col justify-between h-28">
+<div class="flex items-center justify-between">
+<span class="text-xs text-content-secondary font-normal">Drainage invert</span>
+<div class="w-6 h-6 rounded-full bg-surface-subtle flex items-center justify-center">
+<svg class="w-3.5 h-3.5 stroke-content-secondary stroke-[1.5]" fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+<line x1="12" x2="12" y1="19" y2="5"></line>
+<polyline points="5 12 12 5 19 12"></polyline>
+</svg>
+</div>
+</div>
+<div class="text-xl font-medium text-content-primary">
+          -0.40 m
+        </div>
+</div>
+<!-- Telemetry Sync Card -->
+<div class="bg-surface-card rounded-card p-5 flex flex-col justify-between h-28"><div class="flex items-center justify-between"><span class="text-xs text-content-secondary font-normal">Telemetry sync</span></div><div class="flex flex-col gap-1 items-start"><span class="text-base font-normal text-content-primary whitespace-nowrap">Ultrasonic-04</span><span class="bg-surface-subtle text-content-primary text-xs px-2 py-0.5 rounded-full font-normal">Online</span></div></div>
+<!-- Corridor Survey Card -->
+<div class="bg-surface-card rounded-card p-5 flex flex-col justify-between h-28">
+<div class="flex items-center justify-between">
+<span class="text-xs text-content-secondary font-normal">Corridor survey</span>
+<div class="w-6 h-6 rounded-full bg-surface-subtle flex items-center justify-center">
+<svg class="w-3.5 h-3.5 stroke-content-secondary stroke-[1.5]" fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+<rect height="18" rx="2" ry="2" width="18" x="3" y="4"></rect>
+<line x1="16" x2="16" y1="2" y2="6"></line>
+<line x1="8" x2="8" y1="2" y2="6"></line>
+<line x1="3" x2="21" y1="10" y2="10"></line>
+</svg>
+</div>
+</div>
+<div class="text-base font-normal text-content-primary">
+          March 2026
+        </div>
+</div>
+</div>
+<!-- END: TelemetryGrid -->
+<!-- BEGIN: BottomActions -->
+<div class="flex flex-col gap-2.5 pt-2">
+<!-- Close Baseline View Button -->
+<button class="w-full bg-surface-subtle text-content-primary py-3.5 rounded-full text-sm font-normal text-center active:bg-surface-track transition-colors" type="button">
+        Close Baseline View
+      </button>
+<!-- Return to 360° Baseline Button -->
+<button class="w-full bg-surface-subtle text-content-primary py-3.5 rounded-full text-sm font-normal flex items-center justify-center gap-2 active:bg-surface-track transition-colors" type="button">
+<svg class="w-4 h-4 stroke-current stroke-[1.5]" fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+<polyline points="17 1 21 5 17 9"></polyline>
+<path d="M3 11V9a4 4 0 0 1 4-4h14"></path>
+<polyline points="7 23 3 19 7 15"></polyline>
+<path d="M21 13v2a4 4 0 0 1-4 4H3"></path>
+</svg>
+        Return to 360° Baseline
+      </button>
+<!-- Subtle Return Instruction -->
+<div class="flex items-center justify-center gap-1.5 pt-2 text-content-secondary text-xs font-normal">
+<svg class="w-3.5 h-3.5 stroke-current stroke-[1.5]" fill="none" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24">
+<circle cx="12" cy="12" r="10"></circle>
+<line x1="12" x2="12" y1="16" y2="12"></line>
+<line x1="12" x2="12.01" y1="8" y2="8"></line>
+</svg>
+<span class="">Tap outside or dismiss below to return</span>
+</div>
+</div>
+<!-- END: BottomActions -->
+</main>
+<!-- END: MainContainer -->
+
+
+
+
+</body></html>

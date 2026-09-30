@@ -1,0 +1,245 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="utf-8">
+<meta content="width=device-width, initial-scale=1.0" name="viewport">
+<title>LIGTAS - 360° Baseline View</title>
+<!-- Tailwind CSS CDN with forms and container queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Urbanist -->
+<link href="https://fonts.googleapis.com" rel="preconnect">
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect">
+<link href="https://fonts.googleapis.com/css2?family=Urbanist:wght@300;400;500;600&amp;display=swap" rel="stylesheet">
+<style data-purpose="typography">
+    body {
+      font-family: 'Urbanist', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: #1A1A1A;
+      color: #FFFFFF;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+  </style>
+<style data-purpose="custom-utilities">
+    /* Custom styling constraints strictly conforming to spec */
+    .bg-main {
+      background-color: #1A1A1A;
+    }
+    .bg-card {
+      background-color: #242424;
+    }
+    .bg-chip {
+      background-color: #2E2E2E;
+    }
+    .text-secondary {
+      color: #9A9A9A;
+    }
+    .accent-yellow {
+      background-color: #EEF21A;
+      color: #1A1A1A;
+    }
+    .border-subtle {
+      border: 1.5px solid #404040;
+    }
+    .card-radius {
+      border-radius: 28px;
+    }
+  </style>
+</head>
+<body class="bg-main min-h-screen flex justify-center items-start p-0 m-0">
+<!-- BEGIN: MobileContainer -->
+<!-- Constrained strictly to 390px mobile viewport -->
+<main class="w-[390px] min-h-screen bg-main px-4 py-6 flex flex-col gap-4 relative overflow-x-hidden selection:bg-[#EEF21A] selection:text-[#1A1A1A]">
+<!-- BEGIN: HeaderSection -->
+<header class="flex flex-col gap-4">
+<!-- Top Action Navigation -->
+<div class="flex items-center justify-between">
+<!-- Beacon / Gauge App Icon -->
+<button aria-label="App Icon" class="w-11 h-11 rounded-full border-subtle flex items-center justify-center text-white hover:bg-neutral-800 transition-colors" type="button"><svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg></button>
+<!-- Close X Button -->
+<button aria-label="Close view" class="w-11 h-11 rounded-full border-subtle flex items-center justify-center text-white hover:bg-neutral-800 transition-colors" type="button">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<line x1="18" x2="6" y1="6" y2="18"></line>
+<line x1="6" x2="18" y1="6" y2="18"></line>
+</svg>
+</button>
+</div>
+<!-- Title & Location Meta -->
+<div class="flex flex-col gap-2">
+<h1 class="text-[32px] font-normal leading-[1.18] tracking-tight text-white">
+          Roadway Ground Truth &amp; Baseline
+        </h1>
+<div class="flex flex-wrap items-center gap-2 pt-0.5">
+<span class="bg-chip text-white text-xs px-3 py-1 rounded-full font-medium inline-flex items-center justify-center">
+            Metro Manila
+          </span>
+<span class="text-secondary text-xs font-normal">
+            España, Manila · 14.6091°N, 120.9894°E
+          </span>
+</div>
+</div>
+<!-- Tab Chips Row -->
+<div class="flex items-center gap-2.5 pt-1">
+<!-- Selected Tab -->
+<button class="accent-yellow text-xs font-medium px-4 py-2 rounded-full transition-transform active:scale-95" type="button">
+          360° Baseline
+        </button>
+<!-- Inactive Tab -->
+<button class="bg-chip text-secondary text-xs font-normal px-4 py-2 rounded-full flex items-center gap-1.5 hover:text-white transition-colors" type="button">
+<svg class="w-3.5 h-3.5 text-secondary" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+</svg>
+          Corridor Sensors
+        </button>
+</div>
+</header>
+<!-- END: HeaderSection -->
+<!-- BEGIN: ViewerCard -->
+<section class="relative w-full h-[375px] bg-[#141414] card-radius overflow-hidden flex flex-col justify-between p-3.5">
+<!-- Moody Photographic Asphalt Rain Texture Background -->
+<div class="absolute inset-0 pointer-events-none z-0 flex items-center justify-center pb-20"><svg class="w-10 h-10 text-secondary" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="9" cy="9" r="2"></circle><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"></path></svg></div>
+<!-- Top Overlay Controls in Viewer -->
+<div class="relative z-10 flex items-center justify-between w-full">
+<!-- 360 Benchmark Tag -->
+<div class="bg-chip px-3 py-1 rounded-full text-secondary text-xs font-normal">
+          360° Benchmark
+        </div>
+<!-- Heading Direction Indicator -->
+<div class="bg-chip px-3 py-1 rounded-full text-white text-xs font-normal flex items-center gap-1.5">
+<svg class="w-3.5 h-3.5 text-secondary" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<polygon points="3 11 22 2 13 21 11 13 3 11"></polygon>
+</svg>
+          48° NE
+        </div>
+</div>
+<!-- Right Side Camera Controls Stack -->
+<div class="absolute right-3.5 top-14 z-10 flex flex-col gap-2">
+<!-- Zoom In Button -->
+<button aria-label="Zoom in" class="w-11 h-11 rounded-full border-subtle bg-[#1A1A1A]/80 text-white flex items-center justify-center active:scale-95 transition-transform" type="button">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<line x1="12" x2="12" y1="5" y2="19"></line>
+<line x1="5" x2="19" y1="12" y2="12"></line>
+</svg>
+</button>
+<!-- Zoom Out Button -->
+<button aria-label="Zoom out" class="w-11 h-11 rounded-full border-subtle bg-[#1A1A1A]/80 text-white flex items-center justify-center active:scale-95 transition-transform" type="button">
+<svg class="w-5 h-5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<line x1="5" x2="19" y1="12" y2="12"></line>
+</svg>
+</button>
+<!-- Reset View Button -->
+<button aria-label="Reset perspective" class="w-11 h-11 rounded-full border-subtle bg-[#1A1A1A]/80 text-white flex items-center justify-center active:scale-95 transition-transform" type="button">
+<svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+</svg>
+</button>
+</div>
+<!-- Docked Live Waterline Card at bottom -->
+<div class="relative z-10 w-full bg-[#242424] card-radius p-5 flex flex-col gap-3 shadow-lg">
+<!-- Live waterline top info -->
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<!-- Buoy/Water Level Icon -->
+<svg class="w-4 h-4 text-secondary" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M12 2v6M12 18v4M2 15c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2M2 19c2.5 0 2.5-2 5-2s2.5 2 5 2 2.5-2 5-2 2.5 2 5 2"></path>
+</svg>
+<span class="text-secondary text-xs font-normal">Live waterline</span>
+</div>
+<!-- Status Indicator: 8px green dot beside plain white text -->
+
+</div>
+<!-- Metric Reading -->
+<div class="flex items-baseline justify-between pt-0.5">
+<div class="text-[40px] font-light leading-none text-white tracking-tight">--</div>
+<div class="flex flex-col items-end">
+<span class="text-secondary text-xs font-normal">Benchmark</span>
+<span class="text-[28px] font-light leading-tight text-white tracking-tight">
+              +2.42m MSL
+            </span>
+</div>
+</div>
+</div>
+</section>
+<!-- END: ViewerCard -->
+<!-- BEGIN: TelemetryGrid -->
+<section aria-label="Corridor Ground Truth Telemetry" class="grid grid-cols-2 gap-3">
+<!-- Card 1: Curb height -->
+<div class="bg-card card-radius p-5 flex flex-col justify-between h-[116px]">
+<div class="flex items-start justify-between">
+<span class="text-secondary text-xs font-normal">Curb height</span>
+<div class="w-8 h-8 rounded-full border-subtle flex items-center justify-center text-white shrink-0">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<line x1="12" x2="12" y1="5" y2="19"></line>
+<polyline points="19 12 12 19 5 12"></polyline>
+</svg>
+</div>
+</div>
+<div class="text-[28px] font-light leading-none text-white">
+          0.25 m
+        </div>
+</div>
+<!-- Card 2: Drainage invert -->
+<div class="bg-card card-radius p-5 flex flex-col justify-between h-[116px]">
+<div class="flex items-start justify-between">
+<span class="text-secondary text-xs font-normal">Drainage invert</span>
+<div class="w-8 h-8 rounded-full border-subtle flex items-center justify-center text-white shrink-0">
+<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<line x1="12" x2="12" y1="19" y2="5"></line>
+<polyline points="5 12 12 5 19 12"></polyline>
+</svg>
+</div>
+</div>
+<div class="text-[28px] font-light leading-none text-white">
+          -0.40 m
+        </div>
+</div>
+<!-- Card 3: Telemetry sync -->
+<div class="bg-card card-radius p-5 flex flex-col justify-between h-[116px]"><div class="flex flex-col gap-1"><span class="text-[#9A9A9A] text-xs font-normal leading-none whitespace-nowrap">Telemetry sync</span><div class="text-base font-normal leading-tight text-white whitespace-nowrap">Ultrasonic-04</div></div><div class="flex items-center pt-1"><span class="bg-chip text-white text-xs px-2.5 py-0.5 rounded-full font-normal inline-block">Online</span></div></div>
+<!-- Card 4: Corridor survey -->
+<div class="bg-card card-radius p-5 flex flex-col justify-between h-[116px]">
+<div class="flex items-center justify-between">
+<span class="text-secondary text-xs font-normal">Corridor survey</span>
+<svg class="w-4 h-4 text-secondary shrink-0" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<rect height="18" rx="2" ry="2" width="18" x="3" y="4"></rect>
+<line x1="16" x2="16" y1="2" y2="6"></line>
+<line x1="8" x2="8" y1="2" y2="6"></line>
+<line x1="3" x2="21" y1="10" y2="10"></line>
+</svg>
+</div>
+<div class="text-base font-normal leading-tight text-white">
+          March 2026
+        </div>
+</div>
+</section>
+<!-- END: TelemetryGrid -->
+<!-- BEGIN: ActionsAndDismiss -->
+<section class="flex flex-col gap-3 pt-1 pb-4">
+<!-- Close Baseline View Button -->
+<button class="w-full py-4 rounded-full bg-chip text-white text-base font-medium flex items-center justify-center hover:bg-neutral-800 transition-colors active:scale-[0.99]" type="button">
+        Close Baseline View
+      </button>
+<!-- Compare Live Flood Stage Button -->
+<button class="w-full py-4 rounded-full bg-chip text-white text-base font-medium flex items-center justify-center gap-2 hover:bg-neutral-800 transition-colors active:scale-[0.99]" type="button">
+<svg class="w-4 h-4 text-white" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<path d="M8 3 4 7l4 4"></path>
+<path d="M4 7h16"></path>
+<path d="m16 21 4-4-4-4"></path>
+<path d="M20 17H4"></path>
+</svg>
+        Compare Live Flood Stage
+      </button>
+<!-- Return Hint Footer -->
+<div class="flex items-center justify-center gap-1.5 text-secondary text-xs pt-1">
+<svg class="w-3.5 h-3.5 text-secondary" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewBox="0 0 24 24">
+<circle cx="12" cy="12" r="10"></circle>
+<line x1="12" x2="12" y1="16" y2="12"></line>
+<line x1="12" x2="12.01" y1="8" y2="8"></line>
+</svg>
+<span class="">Tap outside or dismiss below to return</span>
+</div>
+</section>
+<!-- END: ActionsAndDismiss -->
+</main>
+<!-- END: MobileContainer -->
+
+
+
+
+</body></html>
