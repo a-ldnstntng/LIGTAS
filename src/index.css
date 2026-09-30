@@ -149,4 +149,19 @@
   background: transparent !important;
 }
 
+/* Stitch Design System Utilities */
+.card-img-fade {
+  mask-image: radial-gradient(circle at 100% 100%, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 80%);
+  -webkit-mask-image: radial-gradient(circle at 100% 100%, rgba(0,0,0,1) 20%, rgba(0,0,0,0) 80%);
+}
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+
 

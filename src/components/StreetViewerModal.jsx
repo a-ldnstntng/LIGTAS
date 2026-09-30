@@ -14,19 +14,20 @@ function getBearingCardinal(deg) {
   return directions[Math.round(normalized / 45) % 8];
 }
 
-export default function StreetViewerModal({
-  isOpen,
-  onClose,
-  imageId: propImageId,
-  activeLocation,
-  accessToken: propToken,
-  depthMeters: propDepthMeters,
-  onCameraMove,
-  lng: propLng,
-  lat: propLat,
-  bearing: propBearing,
-  locationName: propLocationName
-}) {
+export default function StreetViewerModal(rawProps) {
+  // Support either direct props or data={streetViewData} wrapper
+  const data = rawProps.data || {};
+  const isOpen = rawProps.isOpen ?? data.isOpen ?? false;
+  const onClose = rawProps.onClose ?? data.onClose;
+  const propImageId = rawProps.imageId ?? data.imageId;
+  const activeLocation = rawProps.activeLocation ?? data.activeLocation;
+  const propToken = rawProps.accessToken ?? data.accessToken;
+  const propDepthMeters = rawProps.depthMeters ?? data.depthMeters;
+  const onCameraMove = rawProps.onCameraMove ?? data.onCameraMove;
+  const propLng = rawProps.lng ?? data.lng;
+  const propLat = rawProps.lat ?? data.lat;
+  const propBearing = rawProps.bearing ?? data.bearing;
+  const propLocationName = rawProps.locationName ?? data.locationName;
   const viewerContainerRef = useRef(null);
   const viewerRef = useRef(null);
   const currentLoadedIdRef = useRef(null);
