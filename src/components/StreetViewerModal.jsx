@@ -4,7 +4,7 @@ import 'mapillary-js/dist/mapillary.css';
 import { 
   X, Camera, Compass, AlertTriangle, ShieldCheck, 
   Waves, Loader2, Radio, Activity, CloudRain,
-  ArrowRight, Gauge, Car
+  ArrowRight, Gauge, Car, RefreshCw, Check
 } from 'lucide-react';
 import { fetchNearbyImageId } from '../services/mapillaryService';
 import ArcGauge from './Gauge';
