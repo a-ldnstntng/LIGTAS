@@ -1686,6 +1686,8 @@ export default function App() {
           isOpen={streetViewData.isOpen}
           activeLocation={activeLocation}
           depthMeters={activeMetrics.depthMeters}
+          activeMetrics={activeMetrics}
+          hourlyRainfall={liveWeather.hourly}
           onClose={() => setStreetViewData(prev => ({ ...prev, isOpen: false }))}
         />
 

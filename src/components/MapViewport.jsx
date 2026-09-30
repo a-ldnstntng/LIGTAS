@@ -6,6 +6,16 @@ import floodZones from '../data/floodPolygons.json';
 import { DEFAULT_TIMELINE, computeLiveInundation } from '../services/weatherService';
 import { useSmoothNumber } from '../utils/interpolation';
 
+// Set canonical local worker URL for offline/Capacitor WebView compatibility
+const setWorker = maplibregl.setWorkerUrl;
+if (typeof setWorker === 'function') {
+  try {
+    setWorker('/assets/maplibre-gl-worker.mjs');
+  } catch (err) {
+    console.warn('MapLibre setWorkerUrl skipped:', err);
+  }
+}
+
 // Canonical Metro Manila Hydro Telemetry Stations
 export const RIVER_STATIONS = [
   {
@@ -628,6 +638,10 @@ export default function MapViewport({
     });
 
     map.current.on('load', () => {
+      isMapReady.current = true;
+      map.current.resize();
+      setTimeout(() => map.current?.resize(), 300);
+
       // 1. Flood Inundation Polygon Layer
       map.current.addSource('flood-zones', {
         type: 'geojson',
@@ -866,6 +880,18 @@ export default function MapViewport({
       }
     }
   }, [effectiveStreetViewActive, effectiveStreetViewPos]);
+
+  // Ensure map canvas automatically resizes when parent tab or container mounts/expands
+  useEffect(() => {
+    if (!mapContainer.current) return;
+    const ro = new ResizeObserver(() => {
+      if (map.current) {
+        map.current.resize();
+      }
+    });
+    ro.observe(mapContainer.current);
+    return () => ro.disconnect();
+  }, []);
 
   return (
     <div className="relative w-full h-full rounded-4xl overflow-hidden">
