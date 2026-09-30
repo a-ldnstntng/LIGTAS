@@ -19,14 +19,14 @@ function getUncoveredTelemetry(name) {
     depthMeters: null,
     hazardLevel: 'UNKNOWN',
     passability: 'No sensor coverage for this corridor',
-    severityLabel: 'Depth unavailable — outside monitored catchments',
-    rainRate: '—',
-    windSpeed: '—',
-    humidity: '—',
-    clearanceTime: '—',
+    severityLabel: 'Depth unavailable â€” outside monitored catchments',
+    rainRate: 'â€”',
+    windSpeed: 'â€”',
+    humidity: 'â€”',
+    clearanceTime: 'â€”',
     riskPercent: 'UNVERIFIED',
     advisory: 'NO SENSOR COVERAGE',
-    detourDelta: '—',
+    detourDelta: 'â€”',
     isModeled: false,
     isUncovered: true,
     isFailSafe: true,
@@ -41,7 +41,7 @@ function getUncoveredTelemetry(name) {
 
 export default function App() {
   const [corridorsList, setCorridorsList] = useState([
-    { name: 'España, Manila', coordinates: [120.9894, 14.6091], heading: 48 },
+    { name: 'EspaÃ±a, Manila', coordinates: [120.9894, 14.6091], heading: 48 },
     { name: 'Sta. Mesa, Manila', coordinates: [121.012, 14.601], heading: 85 },
     { name: 'Araneta, QC', coordinates: [121.012, 14.630], heading: 215 },
     { name: 'Taft, Pasay', coordinates: [120.993, 14.564], heading: 170 },
@@ -49,7 +49,7 @@ export default function App() {
   ]);
 
   const [activeLocation, setActiveLocation] = useState({
-    name: 'España, Manila',
+    name: 'EspaÃ±a, Manila',
     coordinates: [120.9894, 14.6091],
     lat: 14.6091,
     lon: 120.9894,
@@ -101,8 +101,8 @@ export default function App() {
 
   // Telemetry computation (Fail-Safe)
   const activeMetrics = useMemo(() => {
-    const name = activeLocation?.name || 'España, Manila';
-    const isCuratedCatchment = ['españa', 'espana', 'sta. mesa', 'sta mesa', 'araneta', 'taft', 'katipunan', 'marikina']
+    const name = activeLocation?.name || 'EspaÃ±a, Manila';
+    const isCuratedCatchment = ['espaÃ±a', 'espana', 'sta. mesa', 'sta mesa', 'araneta', 'taft', 'katipunan', 'marikina']
       .some(k => name.toLowerCase().includes(k));
 
     if (isCuratedCatchment) {
@@ -133,7 +133,7 @@ export default function App() {
     lat: 14.6091, 
     bearing: 48,
     imageId: null, 
-    locationName: 'España, Manila' 
+    locationName: 'EspaÃ±a, Manila' 
   });
   const [streetViewPosition, setStreetViewPosition] = useState({ lng: 120.9894, lat: 14.6091, bearing: 48 });
 
@@ -151,7 +151,7 @@ export default function App() {
     }
 
     const locName = (loc?.name || '').toLowerCase();
-    const bearing = loc?.heading ?? loc?.bearing ?? (locName.includes('españa') ? 48 : 0);
+    const bearing = loc?.heading ?? loc?.bearing ?? (locName.includes('espaÃ±a') ? 48 : 0);
     setStreetViewPosition(prev => ({ ...prev, lng, lat, bearing }));
 
     setStreetViewData({
@@ -160,7 +160,7 @@ export default function App() {
       lat,
       bearing,
       imageId: null,
-      locationName: loc?.name || activeLocation.name || 'España, Manila',
+      locationName: loc?.name || activeLocation.name || 'EspaÃ±a, Manila',
     });
 
     fetchNearbyImageId(lng, lat).then(imageId => {
@@ -269,7 +269,6 @@ export default function App() {
             >
               <Bell className="w-5 h-5 text-white" strokeWidth={1.5} />
             </button>
-            <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-[#EEF21A] rounded-full ring-2 ring-[#1A1A1A]"></span>
           </div>
         </header>
 
@@ -277,13 +276,13 @@ export default function App() {
         {showAlertsToast && (
           <div className="mx-6 mb-3 bg-[#242424] border border-[#3A3A3A] rounded-2xl p-4 shadow-2xl relative z-30">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-semibold text-white tracking-wide">Emergency System Status</span>
+              <span className="text-xs font-semibold text-white tracking-wide">Notifications</span>
               <button onClick={() => setShowAlertsToast(false)} className="text-[#9A9A9A] hover:text-white">
                 <X className="w-4 h-4" />
               </button>
             </div>
             <p className="text-xs text-[#9A9A9A] leading-relaxed">
-              All 5 Metro Manila monitored corridors operational. PAGASA Doppler telemetry active. Roadway clearance: Normal.
+              No notifications yet. Emergency alerts and flood warnings will appear here.
             </p>
           </div>
         )}
@@ -297,7 +296,7 @@ export default function App() {
             <section className="flex items-center justify-between px-6 pt-2 pb-4" data-purpose="screen-title-section">
               <h1 className="text-[32px] leading-tight font-semibold tracking-tight text-white">Roadway Ground Truth</h1>
               <span className="bg-[#2E2E2E] text-white text-[12px] font-medium px-3.5 py-1.5 rounded-full">
-                {activeLocation.name?.split(',')[0] || 'España'}
+                {activeLocation.name?.split(',')[0] || 'EspaÃ±a'}
               </span>
             </section>
 
@@ -312,7 +311,7 @@ export default function App() {
                   className="bg-[#2E2E2E] text-[#9A9A9A] hover:text-white font-medium text-[13px] py-2 px-5 rounded-full transition-transform active:scale-95" 
                   type="button"
                 >
-                  360° View
+                  360Â° View
                 </button>
               </div>
             </section>
@@ -408,71 +407,58 @@ export default function App() {
             {/* Rainfall Trend Card */}
             <section className="px-6 mb-5" data-purpose="rainfall-trend-card">
               <article className="bg-[#242424] rounded-[28px] p-6 relative overflow-hidden">
-                <div className="flex items-center justify-between mb-4 relative z-10">
-                  <h2 className="text-[15px] font-semibold text-white tracking-wide">Rainfall Trend</h2>
-                  <span className="text-[12px] font-medium text-[#9A9A9A] bg-[#2E2E2E] px-3 py-1 rounded-full">
-                    Peak: {liveWeather.precipitation > 0 ? `${(liveWeather.precipitation * 3.5).toFixed(0)} mm/h` : '46 mm/h'}
-                  </span>
-                </div>
+                {(() => {
+                  const hourly = liveWeather.hourly || [];
+                  const hasData = hourly.length > 0;
+                  const maxPrecip = hasData ? Math.max(...hourly.map(h => h.precip || 0)) : 0;
+                  const peakLabel = maxPrecip > 0 ? `Peak: ${maxPrecip.toFixed(0)} mm/h` : 'No rain detected';
+                  // Show up to 9 hourly slots
+                  const slots = hasData ? hourly.slice(0, 9) : [];
+                  // For the dot graph, map precip to 0-3 filled dots (out of 3)
+                  const maxForScale = Math.max(maxPrecip, 1);
 
-                {/* Dotted Timeline Stem Graph */}
-                <div className="py-2 relative z-10">
-                  <div className="flex items-center justify-between px-2">
-                    <div className="flex flex-col items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#EEF21A]" />
-                      <span className="w-2 h-2 rounded-full bg-[#3A3A3A]" />
-                      <span className="w-2 h-2 rounded-full bg-[#3A3A3A]" />
-                    </div>
-                    <div className="flex flex-col items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#EEF21A]" />
-                      <span className="w-2 h-2 rounded-full bg-[#EEF21A]" />
-                      <span className="w-2 h-2 rounded-full bg-[#3A3A3A]" />
-                    </div>
-                    <div className="flex flex-col items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#EEF21A]" />
-                      <span className="w-2 h-2 rounded-full bg-[#EEF21A]" />
-                      <span className="w-2 h-2 rounded-full bg-[#3A3A3A]" />
-                    </div>
-                    <div className="flex flex-col items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#EEF21A]" />
-                      <span className="w-2 h-2 rounded-full bg-[#EEF21A]" />
-                      <span className="w-2 h-2 rounded-full bg-[#EEF21A]" />
-                    </div>
-                    {/* Peak with yellow raindrop */}
-                    <div className="flex flex-col items-center gap-1.5">
-                      <Droplet className="w-3.5 h-3.5 text-[#EEF21A] fill-[#EEF21A]" />
-                      <span className="w-2 h-2 rounded-full bg-[#EEF21A]" />
-                      <span className="w-2 h-2 rounded-full bg-[#EEF21A]" />
-                    </div>
-                    <div className="flex flex-col items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#EEF21A]" />
-                      <span className="w-2 h-2 rounded-full bg-[#EEF21A]" />
-                      <span className="w-2 h-2 rounded-full bg-[#3A3A3A]" />
-                    </div>
-                    <div className="flex flex-col items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#EEF21A]" />
-                      <span className="w-2 h-2 rounded-full bg-[#3A3A3A]" />
-                      <span className="w-2 h-2 rounded-full bg-[#3A3A3A]" />
-                    </div>
-                    <div className="flex flex-col items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#3A3A3A]" />
-                      <span className="w-2 h-2 rounded-full bg-[#3A3A3A]" />
-                      <span className="w-2 h-2 rounded-full bg-[#3A3A3A]" />
-                    </div>
-                    <div className="flex flex-col items-center gap-1.5">
-                      <span className="w-2 h-2 rounded-full bg-[#EEF21A]" />
-                      <span className="w-2 h-2 rounded-full bg-[#3A3A3A]" />
-                      <span className="w-2 h-2 rounded-full bg-[#3A3A3A]" />
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center text-[12px] font-medium text-[#9A9A9A] pt-4 px-1">
-                    <span>6 AM</span>
-                    <span>8 AM</span>
-                    <span>10 AM</span>
-                    <span>12 PM</span>
-                    <span>2 PM</span>
-                  </div>
-                </div>
+                  return (
+                    <>
+                      <div className="flex items-center justify-between mb-4 relative z-10">
+                        <h2 className="text-[15px] font-semibold text-white tracking-wide">Rainfall Trend</h2>
+                        <span className="text-[12px] font-medium text-[#9A9A9A] bg-[#2E2E2E] px-3 py-1 rounded-full">
+                          {peakLabel}
+                        </span>
+                      </div>
+
+                      {!hasData ? (
+                        <p className="text-xs text-[#9A9A9A] text-center py-4">Hourly data loading...</p>
+                      ) : (
+                        <div className="py-2 relative z-10">
+                          <div className="flex items-center justify-between px-2">
+                            {slots.map((slot, i) => {
+                              const p = slot.precip || 0;
+                              const filledDots = Math.min(3, Math.ceil((p / maxForScale) * 3));
+                              const isPeak = p === maxPrecip && maxPrecip > 0;
+                              return (
+                                <div key={i} className="flex flex-col items-center gap-1.5">
+                                  {isPeak && <Droplet className="w-3.5 h-3.5 text-[#EEF21A] fill-[#EEF21A]" />}
+                                  {Array.from({ length: 3 - (isPeak ? 0 : 0) }, (_, dotIdx) => {
+                                    const dotNum = dotIdx + 1;
+                                    const isFilled = dotNum <= filledDots;
+                                    return (
+                                      <span key={dotIdx} className={`w-2 h-2 rounded-full ${isFilled ? 'bg-[#EEF21A]' : 'bg-[#3A3A3A]'}`} />
+                                    );
+                                  })}
+                                </div>
+                              );
+                            })}
+                          </div>
+                          <div className="flex justify-between items-center text-[12px] font-medium text-[#9A9A9A] pt-4 px-1">
+                            {slots.filter((_, i) => i % 2 === 0).map((slot, i) => (
+                              <span key={i}>{slot.label}</span>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </article>
             </section>
 
@@ -633,199 +619,160 @@ export default function App() {
               </article>
 
               {/* Secondary Corridor Cards */}
-              {corridorsList.filter(c => c.name !== activeLocation.name).map((corridor, idx) => (
-                <article key={idx} className="bg-[#242424] rounded-[28px] p-6 flex items-center justify-between">
-                  <div className="flex flex-col">
-                    <div className="bg-[#2E2E2E] px-4 py-1.5 rounded-full self-start mb-2.5">
-                      <span className="text-xs font-medium text-white tracking-wide">{corridor.name.split(',')[0]}</span>
+              {corridorsList.filter(c => c.name !== activeLocation.name).map((corridor, idx) => {
+                const cName = corridor.name || '';
+                const isCurated = ['espaÃ±a', 'espana', 'sta. mesa', 'sta mesa', 'araneta', 'taft', 'katipunan', 'marikina']
+                  .some(k => cName.toLowerCase().includes(k));
+                const cMetrics = isCurated
+                  ? computeLiveInundation(cName, liveWeather.precipitation || 0)
+                  : { depthMeters: null, sedanStatus: 'Cannot Verify' };
+                const depthDisplay = cMetrics.depthMeters !== null ? `${cMetrics.depthMeters.toFixed(1)}m` : 'â€”';
+                const statusDisplay = cMetrics.depthMeters !== null
+                  ? (cMetrics.depthMeters === 0 ? 'Passable' : (cMetrics.depthMeters < 0.3 ? 'Caution' : 'Impassable'))
+                  : 'No Data';
+                const dotColor = cMetrics.depthMeters !== null
+                  ? (cMetrics.depthMeters === 0 ? 'bg-[#22C55E]' : (cMetrics.depthMeters < 0.3 ? 'bg-[#EEF21A]' : 'bg-[#EF4444]'))
+                  : 'bg-[#9A9A9A]';
+
+                return (
+                  <article key={idx} className="bg-[#242424] rounded-[28px] p-6 flex items-center justify-between">
+                    <div className="flex flex-col">
+                      <div className="bg-[#2E2E2E] px-4 py-1.5 rounded-full self-start mb-2.5">
+                        <span className="text-xs font-medium text-white tracking-wide">{cName.split(',')[0]}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-light text-white">{depthDisplay}</span>
+                        <span className="text-xs text-[#9A9A9A]">Â·</span>
+                        <span className={`w-2 h-2 rounded-full ${dotColor}`}></span>
+                        <span className="text-xs font-medium text-[#9A9A9A]">{statusDisplay}</span>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-light text-white">0.0m</span>
-                      <span className="text-xs text-[#9A9A9A]">·</span>
-                      <span className="w-2 h-2 rounded-full bg-[#22C55E]"></span>
-                      <span className="text-xs font-medium text-[#9A9A9A]">Passable</span>
-                    </div>
-                  </div>
-                  <button 
-                    aria-label={`Open ${corridor.name} details`}
-                    onClick={() => handleSelectLocation(corridor)}
-                    className="w-10 h-10 rounded-full bg-[#2E2E2E] flex items-center justify-center hover:bg-[#383838] active:scale-95 transition-all text-[#9A9A9A] hover:text-white" 
-                    type="button"
-                  >
-                    <ArrowUpRight className="w-4 h-4" strokeWidth={1.5} />
-                  </button>
-                </article>
-              ))}
+                    <button 
+                      aria-label={`Open ${corridor.name} details`}
+                      onClick={() => handleSelectLocation(corridor)}
+                      className="w-10 h-10 rounded-full bg-[#2E2E2E] flex items-center justify-center hover:bg-[#383838] active:scale-95 transition-all text-[#9A9A9A] hover:text-white" 
+                      type="button"
+                    >
+                      <ArrowUpRight className="w-4 h-4" strokeWidth={1.5} />
+                    </button>
+                  </article>
+                );
+              })}
             </div>
           </div>
         )}
 
         {/* ========================================================================= */}
-        {/* VIEW 4: HYDRO TELEMETRY (ULTRASONIC RIVER GAUGES)                         */}
+        {/* VIEW 4: HYDRO TELEMETRY (RIVER DISCHARGE MONITORING)                      */}
         {/* ========================================================================= */}
-        {activeTab === 'Telemetry' && (
-          <div className="flex flex-col flex-1 animate-fadeIn">
-            <section className="px-6 pt-1 pb-4" data-purpose="screen-title-section">
-              <div className="flex items-center justify-between">
-                <h1 className="text-[32px] leading-tight font-semibold tracking-tight text-white">Hydro Telemetry</h1>
-                <span aria-label="3 monitored stations" className="bg-[#2E2E2E] text-[#EEF21A] text-xs font-semibold px-3 py-1 rounded-full">3</span>
+        {activeTab === 'Telemetry' && (() => {
+          const discharge = liveWeather.riverDischarge;
+          const hasDischarge = typeof discharge === 'number' && !isNaN(discharge);
+          const maxDischarge = liveWeather.riverDischargeMax || 500;
+          const hourly = liveWeather.hourly || [];
+          const maxPrecip = hourly.length > 0 ? Math.max(...hourly.map(h => h.precip || 0)) : 0;
+
+          const stations = [
+            { name: 'Marikina River Basin', coordinates: [121.096, 14.636], factor: 1.0 },
+            { name: 'Pasig River Basin', coordinates: [121.034, 14.582], factor: 0.76 },
+            { name: 'Manggahan Floodway', coordinates: [121.092, 14.577], factor: 0.88 },
+          ];
+
+          return (
+            <div className="flex flex-col flex-1 animate-fadeIn">
+              <section className="px-6 pt-1 pb-4" data-purpose="screen-title-section">
+                <div className="flex items-center justify-between">
+                  <h1 className="text-[32px] leading-tight font-semibold tracking-tight text-white">Hydro Telemetry</h1>
+                  <span aria-label="3 monitored basins" className="bg-[#2E2E2E] text-[#EEF21A] text-xs font-semibold px-3 py-1 rounded-full">3</span>
+                </div>
+                <p className="text-xs font-medium text-[#9A9A9A] mt-1">Open-Meteo river discharge data</p>
+              </section>
+
+              <div className="flex-1 overflow-y-auto no-scrollbar px-6 space-y-4 pb-6">
+                {stations.map((station, idx) => {
+                  const stationDischarge = hasDischarge ? Math.round(discharge * station.factor) : null;
+                  const gaugeMax = Math.max(maxDischarge, 500);
+                  const statusLabel = stationDischarge === null ? 'No Data'
+                    : stationDischarge < 200 ? 'Normal'
+                    : stationDischarge < 400 ? 'Elevated'
+                    : 'Critical';
+                  const statusColor = stationDischarge === null ? 'bg-[#9A9A9A]'
+                    : stationDischarge < 200 ? 'bg-[#22C55E]'
+                    : stationDischarge < 400 ? 'bg-[#EEF21A]'
+                    : 'bg-[#EF4444]';
+
+                  return (
+                    <article key={idx} className="bg-[#242424] rounded-[28px] p-6 relative overflow-hidden flex flex-col justify-between" data-purpose="river-gauge-card">
+                      <div className="relative z-10 flex items-center justify-between mb-2">
+                        <div className="bg-[#2E2E2E]/80 backdrop-blur-sm px-4 py-1.5 rounded-full">
+                          <span className="text-xs font-medium text-white tracking-wide">{station.name}</span>
+                        </div>
+                        <button 
+                          onClick={() => handleOpenStreetCam({ name: station.name, coordinates: station.coordinates })}
+                          className="w-10 h-10 rounded-full bg-white flex items-center justify-center active:scale-95 transition-transform" 
+                          type="button"
+                        >
+                          <ArrowUpRight className="w-5 h-5 text-[#1A1A1A]" strokeWidth={1.5} />
+                        </button>
+                      </div>
+
+                      <div className="relative z-10 flex flex-col items-center my-1">
+                        <ArcGauge 
+                          value={stationDischarge}
+                          min={0}
+                          max={gaugeMax}
+                          unit="mÂ³/s"
+                          label="Discharge"
+                        />
+                      </div>
+
+                      <div className="relative z-10 bg-[#2E2E2E]/50 rounded-[20px] p-3.5 mb-3">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-xs font-medium text-[#9A9A9A]">Rainfall Trend</span>
+                          <span className="text-xs font-medium text-[#FFFFFF] bg-[#2E2E2E] px-2.5 py-0.5 rounded-full">
+                            {maxPrecip > 0 ? `Peak: ${maxPrecip.toFixed(0)} mm/h` : 'No rain'}
+                          </span>
+                        </div>
+                        {hourly.length > 0 ? (
+                          <>
+                            <div className="flex items-end justify-between px-2 h-14 pt-1">
+                              {hourly.slice(0, 7).map((slot, si) => {
+                                const p = slot.precip || 0;
+                                const barH = maxPrecip > 0 ? Math.max(5, Math.round((p / maxPrecip) * 12)) : 5;
+                                const isPeak = p === maxPrecip && maxPrecip > 0;
+                                return (
+                                  <div key={si} className="flex flex-col items-center">
+                                    <div className={`w-px relative flex flex-col items-center justify-between py-0.5 ${isPeak ? 'bg-[#EEF21A]/40' : 'bg-[#3A3A3A]'}`} style={{ height: `${barH * 4}px` }}>
+                                      {isPeak && <Droplet className="w-3.5 h-3.5 text-[#EEF21A] -mt-1.5 fill-[#EEF21A]" />}
+                                      <span className={`w-1.5 h-1.5 rounded-full ${p > 0 ? 'bg-[#EEF21A]' : 'bg-[#3A3A3A]'}`}></span>
+                                      <span className={`w-1.5 h-1.5 rounded-full ${p > 0 ? 'bg-[#EEF21A]' : 'bg-[#3A3A3A]'}`}></span>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <div className="flex justify-between items-center text-xs font-medium text-[#9A9A9A] pt-2 px-1">
+                              {hourly.slice(0, 7).filter((_, i) => i % 2 === 0).map((slot, i) => (
+                                <span key={i}>{slot.label}</span>
+                              ))}
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-xs text-[#9A9A9A] text-center py-2">Loading...</p>
+                        )}
+                      </div>
+
+                      <div className="relative z-10 flex items-center gap-2 pt-1">
+                        <span className={`w-2 h-2 rounded-full ${statusColor}`}></span>
+                        <span className="text-xs font-medium text-white">{statusLabel}</span>
+                      </div>
+                    </article>
+                  );
+                })}
               </div>
-              <p className="text-xs font-medium text-[#9A9A9A] mt-1">Ultrasonic river gauges</p>
-            </section>
-
-            <div className="flex-1 overflow-y-auto no-scrollbar px-6 space-y-4 pb-6">
-              {/* CARD 1: Marikina Sto. Niño */}
-              <article className="bg-[#242424] rounded-[28px] p-6 relative overflow-hidden flex flex-col justify-between" data-purpose="river-gauge-card">
-                <div className="relative z-10 flex items-center justify-between mb-2">
-                  <div className="bg-[#2E2E2E]/80 backdrop-blur-sm px-4 py-1.5 rounded-full">
-                    <span className="text-xs font-medium text-white tracking-wide">Marikina Sto. Niño</span>
-                  </div>
-                  <button 
-                    onClick={() => handleOpenStreetCam({ name: 'Marikina Sto. Niño', coordinates: [121.096, 14.636] })}
-                    className="w-10 h-10 rounded-full bg-white flex items-center justify-center active:scale-95 transition-transform" 
-                    type="button"
-                  >
-                    <ArrowUpRight className="w-5 h-5 text-[#1A1A1A]" strokeWidth={1.5} />
-                  </button>
-                </div>
-
-                <div className="relative z-10 flex flex-col items-center my-1">
-                  <ArcGauge 
-                    value={14.2}
-                    min={0}
-                    max={20}
-                    unit="m"
-                    label="Water Level"
-                  />
-                </div>
-
-                <div className="relative z-10 bg-[#2E2E2E]/50 rounded-[20px] p-3.5 mb-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-[#9A9A9A]">Rainfall Trend</span>
-                    <span className="text-xs font-medium text-[#FFFFFF] bg-[#2E2E2E] px-2.5 py-0.5 rounded-full">Peak: 18 mm/h</span>
-                  </div>
-                  <div className="flex items-end justify-between px-2 h-14 pt-1">
-                    <div className="flex flex-col items-center"><div className="w-px h-8 bg-[#3A3A3A] relative flex flex-col items-center justify-between py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span></div></div>
-                    <div className="flex flex-col items-center"><div className="w-px h-10 bg-[#3A3A3A] relative flex flex-col items-center justify-between py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span></div></div>
-                    <div className="flex flex-col items-center"><div className="w-px h-12 bg-[#EEF21A]/40 relative flex flex-col items-center justify-between py-0.5"><Droplet className="w-3.5 h-3.5 text-[#EEF21A] -mt-1.5 fill-[#EEF21A]" /><span className="w-1.5 h-1.5 rounded-full bg-[#EEF21A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#EEF21A]"></span></div></div>
-                    <div className="flex flex-col items-center"><div className="w-px h-9 bg-[#3A3A3A] relative flex flex-col items-center justify-between py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span></div></div>
-                    <div className="flex flex-col items-center"><div className="w-px h-7 bg-[#3A3A3A] relative flex flex-col items-center justify-between py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span></div></div>
-                    <div className="flex flex-col items-center"><div className="w-px h-5 bg-[#3A3A3A] relative flex flex-col items-center justify-between py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span></div></div>
-                    <div className="flex flex-col items-center"><div className="w-px h-6 bg-[#3A3A3A] relative flex flex-col items-center justify-between py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span></div></div>
-                  </div>
-                  <div className="flex justify-between items-center text-xs font-medium text-[#9A9A9A] pt-2 px-1">
-                    <span>8 AM</span><span>10 AM</span><span>12 PM</span><span>2 PM</span><span>4 PM</span>
-                  </div>
-                </div>
-
-                <div className="relative z-10 flex items-center gap-2 pt-1">
-                  <span className="w-2 h-2 rounded-full bg-[#22C55E]"></span>
-                  <span className="text-xs font-medium text-white">Normal</span>
-                </div>
-              </article>
-
-              {/* CARD 2: Pasig River */}
-              <article className="bg-[#242424] rounded-[28px] p-6 relative overflow-hidden flex flex-col justify-between" data-purpose="river-gauge-card">
-                <div className="relative z-10 flex items-center justify-between mb-2">
-                  <div className="bg-[#2E2E2E]/80 backdrop-blur-sm px-4 py-1.5 rounded-full">
-                    <span className="text-xs font-medium text-white tracking-wide">Pasig River</span>
-                  </div>
-                  <button 
-                    onClick={() => handleOpenStreetCam({ name: 'Pasig River', coordinates: [121.034, 14.582] })}
-                    className="w-10 h-10 rounded-full bg-white flex items-center justify-center active:scale-95 transition-transform" 
-                    type="button"
-                  >
-                    <ArrowUpRight className="w-5 h-5 text-[#1A1A1A]" strokeWidth={1.5} />
-                  </button>
-                </div>
-
-                <div className="relative z-10 flex flex-col items-center my-1">
-                  <ArcGauge 
-                    value={10.8}
-                    min={0}
-                    max={18}
-                    unit="m"
-                    label="Water Level"
-                  />
-                </div>
-
-                <div className="relative z-10 bg-[#2E2E2E]/50 rounded-[20px] p-3.5 mb-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-[#9A9A9A]">Rainfall Trend</span>
-                    <span className="text-xs font-medium text-[#FFFFFF] bg-[#2E2E2E] px-2.5 py-0.5 rounded-full">Peak: 12 mm/h</span>
-                  </div>
-                  <div className="flex items-end justify-between px-2 h-14 pt-1">
-                    <div className="flex flex-col items-center"><div className="w-px h-6 bg-[#3A3A3A] relative flex flex-col items-center justify-between py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span></div></div>
-                    <div className="flex flex-col items-center"><div className="w-px h-8 bg-[#3A3A3A] relative flex flex-col items-center justify-between py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span></div></div>
-                    <div className="flex flex-col items-center"><div className="w-px h-9 bg-[#3A3A3A] relative flex flex-col items-center justify-between py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span></div></div>
-                    <div className="flex flex-col items-center"><div className="w-px h-12 bg-[#EEF21A]/40 relative flex flex-col items-center justify-between py-0.5"><Droplet className="w-3.5 h-3.5 text-[#EEF21A] -mt-1.5 fill-[#EEF21A]" /><span className="w-1.5 h-1.5 rounded-full bg-[#EEF21A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#EEF21A]"></span></div></div>
-                    <div className="flex flex-col items-center"><div className="w-px h-8 bg-[#3A3A3A] relative flex flex-col items-center justify-between py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span></div></div>
-                    <div className="flex flex-col items-center"><div className="w-px h-6 bg-[#3A3A3A] relative flex flex-col items-center justify-between py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span></div></div>
-                    <div className="flex flex-col items-center"><div className="w-px h-5 bg-[#3A3A3A] relative flex flex-col items-center justify-between py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span></div></div>
-                  </div>
-                  <div className="flex justify-between items-center text-xs font-medium text-[#9A9A9A] pt-2 px-1">
-                    <span>8 AM</span><span>10 AM</span><span>12 PM</span><span>2 PM</span><span>4 PM</span>
-                  </div>
-                </div>
-
-                <div className="relative z-10 flex items-center gap-2 pt-1">
-                  <span className="w-2 h-2 rounded-full bg-[#22C55E]"></span>
-                  <span className="text-xs font-medium text-white">Normal</span>
-                </div>
-              </article>
-
-              {/* CARD 3: Manggahan Floodway */}
-              <article className="bg-[#242424] rounded-[28px] p-6 relative overflow-hidden flex flex-col justify-between" data-purpose="river-gauge-card">
-                <div className="relative z-10 flex items-center justify-between mb-2">
-                  <div className="bg-[#2E2E2E]/80 backdrop-blur-sm px-4 py-1.5 rounded-full">
-                    <span className="text-xs font-medium text-white tracking-wide">Manggahan Floodway</span>
-                  </div>
-                  <button 
-                    onClick={() => handleOpenStreetCam({ name: 'Manggahan Floodway', coordinates: [121.092, 14.577] })}
-                    className="w-10 h-10 rounded-full bg-white flex items-center justify-center active:scale-95 transition-transform" 
-                    type="button"
-                  >
-                    <ArrowUpRight className="w-5 h-5 text-[#1A1A1A]" strokeWidth={1.5} />
-                  </button>
-                </div>
-
-                <div className="relative z-10 flex flex-col items-center my-1">
-                  <ArcGauge 
-                    value={12.5}
-                    min={0}
-                    max={18}
-                    unit="m"
-                    label="Water Level"
-                  />
-                </div>
-
-                <div className="relative z-10 bg-[#2E2E2E]/50 rounded-[20px] p-3.5 mb-3">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-medium text-[#9A9A9A]">Rainfall Trend</span>
-                    <span className="text-xs font-medium text-[#FFFFFF] bg-[#2E2E2E] px-2.5 py-0.5 rounded-full">Peak: 14 mm/h</span>
-                  </div>
-                  <div className="flex items-end justify-between px-2 h-14 pt-1">
-                    <div className="flex flex-col items-center"><div className="w-px h-7 bg-[#3A3A3A] relative flex flex-col items-center justify-between py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span></div></div>
-                    <div className="flex flex-col items-center"><div className="w-px h-8 bg-[#3A3A3A] relative flex flex-col items-center justify-between py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span></div></div>
-                    <div className="flex flex-col items-center"><div className="w-px h-11 bg-[#3A3A3A] relative flex flex-col items-center justify-between py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span></div></div>
-                    <div className="flex flex-col items-center"><div className="w-px h-9 bg-[#3A3A3A] relative flex flex-col items-center justify-between py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span></div></div>
-                    <div className="flex flex-col items-center"><div className="w-px h-7 bg-[#3A3A3A] relative flex flex-col items-center justify-between py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span></div></div>
-                    <div className="flex flex-col items-center"><div className="w-px h-12 bg-[#EEF21A]/40 relative flex flex-col items-center justify-between py-0.5"><Droplet className="w-3.5 h-3.5 text-[#EEF21A] -mt-1.5 fill-[#EEF21A]" /><span className="w-1.5 h-1.5 rounded-full bg-[#EEF21A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#EEF21A]"></span></div></div>
-                    <div className="flex flex-col items-center"><div className="w-px h-6 bg-[#3A3A3A] relative flex flex-col items-center justify-between py-0.5"><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span><span className="w-1.5 h-1.5 rounded-full bg-[#3A3A3A]"></span></div></div>
-                  </div>
-                  <div className="flex justify-between items-center text-xs font-medium text-[#9A9A9A] pt-2 px-1">
-                    <span>8 AM</span><span>10 AM</span><span>12 PM</span><span>2 PM</span><span>4 PM</span>
-                  </div>
-                </div>
-
-                <div className="relative z-10 flex items-center gap-2 pt-1">
-                  <span className="w-2 h-2 rounded-full bg-[#22C55E]"></span>
-                  <span className="text-xs font-medium text-white">Normal</span>
-                </div>
-              </article>
             </div>
-          </div>
-        )}
+          );
+        })()}
 
         {/* ========================================================================= */}
         {/* VIEW 5: EMERGENCY HOTLINES                                                */}
