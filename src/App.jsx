@@ -45,6 +45,7 @@ export default function App() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [nominatimResults, setNominatimResults] = useState([]);
+  const searchDebounceRef = useRef(null);
   const [activeTab, setActiveTab] = useState('Overview'); // 'Overview' | 'Radar' | 'Corridors' | 'Telemetry' | 'Hotlines'
   const [copiedHotline, setCopiedHotline] = useState(null);
   const [showReportModal, setShowReportModal] = useState(false);
@@ -73,6 +74,20 @@ export default function App() {
     };
   });
   const [isRefreshingWeather, setIsRefreshingWeather] = useState(false);
+  const [timelineStep, setTimelineStep] = useState(6);
+  const [isPlayingTimeline, setIsPlayingTimeline] = useState(false);
+
+  useEffect(() => {
+    if (!isPlayingTimeline) return;
+    const interval = setInterval(() => {
+      setTimelineStep(prev => {
+        const total = liveWeather.timeline?.length || 7;
+        const next = prev + 1;
+        return next >= total ? 0 : next;
+      });
+    }, 1600);
+    return () => clearInterval(interval);
+  }, [isPlayingTimeline, liveWeather.timeline]);
 
   const updateWeather = useCallback(async () => {
     const [lon, lat] = activeLocation.coordinates || [120.9894, 14.6091];
@@ -261,22 +276,50 @@ export default function App() {
     }
   }, []);
 
-  // Quick Nominatim search for Radar tab
-  const handleSearch = useCallback(async (query) => {
+  // Debounced Nominatim search for Radar tab (Phase 2 Rate-limiting compliance)
+  const handleSearch = useCallback((query) => {
     setSearchQuery(query);
-    if (!query || query.trim().length < 2) {
+    if (searchDebounceRef.current) {
+      clearTimeout(searchDebounceRef.current);
+    }
+
+    const trimmed = (query || '').trim();
+    if (trimmed.length < 2) {
       setNominatimResults([]);
       return;
     }
-    try {
-      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query + ', Metro Manila, Philippines')}&limit=4`);
-      if (res.ok) {
-        const data = await res.json();
-        setNominatimResults(data);
+
+    searchDebounceRef.current = setTimeout(async () => {
+      // 1. Try local backend proxy first (cached & throttled to 1 req/sec)
+      try {
+        const proxyHost = typeof window !== 'undefined' ? (window.location.hostname || '127.0.0.1') : '127.0.0.1';
+        const proxyUrl = `http://${proxyHost}:3001/api/geocode?q=${encodeURIComponent(trimmed)}`;
+        const pRes = await fetch(proxyUrl, { headers: { 'Accept': 'application/json' } });
+        if (pRes.ok) {
+          const pData = await pRes.json();
+          if (Array.isArray(pData) && pData.length > 0) {
+            setNominatimResults(pData);
+            return;
+          }
+        }
+      } catch {
+        // Proxy unavailable, proceed to direct fetch
       }
-    } catch {
-      // offline safe
-    }
+
+      // 2. Direct client fallback with Nominatim terms compliance
+      try {
+        const directUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(trimmed + ', Metro Manila, Philippines')}&limit=4&countrycodes=ph`;
+        const res = await fetch(directUrl, {
+          headers: { 'Accept': 'application/json' }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setNominatimResults(Array.isArray(data) ? data : []);
+        }
+      } catch {
+        // offline safe
+      }
+    }, 400);
   }, []);
 
   return (
@@ -1254,6 +1297,11 @@ export default function App() {
                     <MapViewport 
                       activeLocation={activeLocation}
                       floodData={floodData}
+                      timeline={liveWeather.timeline}
+                      timelineStep={timelineStep}
+                      onTimelineChange={setTimelineStep}
+                      isPlayingTimeline={isPlayingTimeline}
+                      onTogglePlayTimeline={() => setIsPlayingTimeline(prev => !prev)}
                       onMapClick={handleMapClick}
                       onOpenStreetCam={handleOpenStreetCam}
                       className="w-full h-full"
