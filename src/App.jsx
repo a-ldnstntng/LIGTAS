@@ -5,7 +5,7 @@ import floodData from './data/floodPolygons.json';
 import { fetchNearbyImageId } from './services/mapillaryService';
 import { fetchLiveWeather, computeLiveInundation, getCachedWeather, DEFAULT_TIMELINE } from './services/weatherService';
 import ArcGauge from './components/Gauge';
-import { RefreshCw, X, Check, Droplet, MapPin, Navigation, Loader2 } from 'lucide-react';
+import { RefreshCw, X, Check, Droplet, MapPin, Navigation, Loader2, WifiOff, AlertTriangle } from 'lucide-react';
 
 // Fallback for corridors outside sensor coverage (Fail-Safe: Never default to passable)
 function getUncoveredTelemetry(name) {
@@ -96,6 +96,37 @@ export default function App() {
     setLiveWeather(data);
     setIsRefreshingWeather(false);
   }, [activeLocation]);
+
+  const [isOnline, setIsOnline] = useState(() => typeof navigator !== 'undefined' ? navigator.onLine : true);
+
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true);
+      updateWeather();
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+    };
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, [updateWeather]);
+
+  const stalenessText = useMemo(() => {
+    if (!liveWeather.updatedAt) return null;
+    const elapsedMs = Math.max(0, Date.now() - Number(liveWeather.updatedAt));
+    const minutes = Math.floor(elapsedMs / 60000);
+    if (minutes < 1) return 'just now';
+    if (minutes === 1) return '1 min ago';
+    if (minutes < 60) return `${minutes} mins ago`;
+    const hours = Math.floor(minutes / 60);
+    return hours === 1 ? '1 hour ago' : `${hours} hours ago`;
+  }, [liveWeather.updatedAt]);
+
+  const isOfflineMode = !isOnline || liveWeather.isOffline || liveWeather.isCached;
 
   useEffect(() => {
     updateWeather();
@@ -365,6 +396,45 @@ export default function App() {
           </div>
         </header>
         {/* END: TopHeader */}
+
+        {/* BEGIN: Offline / Stale Data Banner */}
+        {isOfflineMode && (
+          <div className="mx-6 mb-3 bg-[#242424] border border-[#FF922B]/40 rounded-2xl p-3 flex items-center justify-between shadow-lg relative z-30 animate-fadeIn">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-full bg-[#FF922B]/15 border border-[#FF922B]/30 flex items-center justify-center shrink-0">
+                <WifiOff className="w-4 h-4 text-[#FF922B]" />
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[12px] font-semibold text-[#FF922B] tracking-wide uppercase">
+                    {!isOnline ? 'Offline Mode' : 'Cached Snapshot'}
+                  </span>
+                  {stalenessText && (
+                    <span className="text-[10px] text-[#888888] font-mono">
+                      • {stalenessText}
+                    </span>
+                  )}
+                </div>
+                <span className="text-[11px] text-[#A0A0A0] leading-tight">
+                  {!isOnline 
+                    ? 'No signal. Displaying persisted station readings.'
+                    : 'Serving offline cache to conserve cellular bandwidth.'}
+                </span>
+              </div>
+            </div>
+            <button 
+              onClick={updateWeather}
+              disabled={isRefreshingWeather}
+              aria-label="Retry connection"
+              className="bg-[#2E2E2E] hover:bg-[#383838] active:scale-95 text-white text-[11px] font-medium px-2.5 py-1.5 rounded-lg border border-white/10 shrink-0 transition-transform flex items-center gap-1"
+              type="button"
+            >
+              <RefreshCw className={`w-3 h-3 text-[#FF922B] ${isRefreshingWeather ? 'animate-spin' : ''}`} />
+              <span>Retry</span>
+            </button>
+          </div>
+        )}
+        {/* END: Offline / Stale Data Banner */}
 
         {/* Alerts Dropdown Toast */}
         {showAlertsToast && (
